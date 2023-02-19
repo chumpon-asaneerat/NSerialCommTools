@@ -60,6 +60,11 @@ namespace TFOTest
             ToggleConnection();
         }
 
+        private void cmdSend1_Click(object sender, EventArgs e)
+        {
+            Send();
+        }
+
         #endregion
 
         #region Internal Variables
@@ -237,6 +242,29 @@ namespace TFOTest
             }
             // Free Thread
             FreeReadThread();
+        }
+
+        private void Send()
+        {
+            if (!IsConnected)
+                return;
+
+            string hexStr = txtSend1.Text.Trim();
+            if (string.IsNullOrEmpty(hexStr)) 
+                return;
+
+            List<string> hexCodes = new List<string>(hexStr.Split(new char[] { ' ', '\r', '\n' }, 
+                StringSplitOptions.RemoveEmptyEntries));
+            if (hexCodes.Count <= 0) 
+                return;
+
+            byte[] buffers = new byte[hexCodes.Count];
+            for (int i = 0; i < hexCodes.Count; i++)
+            {
+                string hexCode = hexCodes[i];
+                buffers[i] = Convert.ToByte(hexCode, 16);
+            }
+            _comm.Write(buffers, 0, buffers.Length);
         }
 
         #endregion

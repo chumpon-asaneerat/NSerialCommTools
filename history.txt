@@ -4,8 +4,10 @@ Implements #10
 Implements #9
 -
 
+[Commit]
 Implements #8
--
+- Update TFOTest prject #3.
+  - Implements send (Hex Code) mode.
 
 [Commit]
 Implements #7

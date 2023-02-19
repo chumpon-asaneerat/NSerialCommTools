@@ -30,7 +30,6 @@
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.panel1 = new System.Windows.Forms.Panel();
             this.cbHandshakes = new System.Windows.Forms.ComboBox();
             this.label6 = new System.Windows.Forms.Label();
@@ -47,7 +46,11 @@
             this.cmdConnectDisconnect = new System.Windows.Forms.Button();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.txtLog = new System.Windows.Forms.TextBox();
+            this.txtSend1 = new System.Windows.Forms.TextBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.cmdSend1 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
+            this.tabPage1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.SuspendLayout();
@@ -55,7 +58,6 @@
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
-            this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 165);
@@ -67,25 +69,17 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.cmdSend1);
+            this.tabPage1.Controls.Add(this.label7);
+            this.tabPage1.Controls.Add(this.txtSend1);
             this.tabPage1.Location = new System.Drawing.Point(4, 34);
             this.tabPage1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabPage1.Size = new System.Drawing.Size(1165, 453);
             this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "TFO (RECV)";
+            this.tabPage1.Text = "TFO";
             this.tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // tabPage2
-            // 
-            this.tabPage2.Location = new System.Drawing.Point(4, 34);
-            this.tabPage2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage2.Size = new System.Drawing.Size(1165, 453);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "TFO (SIMULATE)";
-            this.tabPage2.UseVisualStyleBackColor = true;
             // 
             // panel1
             // 
@@ -255,6 +249,36 @@
             this.txtLog.Size = new System.Drawing.Size(1165, 453);
             this.txtLog.TabIndex = 0;
             // 
+            // txtSend1
+            // 
+            this.txtSend1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtSend1.Location = new System.Drawing.Point(19, 38);
+            this.txtSend1.Multiline = true;
+            this.txtSend1.Name = "txtSend1";
+            this.txtSend1.Size = new System.Drawing.Size(949, 169);
+            this.txtSend1.TabIndex = 0;
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(14, 10);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(178, 25);
+            this.label7.TabIndex = 1;
+            this.label7.Text = "Send (HEX Code):";
+            // 
+            // cmdSend1
+            // 
+            this.cmdSend1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmdSend1.Location = new System.Drawing.Point(983, 162);
+            this.cmdSend1.Name = "cmdSend1";
+            this.cmdSend1.Size = new System.Drawing.Size(174, 45);
+            this.cmdSend1.TabIndex = 14;
+            this.cmdSend1.Text = "Send";
+            this.cmdSend1.UseVisualStyleBackColor = true;
+            this.cmdSend1.Click += new System.EventHandler(this.cmdSend1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -269,6 +293,8 @@
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.tabControl1.ResumeLayout(false);
+            this.tabPage1.ResumeLayout(false);
+            this.tabPage1.PerformLayout();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.tabPage3.ResumeLayout(false);
@@ -281,7 +307,6 @@
 
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage1;
-        private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.ComboBox cbPorts;
         private System.Windows.Forms.Label label1;
@@ -298,6 +323,9 @@
         private System.Windows.Forms.Button cmdConnectDisconnect;
         private System.Windows.Forms.TabPage tabPage3;
         private System.Windows.Forms.TextBox txtLog;
+        private System.Windows.Forms.Button cmdSend1;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.TextBox txtSend1;
     }
 }
 
