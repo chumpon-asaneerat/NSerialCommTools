@@ -3,14 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Wpf.HexEditor.Control", "NLib.Wpf.HexEditor.Control\NLib.Wpf.HexEditor.Control.csproj", "{4173085E-7B01-4274-8971-B4243A8491D1}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{36548673-0E2D-4DFE-BB53-A7DB37C273C8}"
 	ProjectSection(SolutionItems) = preProject
 		history.txt = history.txt
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Terminal.App", "NLib.Serial.Terminal.App\NLib.Serial.Terminal.App.csproj", "{45543D45-3584-4C63-BAC1-578177B132CB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01.Core", "01.Core", "{E643A486-6F09-4B8D-A991-4390DB5FFF7B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "05.Controls", "05.Controls", "{CCDA077A-CBFE-448E-8842-DB5FF063FA05}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "09.App", "09.App", "{4855DCBB-7284-4DF7-8613-212D1B89C851}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Wpf.HexEditor.Control", "05.Controls\NLib.Wpf.HexEditor.Control\NLib.Wpf.HexEditor.Control.csproj", "{4173085E-7B01-4274-8971-B4243A8491D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Terminal.App", "09.App\NLib.Serial.Terminal.App\NLib.Serial.Terminal.App.csproj", "{45543D45-3584-4C63-BAC1-578177B132CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +35,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4173085E-7B01-4274-8971-B4243A8491D1} = {CCDA077A-CBFE-448E-8842-DB5FF063FA05}
+		{45543D45-3584-4C63-BAC1-578177B132CB} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}
