@@ -7,8 +7,10 @@ Implements #9
 Implements #8
 -
 
+[Commit]
 Implements #7
--
+- Update TFOTest prject #2.
+  - Implements connect/disconnect + prepare read thread.
 
 [Commit]
 Implements #6

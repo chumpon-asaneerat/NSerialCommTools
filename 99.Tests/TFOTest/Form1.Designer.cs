@@ -32,32 +32,37 @@
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.cbPorts = new System.Windows.Forms.ComboBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.txtBaudRate = new System.Windows.Forms.TextBox();
-            this.cbParityBits = new System.Windows.Forms.ComboBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.cbStopBits = new System.Windows.Forms.ComboBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.txtDataBits = new System.Windows.Forms.TextBox();
             this.cbHandshakes = new System.Windows.Forms.ComboBox();
             this.label6 = new System.Windows.Forms.Label();
+            this.txtDataBits = new System.Windows.Forms.TextBox();
+            this.cbStopBits = new System.Windows.Forms.ComboBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.cbParityBits = new System.Windows.Forms.ComboBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.txtBaudRate = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.cbPorts = new System.Windows.Forms.ComboBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.cmdConnectDisconnect = new System.Windows.Forms.Button();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.txtLog = new System.Windows.Forms.TextBox();
             this.tabControl1.SuspendLayout();
             this.panel1.SuspendLayout();
+            this.tabPage3.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl1.Location = new System.Drawing.Point(0, 111);
+            this.tabControl1.Location = new System.Drawing.Point(0, 165);
             this.tabControl1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(1173, 545);
+            this.tabControl1.Size = new System.Drawing.Size(1173, 491);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPage1
@@ -66,24 +71,25 @@
             this.tabPage1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage1.Size = new System.Drawing.Size(1165, 507);
+            this.tabPage1.Size = new System.Drawing.Size(1165, 453);
             this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "tabPage1";
+            this.tabPage1.Text = "TFO (RECV)";
             this.tabPage1.UseVisualStyleBackColor = true;
             // 
             // tabPage2
             // 
-            this.tabPage2.Location = new System.Drawing.Point(4, 25);
+            this.tabPage2.Location = new System.Drawing.Point(4, 34);
             this.tabPage2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.tabPage2.Size = new System.Drawing.Size(1165, 516);
+            this.tabPage2.Size = new System.Drawing.Size(1165, 453);
             this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "tabPage2";
+            this.tabPage2.Text = "TFO (SIMULATE)";
             this.tabPage2.UseVisualStyleBackColor = true;
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.cmdConnectDisconnect);
             this.panel1.Controls.Add(this.cbHandshakes);
             this.panel1.Controls.Add(this.label6);
             this.panel1.Controls.Add(this.txtDataBits);
@@ -100,46 +106,66 @@
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1173, 111);
+            this.panel1.Size = new System.Drawing.Size(1173, 165);
             this.panel1.TabIndex = 1;
             // 
-            // cbPorts
+            // cbHandshakes
             // 
-            this.cbPorts.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbPorts.FormattingEnabled = true;
-            this.cbPorts.Location = new System.Drawing.Point(18, 44);
-            this.cbPorts.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.cbPorts.Name = "cbPorts";
-            this.cbPorts.Size = new System.Drawing.Size(180, 33);
-            this.cbPorts.TabIndex = 1;
+            this.cbHandshakes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbHandshakes.FormattingEnabled = true;
+            this.cbHandshakes.Location = new System.Drawing.Point(345, 112);
+            this.cbHandshakes.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.cbHandshakes.Name = "cbHandshakes";
+            this.cbHandshakes.Size = new System.Drawing.Size(180, 33);
+            this.cbHandshakes.TabIndex = 12;
             // 
-            // label1
+            // label6
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(18, 14);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(53, 25);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Port:";
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(345, 82);
+            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(118, 25);
+            this.label6.TabIndex = 11;
+            this.label6.Text = "Handshake:";
             // 
-            // label2
+            // txtDataBits
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(200, 14);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(109, 25);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "Baud Rate:";
+            this.txtDataBits.Location = new System.Drawing.Point(23, 112);
+            this.txtDataBits.Name = "txtDataBits";
+            this.txtDataBits.Size = new System.Drawing.Size(127, 30);
+            this.txtDataBits.TabIndex = 10;
+            this.txtDataBits.Text = "8";
             // 
-            // txtBaudRate
+            // cbStopBits
             // 
-            this.txtBaudRate.Location = new System.Drawing.Point(205, 44);
-            this.txtBaudRate.Name = "txtBaudRate";
-            this.txtBaudRate.Size = new System.Drawing.Size(127, 30);
-            this.txtBaudRate.TabIndex = 3;
-            this.txtBaudRate.Text = "9600";
+            this.cbStopBits.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbStopBits.FormattingEnabled = true;
+            this.cbStopBits.Location = new System.Drawing.Point(157, 112);
+            this.cbStopBits.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.cbStopBits.Name = "cbStopBits";
+            this.cbStopBits.Size = new System.Drawing.Size(180, 33);
+            this.cbStopBits.TabIndex = 9;
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(157, 82);
+            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(86, 25);
+            this.label5.TabIndex = 8;
+            this.label5.Text = "Stop Bit:";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(18, 82);
+            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(96, 25);
+            this.label4.TabIndex = 6;
+            this.label4.Text = "Data Bits:";
             // 
             // cbParityBits
             // 
@@ -161,63 +187,73 @@
             this.label3.TabIndex = 4;
             this.label3.Text = "Parity Bit:";
             // 
-            // label4
+            // txtBaudRate
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(521, 14);
-            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(96, 25);
-            this.label4.TabIndex = 6;
-            this.label4.Text = "Data Bits:";
+            this.txtBaudRate.Location = new System.Drawing.Point(205, 44);
+            this.txtBaudRate.Name = "txtBaudRate";
+            this.txtBaudRate.Size = new System.Drawing.Size(127, 30);
+            this.txtBaudRate.TabIndex = 3;
+            this.txtBaudRate.Text = "9600";
             // 
-            // cbStopBits
+            // label2
             // 
-            this.cbStopBits.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbStopBits.FormattingEnabled = true;
-            this.cbStopBits.Location = new System.Drawing.Point(660, 44);
-            this.cbStopBits.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.cbStopBits.Name = "cbStopBits";
-            this.cbStopBits.Size = new System.Drawing.Size(180, 33);
-            this.cbStopBits.TabIndex = 9;
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(200, 14);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(109, 25);
+            this.label2.TabIndex = 2;
+            this.label2.Text = "Baud Rate:";
             // 
-            // label5
+            // cbPorts
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(660, 14);
-            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(86, 25);
-            this.label5.TabIndex = 8;
-            this.label5.Text = "Stop Bit:";
+            this.cbPorts.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbPorts.FormattingEnabled = true;
+            this.cbPorts.Location = new System.Drawing.Point(18, 44);
+            this.cbPorts.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.cbPorts.Name = "cbPorts";
+            this.cbPorts.Size = new System.Drawing.Size(180, 33);
+            this.cbPorts.TabIndex = 1;
             // 
-            // txtDataBits
+            // label1
             // 
-            this.txtDataBits.Location = new System.Drawing.Point(526, 44);
-            this.txtDataBits.Name = "txtDataBits";
-            this.txtDataBits.Size = new System.Drawing.Size(127, 30);
-            this.txtDataBits.TabIndex = 10;
-            this.txtDataBits.Text = "8";
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(18, 14);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(53, 25);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Port:";
             // 
-            // cbHandshakes
+            // cmdConnectDisconnect
             // 
-            this.cbHandshakes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbHandshakes.FormattingEnabled = true;
-            this.cbHandshakes.Location = new System.Drawing.Point(848, 44);
-            this.cbHandshakes.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.cbHandshakes.Name = "cbHandshakes";
-            this.cbHandshakes.Size = new System.Drawing.Size(180, 33);
-            this.cbHandshakes.TabIndex = 12;
+            this.cmdConnectDisconnect.Location = new System.Drawing.Point(542, 37);
+            this.cmdConnectDisconnect.Name = "cmdConnectDisconnect";
+            this.cmdConnectDisconnect.Size = new System.Drawing.Size(174, 45);
+            this.cmdConnectDisconnect.TabIndex = 13;
+            this.cmdConnectDisconnect.Text = "Connect";
+            this.cmdConnectDisconnect.UseVisualStyleBackColor = true;
+            this.cmdConnectDisconnect.Click += new System.EventHandler(this.cmdConnectDisconnect_Click);
             // 
-            // label6
+            // tabPage3
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(848, 14);
-            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(118, 25);
-            this.label6.TabIndex = 11;
-            this.label6.Text = "Handshake:";
+            this.tabPage3.Controls.Add(this.txtLog);
+            this.tabPage3.Location = new System.Drawing.Point(4, 34);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Size = new System.Drawing.Size(1165, 453);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "Log";
+            this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // txtLog
+            // 
+            this.txtLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtLog.Location = new System.Drawing.Point(0, 0);
+            this.txtLog.Multiline = true;
+            this.txtLog.Name = "txtLog";
+            this.txtLog.ReadOnly = true;
+            this.txtLog.Size = new System.Drawing.Size(1165, 453);
+            this.txtLog.TabIndex = 0;
             // 
             // Form1
             // 
@@ -235,6 +271,8 @@
             this.tabControl1.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
+            this.tabPage3.ResumeLayout(false);
+            this.tabPage3.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -257,6 +295,9 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox txtBaudRate;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Button cmdConnectDisconnect;
+        private System.Windows.Forms.TabPage tabPage3;
+        private System.Windows.Forms.TextBox txtLog;
     }
 }
 
