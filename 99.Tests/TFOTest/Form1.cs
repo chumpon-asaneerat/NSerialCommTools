@@ -71,7 +71,11 @@ namespace TFOTest
 
         private SerialPort _comm = null;
         private Thread _readThread = null;
+        private bool _running = false;
         private bool isExit = false;
+
+        private object lockObj = new object();
+        private List<byte> queues = new List<byte>();
 
         #endregion
 
@@ -108,6 +112,8 @@ namespace TFOTest
             cbHandshakes.SelectedIndex = (cbHandshakes.Items.Count > 0) ? 0 : -1;
         }
 
+        #region Log
+
         private void log(string msg)
         {
             string time = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fffff ", CultureInfo.InvariantCulture);
@@ -118,6 +124,10 @@ namespace TFOTest
         {
             txtLog.Text = string.Empty;
         }
+
+        #endregion
+
+        #region Connect/Disconnect
 
         private void Connect()
         {
@@ -211,6 +221,12 @@ namespace TFOTest
 
         private bool IsConnected { get { return null != _comm && _comm.IsOpen; } }
 
+        #endregion
+
+        #region Thread
+
+        private bool IsRunning { get { return _running; } }
+
         private void CreateReadThread()
         {
             // Create Read Thread
@@ -218,11 +234,20 @@ namespace TFOTest
             _readThread.Name = "Serial read thread";
             _readThread.IsBackground = true;
 
+            // set flag
+            _running = true;
+
             _readThread.Start();
+
+            log("Create read thread");
         }
 
         private void FreeReadThread()
         {
+            log("Free read thread");
+
+            // reset flag
+            _running = false;
             // Free Thread
             if (null != _readThread)
             {
@@ -234,15 +259,37 @@ namespace TFOTest
 
         private void ReadProcessing()
         {
-            while (null != _readThread && !isExit)
+            while (null != _readThread && IsRunning && !isExit)
             {
-
+                try
+                {
+                    if (null != _comm)
+                    {
+                        int byteToRead = _comm.BytesToRead;
+                        if (byteToRead > 0)
+                        {
+                            lock (lockObj)
+                            {
+                                byte[] buffers = new byte[byteToRead];
+                                _comm.Read(buffers, 0, byteToRead);
+                                queues.AddRange(buffers);
+                            }
+                            // update viewer
+                            UpdateMainThreadUI();
+                        }
+                    }
+                }
+                catch (TimeoutException) { }
                 Thread.Sleep(50);
                 Application.DoEvents();
             }
             // Free Thread
             FreeReadThread();
         }
+
+        #endregion
+
+        #region Send
 
         private void Send()
         {
@@ -266,6 +313,28 @@ namespace TFOTest
             }
             _comm.Write(buffers, 0, buffers.Length);
         }
+
+        #endregion
+
+        #region Recv
+
+        private void UpdateMainThreadUI()
+        {
+            Invoke(new Action(() => { UpdateUI(); }));
+        }
+
+        private void UpdateUI()
+        {
+            byte[] buffers;
+            lock (lockObj)
+            {
+                buffers = queues.ToArray();
+                queues.Clear();
+            }
+            viewer.SetBytes(buffers);
+        }
+
+        #endregion
 
         #endregion
     }

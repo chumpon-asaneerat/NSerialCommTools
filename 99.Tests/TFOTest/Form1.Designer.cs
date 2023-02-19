@@ -30,7 +30,15 @@
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.label8 = new System.Windows.Forms.Label();
+            this.cmdSend1 = new System.Windows.Forms.Button();
+            this.label7 = new System.Windows.Forms.Label();
+            this.txtSend1 = new System.Windows.Forms.TextBox();
+            this.viewer = new System.ComponentModel.Design.ByteViewer();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.txtLog = new System.Windows.Forms.TextBox();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.cmdConnectDisconnect = new System.Windows.Forms.Button();
             this.cbHandshakes = new System.Windows.Forms.ComboBox();
             this.label6 = new System.Windows.Forms.Label();
             this.txtDataBits = new System.Windows.Forms.TextBox();
@@ -43,16 +51,10 @@
             this.label2 = new System.Windows.Forms.Label();
             this.cbPorts = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.cmdConnectDisconnect = new System.Windows.Forms.Button();
-            this.tabPage3 = new System.Windows.Forms.TabPage();
-            this.txtLog = new System.Windows.Forms.TextBox();
-            this.txtSend1 = new System.Windows.Forms.TextBox();
-            this.label7 = new System.Windows.Forms.Label();
-            this.cmdSend1 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
-            this.panel1.SuspendLayout();
             this.tabPage3.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -69,9 +71,11 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.label8);
             this.tabPage1.Controls.Add(this.cmdSend1);
             this.tabPage1.Controls.Add(this.label7);
             this.tabPage1.Controls.Add(this.txtSend1);
+            this.tabPage1.Controls.Add(this.viewer);
             this.tabPage1.Location = new System.Drawing.Point(4, 34);
             this.tabPage1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabPage1.Name = "tabPage1";
@@ -80,6 +84,84 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "TFO";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(14, 210);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(62, 25);
+            this.label8.TabIndex = 15;
+            this.label8.Text = "Recv:";
+            // 
+            // cmdSend1
+            // 
+            this.cmdSend1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmdSend1.Location = new System.Drawing.Point(983, 162);
+            this.cmdSend1.Name = "cmdSend1";
+            this.cmdSend1.Size = new System.Drawing.Size(174, 45);
+            this.cmdSend1.TabIndex = 14;
+            this.cmdSend1.Text = "Send";
+            this.cmdSend1.UseVisualStyleBackColor = true;
+            this.cmdSend1.Click += new System.EventHandler(this.cmdSend1_Click);
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(14, 10);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(178, 25);
+            this.label7.TabIndex = 1;
+            this.label7.Text = "Send (HEX Code):";
+            // 
+            // txtSend1
+            // 
+            this.txtSend1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtSend1.Location = new System.Drawing.Point(19, 38);
+            this.txtSend1.Multiline = true;
+            this.txtSend1.Name = "txtSend1";
+            this.txtSend1.Size = new System.Drawing.Size(949, 169);
+            this.txtSend1.TabIndex = 0;
+            // 
+            // viewer
+            // 
+            this.viewer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.viewer.AutoSize = true;
+            this.viewer.CellBorderStyle = System.Windows.Forms.TableLayoutPanelCellBorderStyle.Inset;
+            this.viewer.ColumnCount = 1;
+            this.viewer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.viewer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.viewer.Font = new System.Drawing.Font("Microsoft Sans Serif", 16.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.viewer.Location = new System.Drawing.Point(19, 238);
+            this.viewer.Name = "viewer";
+            this.viewer.RowCount = 1;
+            this.viewer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.viewer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.viewer.Size = new System.Drawing.Size(949, 199);
+            this.viewer.TabIndex = 16;
+            // 
+            // tabPage3
+            // 
+            this.tabPage3.Controls.Add(this.txtLog);
+            this.tabPage3.Location = new System.Drawing.Point(4, 34);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Size = new System.Drawing.Size(1165, 453);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "Log";
+            this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // txtLog
+            // 
+            this.txtLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.txtLog.Location = new System.Drawing.Point(0, 0);
+            this.txtLog.Multiline = true;
+            this.txtLog.Name = "txtLog";
+            this.txtLog.ReadOnly = true;
+            this.txtLog.Size = new System.Drawing.Size(1165, 453);
+            this.txtLog.TabIndex = 0;
             // 
             // panel1
             // 
@@ -102,6 +184,16 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1173, 165);
             this.panel1.TabIndex = 1;
+            // 
+            // cmdConnectDisconnect
+            // 
+            this.cmdConnectDisconnect.Location = new System.Drawing.Point(542, 37);
+            this.cmdConnectDisconnect.Name = "cmdConnectDisconnect";
+            this.cmdConnectDisconnect.Size = new System.Drawing.Size(174, 45);
+            this.cmdConnectDisconnect.TabIndex = 13;
+            this.cmdConnectDisconnect.Text = "Connect";
+            this.cmdConnectDisconnect.UseVisualStyleBackColor = true;
+            this.cmdConnectDisconnect.Click += new System.EventHandler(this.cmdConnectDisconnect_Click);
             // 
             // cbHandshakes
             // 
@@ -219,66 +311,6 @@
             this.label1.TabIndex = 0;
             this.label1.Text = "Port:";
             // 
-            // cmdConnectDisconnect
-            // 
-            this.cmdConnectDisconnect.Location = new System.Drawing.Point(542, 37);
-            this.cmdConnectDisconnect.Name = "cmdConnectDisconnect";
-            this.cmdConnectDisconnect.Size = new System.Drawing.Size(174, 45);
-            this.cmdConnectDisconnect.TabIndex = 13;
-            this.cmdConnectDisconnect.Text = "Connect";
-            this.cmdConnectDisconnect.UseVisualStyleBackColor = true;
-            this.cmdConnectDisconnect.Click += new System.EventHandler(this.cmdConnectDisconnect_Click);
-            // 
-            // tabPage3
-            // 
-            this.tabPage3.Controls.Add(this.txtLog);
-            this.tabPage3.Location = new System.Drawing.Point(4, 34);
-            this.tabPage3.Name = "tabPage3";
-            this.tabPage3.Size = new System.Drawing.Size(1165, 453);
-            this.tabPage3.TabIndex = 2;
-            this.tabPage3.Text = "Log";
-            this.tabPage3.UseVisualStyleBackColor = true;
-            // 
-            // txtLog
-            // 
-            this.txtLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txtLog.Location = new System.Drawing.Point(0, 0);
-            this.txtLog.Multiline = true;
-            this.txtLog.Name = "txtLog";
-            this.txtLog.ReadOnly = true;
-            this.txtLog.Size = new System.Drawing.Size(1165, 453);
-            this.txtLog.TabIndex = 0;
-            // 
-            // txtSend1
-            // 
-            this.txtSend1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtSend1.Location = new System.Drawing.Point(19, 38);
-            this.txtSend1.Multiline = true;
-            this.txtSend1.Name = "txtSend1";
-            this.txtSend1.Size = new System.Drawing.Size(949, 169);
-            this.txtSend1.TabIndex = 0;
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(14, 10);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(178, 25);
-            this.label7.TabIndex = 1;
-            this.label7.Text = "Send (HEX Code):";
-            // 
-            // cmdSend1
-            // 
-            this.cmdSend1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdSend1.Location = new System.Drawing.Point(983, 162);
-            this.cmdSend1.Name = "cmdSend1";
-            this.cmdSend1.Size = new System.Drawing.Size(174, 45);
-            this.cmdSend1.TabIndex = 14;
-            this.cmdSend1.Text = "Send";
-            this.cmdSend1.UseVisualStyleBackColor = true;
-            this.cmdSend1.Click += new System.EventHandler(this.cmdSend1_Click);
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -295,10 +327,10 @@
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -326,6 +358,8 @@
         private System.Windows.Forms.Button cmdSend1;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox txtSend1;
+        private System.Windows.Forms.Label label8;
+        private System.ComponentModel.Design.ByteViewer viewer;
     }
 }
 
