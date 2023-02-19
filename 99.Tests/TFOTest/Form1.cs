@@ -331,7 +331,13 @@ namespace TFOTest
                 buffers = queues.ToArray();
                 queues.Clear();
             }
-            viewer.SetBytes(buffers);
+
+            List<byte> allbytes = new List<byte>();            
+            var originals = viewer.GetBytes();
+            if (null != originals && originals.Length > 0) allbytes.AddRange(originals);
+            if (null != buffers && buffers.Length > 0) allbytes.AddRange(buffers);
+
+            viewer.SetBytes(allbytes.ToArray());
         }
 
         #endregion
