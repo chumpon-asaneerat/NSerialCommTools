@@ -9,6 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
+using System.IO.Ports;
+
 #endregion
 
 namespace TFOTest
@@ -31,7 +33,7 @@ namespace TFOTest
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            InitComboboxs();
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -42,6 +44,37 @@ namespace TFOTest
         #endregion
 
         #region Private Methods
+
+        private void InitComboboxs()
+        {
+            // init ports
+            foreach (string s in SerialPort.GetPortNames())
+            {
+                cbPorts.Items.Add(s);
+            }
+            cbPorts.SelectedIndex = (cbPorts.Items.Count > 0) ? 0 : -1;
+
+            // init parity bits
+            foreach (string s in Enum.GetNames(typeof(Parity)))
+            {
+                cbParityBits.Items.Add(s);
+            }
+            cbParityBits.SelectedIndex = (cbParityBits.Items.Count > 0) ? 0 : -1;
+
+            // init stop bits
+            foreach (string s in Enum.GetNames(typeof(StopBits)))
+            {
+                cbStopBits.Items.Add(s);
+            }
+            cbStopBits.SelectedIndex = (cbStopBits.Items.Count > 0) ? cbStopBits.Items.IndexOf("One") : -1;
+
+            // init handshakes
+            foreach (string s in Enum.GetNames(typeof(Handshake)))
+            {
+                cbHandshakes.Items.Add(s);
+            }
+            cbHandshakes.SelectedIndex = (cbHandshakes.Items.Count > 0) ? 0 : -1;
+        }
 
         private void Connect()
         {

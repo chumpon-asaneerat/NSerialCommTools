@@ -10,8 +10,10 @@ Implements #8
 Implements #7
 -
 
+[Commit]
 Implements #6
--
+- Update TFOTest prject #1.
+  - Init comboboxes
 
 [Commit]
 Implements #5
