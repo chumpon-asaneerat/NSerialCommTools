@@ -16,8 +16,10 @@ Implements #16
 Implements #15
 -
 
+[Commit]
 Implements #14
--
+- Update TFOTest prject #6.
+  - Add sample images (actual data)
 
 [Commit]
 Implements #13

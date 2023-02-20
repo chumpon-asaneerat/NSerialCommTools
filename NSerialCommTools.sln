@@ -19,14 +19,18 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Terminal.App", "09.App\NLib.Serial.Terminal.App\NLib.Serial.Terminal.App.csproj", "{45543D45-3584-4C63-BAC1-578177B132CB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{48FD7052-9B3E-4916-BB9C-7592B76C1500}"
-	ProjectSection(SolutionItems) = preProject
-		Samples\TFO.Weight.Attemp.01.txt = Samples\TFO.Weight.Attemp.01.txt
-		Samples\TFO.Weight.Response.txt = Samples\TFO.Weight.Response.txt
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "99.Tests", "99.Tests", "{9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TFOTest", "99.Tests\TFOTest\TFOTest.csproj", "{16260089-D159-4831-A569-5EE684C5B9D0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TFO", "TFO", "{F811FC26-A0ED-4F7F-B459-06728A4DDDA4}"
+	ProjectSection(SolutionItems) = preProject
+		Samples\TFO\TFO.Weight.Attemp.01.txt = Samples\TFO\TFO.Weight.Attemp.01.txt
+		Samples\TFO\TFO.Weight.Response.txt = Samples\TFO\TFO.Weight.Response.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PH Meter", "PH Meter", "{C82A2BB7-BF61-4B41-B72C-E87C74A35967}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,6 +58,8 @@ Global
 		{4173085E-7B01-4274-8971-B4243A8491D1} = {CCDA077A-CBFE-448E-8842-DB5FF063FA05}
 		{45543D45-3584-4C63-BAC1-578177B132CB} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 		{16260089-D159-4831-A569-5EE684C5B9D0} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
+		{F811FC26-A0ED-4F7F-B459-06728A4DDDA4} = {48FD7052-9B3E-4916-BB9C-7592B76C1500}
+		{C82A2BB7-BF61-4B41-B72C-E87C74A35967} = {48FD7052-9B3E-4916-BB9C-7592B76C1500}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}
