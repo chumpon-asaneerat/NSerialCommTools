@@ -115,7 +115,7 @@
             this.txtSend1.Name = "txtSend1";
             this.txtSend1.Size = new System.Drawing.Size(949, 441);
             this.txtSend1.TabIndex = 0;
-            this.txtSend1.Text = "24 30 31 4D ";
+            this.txtSend1.Text = "24 30 31 4D 0D";
             // 
             // tabPage2
             // 
@@ -137,11 +137,13 @@
             this.viewer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.viewer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.viewer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.viewer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.viewer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.viewer.Font = new System.Drawing.Font("Microsoft Sans Serif", 16.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.viewer.Location = new System.Drawing.Point(0, 0);
             this.viewer.Name = "viewer";
             this.viewer.RowCount = 1;
+            this.viewer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.viewer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.viewer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.viewer.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
