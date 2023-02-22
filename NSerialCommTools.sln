@@ -24,13 +24,63 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "99.Tests", "99.Tests", "{9F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TFOTest", "99.Tests\TFOTest\TFOTest.csproj", "{16260089-D159-4831-A569-5EE684C5B9D0}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TFO", "TFO", "{F811FC26-A0ED-4F7F-B459-06728A4DDDA4}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{50B9F879-6336-48EC-AB6D-A5C36C40605B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LuckyTex Devices", "LuckyTex Devices", "{0A0F66D7-A020-4B80-B3CB-76C00FAD585F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TFO1", "TFO1", "{750363DC-AAEE-4A0A-B677-581B0A073F92}"
 	ProjectSection(SolutionItems) = preProject
-		Samples\TFO\TFO.Weight.Attemp.01.txt = Samples\TFO\TFO.Weight.Attemp.01.txt
-		Samples\TFO\TFO.Weight.Response.txt = Samples\TFO\TFO.Weight.Response.txt
+		Documents\LuckyTex Devices\TFO1\76053.jpg = Documents\LuckyTex Devices\TFO1\76053.jpg
+		Documents\LuckyTex Devices\TFO1\76059.jpg = Documents\LuckyTex Devices\TFO1\76059.jpg
+		Documents\LuckyTex Devices\TFO1\80198.jpg = Documents\LuckyTex Devices\TFO1\80198.jpg
+		Documents\LuckyTex Devices\TFO1\80199.jpg = Documents\LuckyTex Devices\TFO1\80199.jpg
+		Documents\LuckyTex Devices\TFO1\80201.jpg = Documents\LuckyTex Devices\TFO1\80201.jpg
+		Documents\LuckyTex Devices\TFO1\Serial_Log.txt = Documents\LuckyTex Devices\TFO1\Serial_Log.txt
+		Documents\LuckyTex Devices\TFO1\Serial_Log1.log = Documents\LuckyTex Devices\TFO1\Serial_Log1.log
+		Documents\LuckyTex Devices\TFO1\Serial_Loghex_text.log = Documents\LuckyTex Devices\TFO1\Serial_Loghex_text.log
+		Documents\LuckyTex Devices\TFO1\S__70369364.jpg = Documents\LuckyTex Devices\TFO1\S__70369364.jpg
+		Documents\LuckyTex Devices\TFO1\S__70434999.jpg = Documents\LuckyTex Devices\TFO1\S__70434999.jpg
+		Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.01.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.01.txt
+		Documents\LuckyTex Devices\TFO1\TFO.Weight.Response.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Response.txt
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PH Meter", "PH Meter", "{C82A2BB7-BF61-4B41-B72C-E87C74A35967}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TFO3", "TFO3", "{DEA42806-3F1D-4029-A6A4-804F8DC7E7B5}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\TFO3\80205.jpg = Documents\LuckyTex Devices\TFO3\80205.jpg
+		Documents\LuckyTex Devices\TFO3\80206.jpg = Documents\LuckyTex Devices\TFO3\80206.jpg
+		Documents\LuckyTex Devices\TFO3\messageImage_1676861119135.jpg = Documents\LuckyTex Devices\TFO3\messageImage_1676861119135.jpg
+		Documents\LuckyTex Devices\TFO3\messageImage_1676861126196.jpg = Documents\LuckyTex Devices\TFO3\messageImage_1676861126196.jpg
+		Documents\LuckyTex Devices\TFO3\Serial_Log FO3 HexText 2.txt = Documents\LuckyTex Devices\TFO3\Serial_Log FO3 HexText 2.txt
+		Documents\LuckyTex Devices\TFO3\Serial_Log FO3 Text 2.txt = Documents\LuckyTex Devices\TFO3\Serial_Log FO3 Text 2.txt
+		Documents\LuckyTex Devices\TFO3\Serial_Logfo3_hextext.txt = Documents\LuckyTex Devices\TFO3\Serial_Logfo3_hextext.txt
+		Documents\LuckyTex Devices\TFO3\Serial_Logfo3_text.txt = Documents\LuckyTex Devices\TFO3\Serial_Logfo3_text.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PH Meter", "PH Meter", "{896D855D-323B-46A4-833C-8F22F9E1A5C2}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\PH Meter\80385(1).jpg = Documents\LuckyTex Devices\PH Meter\80385(1).jpg
+		Documents\LuckyTex Devices\PH Meter\80386.jpg = Documents\LuckyTex Devices\PH Meter\80386.jpg
+		Documents\LuckyTex Devices\PH Meter\80389.jpg = Documents\LuckyTex Devices\PH Meter\80389.jpg
+		Documents\LuckyTex Devices\PH Meter\LINE_ALBUM_Ph meter_230214_0.jpg = Documents\LuckyTex Devices\PH Meter\LINE_ALBUM_Ph meter_230214_0.jpg
+		Documents\LuckyTex Devices\PH Meter\LINE_ALBUM_Ph meter_230214_1.jpg = Documents\LuckyTex Devices\PH Meter\LINE_ALBUM_Ph meter_230214_1.jpg
+		Documents\LuckyTex Devices\PH Meter\Serial_Log PH.txt = Documents\LuckyTex Devices\PH Meter\Serial_Log PH.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Weight QA", "Weight QA", "{3557A834-C987-4BA3-B914-2D3DCC33AC89}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\WEIGHT QA\80337.jpg = Documents\LuckyTex Devices\WEIGHT QA\80337.jpg
+		Documents\LuckyTex Devices\WEIGHT QA\80339.jpg = Documents\LuckyTex Devices\WEIGHT QA\80339.jpg
+		Documents\LuckyTex Devices\WEIGHT QA\80344.jpg = Documents\LuckyTex Devices\WEIGHT QA\80344.jpg
+		Documents\LuckyTex Devices\WEIGHT QA\80345.jpg = Documents\LuckyTex Devices\WEIGHT QA\80345.jpg
+		Documents\LuckyTex Devices\WEIGHT QA\Serial_Log Weight QA.txt = Documents\LuckyTex Devices\WEIGHT QA\Serial_Log Weight QA.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Weight SPUN", "Weight SPUN", "{8727ABE7-44F8-43CA-922B-249D6223248A}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\WEIGHT SPUN\51396f61-a182-42c2-a28e-255ac7f0acf5.mp4 = Documents\LuckyTex Devices\WEIGHT SPUN\51396f61-a182-42c2-a28e-255ac7f0acf5.mp4
+		Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspun.log = Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspun.log
+		Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspuntext.log = Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspuntext.log
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -58,8 +108,12 @@ Global
 		{4173085E-7B01-4274-8971-B4243A8491D1} = {CCDA077A-CBFE-448E-8842-DB5FF063FA05}
 		{45543D45-3584-4C63-BAC1-578177B132CB} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 		{16260089-D159-4831-A569-5EE684C5B9D0} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
-		{F811FC26-A0ED-4F7F-B459-06728A4DDDA4} = {48FD7052-9B3E-4916-BB9C-7592B76C1500}
-		{C82A2BB7-BF61-4B41-B72C-E87C74A35967} = {48FD7052-9B3E-4916-BB9C-7592B76C1500}
+		{0A0F66D7-A020-4B80-B3CB-76C00FAD585F} = {50B9F879-6336-48EC-AB6D-A5C36C40605B}
+		{750363DC-AAEE-4A0A-B677-581B0A073F92} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{DEA42806-3F1D-4029-A6A4-804F8DC7E7B5} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{896D855D-323B-46A4-833C-8F22F9E1A5C2} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{3557A834-C987-4BA3-B914-2D3DCC33AC89} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{8727ABE7-44F8-43CA-922B-249D6223248A} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}
