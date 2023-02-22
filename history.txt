@@ -7,8 +7,9 @@ Implements #19
 Implements #18
 -
 
+[Commit]
 Implements #17
--
+- Recheck Git.
 
 [Commit]
 Implements #16
