@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Collections;
+using NLib.Serial.Devices;
 
 #endregion
 

@@ -44,9 +44,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Devices\SerialDevices.cs" />
+    <Compile Include="Serial\Devices\SerialDevices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serial\Emulators\PHMeterDevice.cs" />
+    <Compile Include="Serial\Emulators\TFO1Device.cs" />
+    <Compile Include="Serial\Emulators\WeightQADevice.cs" />
+    <Compile Include="Serial\Emulators\WeightSPUNDevice.cs" />
+    <Compile Include="Serial\Terminals\PHMeterTerminal.cs" />
+    <Compile Include="Serial\Terminals\TFO1Terminal.cs" />
+    <Compile Include="Serial\Terminals\WeightQATerminal.cs" />
+    <Compile Include="Serial\Terminals\WeightSPUNTerminal.cs" />
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
