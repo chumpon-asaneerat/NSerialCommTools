@@ -1,8 +1,39 @@
+Implements #30
+-
+
+Implements #29
+-
+
+Implements #28
+-
+
+Implements #27
+-
+
+Implements #26
+-
+
+Implements #25
+-
+
+Implements #24
+-
+
+Implements #23
+-
+
+Implements #22
+-
+
+Implements #21
+-
+
 Implements #20
 -
 
+[Commit]
 Implements #19
--
+- Prepare History.txt
 
 [Commit]
 Implements #18
