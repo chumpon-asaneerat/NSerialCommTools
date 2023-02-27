@@ -21,7 +21,7 @@ namespace NLib.Serial.Emulators
     /// <summary>
     /// The PHMeterDevice class.
     /// </summary>
-    public class PHMeterDevice : SerialDeviceEmulator
+    public class PHMeterDevice : SerialDeviceEmulator<PHMeterData>
     {
         #region Singelton Access
 

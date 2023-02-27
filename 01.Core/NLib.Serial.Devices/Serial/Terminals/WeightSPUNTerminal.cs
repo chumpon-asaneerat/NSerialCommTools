@@ -21,7 +21,7 @@ namespace NLib.Serial.Terminals
     /// <summary>
     /// The WeightSPUNTerminal class.
     /// </summary>
-    public class WeightSPUNTerminal : SerialDeviceTerminal
+    public class WeightSPUNTerminal : SerialDeviceTerminal<WeightSPUNData>
     {
         #region Singelton Access
 

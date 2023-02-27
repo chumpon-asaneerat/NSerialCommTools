@@ -21,7 +21,7 @@ namespace NLib.Serial.Emulators
     /// <summary>
     /// The WeightQADevice class.
     /// </summary>
-    public class WeightQADevice : SerialDeviceEmulator
+    public class WeightQADevice : SerialDeviceEmulator<WeightQAData>
     {
         #region Singelton Access
 

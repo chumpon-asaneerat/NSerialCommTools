@@ -21,7 +21,7 @@ namespace NLib.Serial.Terminals
     /// <summary>
     /// The PHMeterTerminal class.
     /// </summary>
-    public class PHMeterTerminal : SerialDeviceTerminal
+    public class PHMeterTerminal : SerialDeviceTerminal<PHMeterData>
     {
         #region Singelton Access
 

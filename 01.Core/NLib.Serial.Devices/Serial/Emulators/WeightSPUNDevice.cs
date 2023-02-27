@@ -21,7 +21,7 @@ namespace NLib.Serial.Emulators
     /// <summary>
     /// The WeightSPUNDevice class.
     /// </summary>
-    public class WeightSPUNDevice : SerialDeviceEmulator
+    public class WeightSPUNDevice : SerialDeviceEmulator<WeightSPUNData>
     {
         #region Singelton Access
 

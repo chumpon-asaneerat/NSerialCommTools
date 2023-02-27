@@ -10,11 +10,10 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Collections;
-using NLib.Serial.Devices;
 
 #endregion
 
-namespace NLib.Serial.Devices
+namespace NLib.Serial
 {
     #region SerialPortConfig
 
@@ -387,12 +386,54 @@ namespace NLib.Serial.Devices
 
     #endregion
 
+    #region SerialDeviceData
+
+    /// <summary>
+    /// The SerialDeviceData class.
+    /// </summary>
+    public abstract class SerialDeviceData
+    {
+        #region Constructor and Destructor
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        public SerialDeviceData() : base() { }
+        /// <summary>
+        /// Destructor.
+        /// </summary>
+        ~SerialDeviceData()
+        {
+
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Convert content to byte array.
+        /// </summary>
+        /// <returns>Returns content in byte array.</returns>
+        public abstract byte[] ToByteArray();
+        /// <summary>
+        /// Parse byte array and update content.
+        /// </summary>
+        /// <param name="buffers">The buffer data.</param>
+        public abstract void Parse(byte[] buffers);
+
+        #endregion
+    }
+
+    #endregion
+
     #region SerialDeviceEmulator
 
     /// <summary>
     /// The SerialDeviceEmulator class (abstract).
     /// </summary>
-    public abstract class SerialDeviceEmulator : SerialDevice
+    public abstract class SerialDeviceEmulator<T> : SerialDevice
+        where T : SerialDeviceData, new()
     {
         #region Internal Variables
 
@@ -408,6 +449,7 @@ namespace NLib.Serial.Devices
         public SerialDeviceEmulator() : base() 
         {
             _config = new SerialPortConfig();
+            Value = new T();
         }
         /// <summary>
         /// Destructor.
@@ -454,6 +496,10 @@ namespace NLib.Serial.Devices
             }
             set { _config = value; }  
         }
+        /// <summary>
+        /// Gets or sets content value.
+        /// </summary>
+        public T Value { get; set; }
 
         #endregion
     }
@@ -465,7 +511,8 @@ namespace NLib.Serial.Devices
     /// <summary>
     /// The SerialDeviceTerminal class (abstract).
     /// </summary>
-    public abstract class SerialDeviceTerminal : SerialDevice
+    public abstract class SerialDeviceTerminal<T> : SerialDevice
+        where T : SerialDeviceData, new()
     {
         #region Internal Variables
 
@@ -481,6 +528,7 @@ namespace NLib.Serial.Devices
         public SerialDeviceTerminal() : base() 
         {
             _config = new SerialPortConfig();
+            Value = new T();
         }
         /// <summary>
         /// Destructor.
@@ -527,6 +575,10 @@ namespace NLib.Serial.Devices
             }
             set { _config = value; }
         }
+        /// <summary>
+        /// Gets or sets content value.
+        /// </summary>
+        public T Value { get; set; }
 
         #endregion
     }

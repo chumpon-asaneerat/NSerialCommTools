@@ -21,7 +21,7 @@ namespace NLib.Serial.Terminals
     /// <summary>
     /// The WeightQATerminal class.
     /// </summary>
-    public class WeightQATerminal : SerialDeviceTerminal
+    public class WeightQATerminal : SerialDeviceTerminal<WeightQAData>
     {
         #region Singelton Access
 

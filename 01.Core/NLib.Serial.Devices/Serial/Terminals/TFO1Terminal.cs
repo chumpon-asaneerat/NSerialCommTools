@@ -21,7 +21,7 @@ namespace NLib.Serial.Terminals
     /// <summary>
     /// The TFO1Terminal class.
     /// </summary>
-    public class TFO1Terminal : SerialDeviceTerminal
+    public class TFO1Terminal : SerialDeviceTerminal<TFO1Data>
     {
         #region Singelton Access
 

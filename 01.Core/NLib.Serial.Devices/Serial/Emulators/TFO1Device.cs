@@ -21,7 +21,7 @@ namespace NLib.Serial.Emulators
     /// <summary>
     /// The TFO1Device class.
     /// </summary>
-    public class TFO1Device : SerialDeviceEmulator
+    public class TFO1Device : SerialDeviceEmulator<TFO1Data>
     {
         #region Singelton Access
 
