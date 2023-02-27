@@ -22,8 +22,9 @@ Implements #24
 Implements #23
 -
 
+[Commit]
 Implements #22
--
+- Implements NLib.Serial.Devices project #3.
 
 [Commit]
 Implements #21

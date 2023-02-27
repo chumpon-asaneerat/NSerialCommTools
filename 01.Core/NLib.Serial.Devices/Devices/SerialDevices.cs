@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Threading;
 using System.Windows.Forms;
 using System.Reflection;
+using System.Collections;
 
 #endregion
 
@@ -84,6 +85,9 @@ namespace NLib.Serial.Devices
 
         private bool _isProcessing = false;
         private Thread _th = null;
+
+        private object _lock = new object();
+        private List<byte> queues = new List<byte>();
 
         #endregion
 
@@ -187,6 +191,26 @@ namespace NLib.Serial.Devices
         {
             while (null != _th && _isProcessing && !_isExit)
             {
+                try
+                {
+                    if (null != _comm)
+                    {
+                        int byteToRead = _comm.BytesToRead;
+                        if (byteToRead > 0)
+                        {
+                            lock (_lock)
+                            {
+                                byte[] buffers = new byte[byteToRead];
+                                _comm.Read(buffers, 0, byteToRead);
+                                queues.AddRange(buffers);
+                            }
+                            // process rx queue.
+                            ProcessRXQueue();
+                        }
+                    }
+                }
+                catch (TimeoutException) { }
+                catch (Exception) { }
 
                 Thread.Sleep(50);
                 DoEvents();
@@ -200,15 +224,100 @@ namespace NLib.Serial.Devices
 
         #region Protected Methods
 
+        #region Open/Close port
+
+        /// <summary>
+        /// OpenPort.
+        /// </summary>
+        /// <param name="value">The Serial Port Config instance.</param>
+        protected void OpenPort(SerialPortConfig value)
+        {
+            MethodBase med = MethodBase.GetCurrentMethod();
+
+            if (null == value)
+            {
+                Error(med, "The SerialPortConfig is null.");
+                return;
+            }
+            // Open Port.
+            OpenPort(value.PortName, value.BaudRate, 
+                value.Parity, value.DataBits, value.StopBits, 
+                value.Handshake);
+        }
         /// <summary>
         /// Open Serial Port connection.
         /// </summary>
-        protected void OpenPort() 
+        /// <param name="portName">The port name. i.e. COM1, COM2,...</param>
+        /// <param name="boadRate">The boad rate. default 9600.</param>
+        /// <param name="parity">The parity. default None.</param>
+        /// <param name="dataBits">The data bits. default 8.</param>
+        /// <param name="stopBits">The stop bits. default One.</param>
+        /// <param name="handshake">The handshake. default None.</param>
+        protected void OpenPort(string portName, int boadRate = 9600, 
+            Parity parity = Parity.None, int dataBits = 8, StopBits stopBits = StopBits.One,
+            Handshake handshake = Handshake.None) 
         {
             MethodBase med = MethodBase.GetCurrentMethod();
 
             if (null != _comm)
                 return; // already connected.
+
+            #region Set port
+
+            try
+            {
+                _comm = new SerialPort();
+                _comm.PortName = portName;
+                _comm.BaudRate = boadRate;
+                _comm.Parity = parity;
+                _comm.DataBits = dataBits;
+                _comm.StopBits = stopBits;
+                _comm.Handshake = handshake;
+            }
+            catch (Exception ex)
+            {
+                Error(med, ex.ToString());
+            }
+
+            #endregion
+
+            #region Open port
+
+            // Open Port
+            string msg = string.Format("Open port {0} - {1}, {2}, {3}, {4}",
+                _comm.PortName, _comm.BaudRate, _comm.Parity, _comm.DataBits, _comm.StopBits);
+            Log(med, msg);
+
+            try
+            {
+                _comm.Open();
+            }
+            catch (Exception ex2)
+            {
+                Error(med, ex2.ToString());
+            }
+
+            #endregion
+
+            #region Check port opened
+
+            if (null != _comm && !_comm.IsOpen)
+            {
+                Error(med, "Cannot open port. Free resource.");
+                try
+                {
+                    _comm.Close();
+                    _comm.Dispose();
+                }
+                catch { }
+                _comm = null;
+
+                return; // cannot open port
+            }
+            // Port opened so Create Read Thread
+            CreateRXThread();
+
+            #endregion
         }
         /// <summary>
         /// Close Serial Port connection.
@@ -233,6 +342,17 @@ namespace NLib.Serial.Devices
             }
             _comm = null;
         }
+
+        #endregion
+
+        #region RX Data processing
+
+        protected void ProcessRXQueue()
+        {
+
+        }
+
+        #endregion
 
         #endregion
 
