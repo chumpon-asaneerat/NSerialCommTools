@@ -1,7 +1,7 @@
-﻿<Application x:Class="NLib.Serial.Terminal.App.App"
+﻿<Application x:Class="NLib.Serial.Emulator.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:NLib.Serial.Terminal.App"
+             xmlns:local="clr-namespace:NLib.Serial.Emulator.App"
              StartupUri="MainWindow.xaml">
     <Application.Resources />
 </Application>

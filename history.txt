@@ -16,8 +16,9 @@ Implements #26
 Implements #25
 -
 
+[Commit]
 Implements #24
--
+- Add project NLib.Serial.Emulator.App.
 
 [Commit]
 Implements #23
