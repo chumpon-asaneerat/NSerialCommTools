@@ -7,11 +7,18 @@ using System.Text;
 using System.IO.Ports;
 using System.Globalization;
 using System.Threading;
+using System.Windows.Forms;
+using System.Reflection;
 
 #endregion
 
 namespace NLib.Serial.Devices
 {
+    #region SerialPortConfig
+
+    /// <summary>
+    /// The SerialPortConfig class.
+    /// </summary>
     public class SerialPortConfig
     {
         #region Constructor
@@ -60,6 +67,7 @@ namespace NLib.Serial.Devices
         #endregion
     }
 
+    #endregion
 
     #region SerialDevice
 
@@ -71,6 +79,11 @@ namespace NLib.Serial.Devices
         #region Internal Variables
 
         private bool _isExit = false;
+
+        private SerialPort _comm = null;
+
+        private bool _isProcessing = false;
+        private Thread _th = null;
 
         #endregion
 
@@ -91,6 +104,8 @@ namespace NLib.Serial.Devices
         ~SerialDevice()
         {
             ClosePort();
+            AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
+            AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         }
 
         #endregion
@@ -111,6 +126,76 @@ namespace NLib.Serial.Devices
 
         #endregion
 
+        #region NLib Wrapper
+
+        private void DoEvents()
+        {
+            Application.DoEvents();
+        }
+
+        private void Log(MethodBase med, string messsage)
+        {
+            // Write log
+        }
+
+        private void Error(MethodBase med, string messsage)
+        {
+            // Write error
+        }
+
+        #endregion
+
+        #region Thread Related Methods
+
+        private void CreateRXThread()
+        {
+            if (null != _th) return; // thread instance exist.
+
+            MethodBase med = MethodBase.GetCurrentMethod();
+            Log(med, "Creeate RX Thread");
+
+            _th = new Thread(this.RxProcessing);
+            _th.Name = "Serial RX thread";
+            _th.IsBackground = true;
+            _th.Priority = ThreadPriority.BelowNormal;
+
+            _isProcessing = true; // mark flag.
+            
+            _th.Start();
+        }
+
+        private void FreeRXThread()
+        {
+            MethodBase med = MethodBase.GetCurrentMethod();
+            Log(med, "Free RX Thread");
+
+            _isProcessing = false; // mark flag.
+
+            if (null == _th) return; // no thread instance.
+            try
+            {
+                _th.Abort();
+            }
+            catch (ThreadAbortException) 
+            { 
+                Thread.ResetAbort(); 
+            }
+            _th = null;
+        }
+
+        private void RxProcessing()
+        {
+            while (null != _th && _isProcessing && !_isExit)
+            {
+
+                Thread.Sleep(50);
+                DoEvents();
+            }
+            FreeRXThread();
+        }
+
+        #endregion
+
         #endregion
 
         #region Protected Methods
@@ -119,15 +204,34 @@ namespace NLib.Serial.Devices
         /// Open Serial Port connection.
         /// </summary>
         protected void OpenPort() 
-        { 
+        {
+            MethodBase med = MethodBase.GetCurrentMethod();
 
+            if (null != _comm)
+                return; // already connected.
         }
         /// <summary>
         /// Close Serial Port connection.
         /// </summary>
         protected void ClosePort()
         {
+            MethodBase med = MethodBase.GetCurrentMethod();
 
+            FreeRXThread();
+            // Free Serial ports
+            if (null != _comm)
+            {
+                string msg = string.Format("Close port {0}", _comm.PortName);
+                Log(med, msg);
+
+                try
+                {
+                    _comm.Close();
+                    _comm.Dispose();
+                }
+                catch { }
+            }
+            _comm = null;
         }
 
         #endregion
@@ -138,6 +242,15 @@ namespace NLib.Serial.Devices
         /// Checks is AppDomain is unloaded or Process is exit.
         /// </summary>
         protected bool IsExit { get { return _isExit; } }
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Checks is thread still processing.
+        /// </summary>
+        public bool IsProcessing { get { return (null != _th && _isProcessing); } }
 
         #endregion
     }
