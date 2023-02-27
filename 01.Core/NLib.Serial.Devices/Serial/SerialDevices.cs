@@ -10,6 +10,9 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Collections;
+using System.ComponentModel;
+using System.Windows.Threading;
+using System.Linq.Expressions;
 
 #endregion
 
@@ -64,6 +67,272 @@ namespace NLib.Serial
         /// Gets or sets Handshake (default None).
         /// </summary>
         public Handshake Handshake { get; set; }
+
+        #endregion
+    }
+
+    #endregion
+
+    #region Delegate Helper
+
+    /// <summary>
+    /// The Delegate Helper. This class contains static method to invoke delegate without concern about
+    /// cross thread problem.
+    /// </summary>
+    internal static class DelegateHelper
+    {
+        #region Delegate
+
+        private delegate void EmptyDelegate();
+
+        #endregion
+
+        #region Internal Variables
+
+        private static object _lock = new object();
+        private static Dictionary<Type, bool> _caches = new Dictionary<Type, bool>();
+
+        #endregion
+
+        #region Private Methods
+
+        private static bool HasDispatcher(object obj)
+        {
+            bool result = false;
+            Type targetType = (null != obj) ? obj.GetType() : null;
+            if (null != targetType)
+            {
+                if (!_caches.ContainsKey(targetType))
+                {
+                    bool isDispatcherObject =
+                        targetType.IsSubclassOf(typeof(System.Windows.Threading.DispatcherObject)) ||
+                        targetType.IsSubclassOf(typeof(System.Windows.DependencyObject));
+
+                    if (!isDispatcherObject)
+                    {
+                        System.Reflection.PropertyInfo prop =
+                            targetType.GetProperty("Dispatcher");
+                        result = (null != prop); // property found.
+                    }
+                    else
+                    {
+                        // target is inherited from DispatcherObject or DependencyObject
+                        result = true;
+                    }
+
+                    lock (_lock)
+                    {
+                        _caches.Add(targetType, result);
+                    }
+                }
+                else
+                {
+                    lock (_lock)
+                    {
+                        result = _caches[targetType];
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Invoke Delegate.
+        /// </summary>
+        /// <param name="del">delegate to invoke</param>
+        /// <param name="args">args for delegate</param>
+        /// <returns>Return result of invocation.</returns>
+        private static object __Invoke(Delegate del, object[] args)
+        {
+            object result = null;
+            if (null == del)
+                return result;
+
+            // if we can find propery to handle it so this flag will set to be true
+            bool isHandled = false;
+
+            if (null != del.Target)
+            {
+                // Checks is windows forms UI
+                if (!HasDispatcher(del.Target))
+                {
+                    ISynchronizeInvoke syncInvoke =
+                        (null != del.Target && del.Target is ISynchronizeInvoke) ?
+                        (del.Target as ISynchronizeInvoke) : null;
+                    if (null != syncInvoke && syncInvoke.InvokeRequired)
+                    {
+                        // Detected target is ISynchronizeInvoke and in anothre thread
+                        // This is the general case when used in windows forms.
+                        isHandled = true;
+                        result = syncInvoke.Invoke(del, args);
+                    }
+                }
+
+                if (!isHandled)
+                {
+                    // Checks is WPF UI
+                    Dispatcher dispatcher = null;
+
+                    PropertyInfo prop = del.Target.GetType().GetProperty("Dispatcher");
+                    dispatcher = prop.GetValue(del.Target, null) as Dispatcher;
+                    //dispatcher = DynamicAccess.Get(del.Target, "Dispatcher") as Dispatcher;
+
+                    if (null != dispatcher && !dispatcher.CheckAccess())
+                    {
+                        // Dispatcher detected so it's is WPF object that the delegate should
+                        // invoke via dispatcher.
+                        isHandled = true;
+                        result = dispatcher.Invoke(del, DispatcherPriority.Normal, args);
+                    }
+                }
+            }
+
+            if (!isHandled)
+            {
+                // cannot find the way to handle it or it's run in same as UI thread
+                // so it's should be no problem in UI thread.
+                result = del.DynamicInvoke(args);
+            }
+
+            return result;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Application DoEvents.
+        /// </summary>
+        public static void DoEvents()
+        {
+            bool handled = false;
+            if (null != Dispatcher.CurrentDispatcher)
+            {
+                // Detected is WPF
+                handled = true;
+                try
+                {
+                    Wpf.DoEvents(DispatcherPriority.Background, true);
+                    //Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
+                }
+                catch (Exception)
+                {
+                    //Console.WriteLine(ex);
+                }
+            }
+            if (!handled)
+            {
+                // Used Windows Forms
+                try
+                {
+                    handled = true;
+                    System.Windows.Forms.Application.DoEvents();
+                }
+                catch (Exception)
+                {
+                    //Console.WriteLine(ex);
+                }
+            }
+            if (!handled)
+            {
+                // Non UI type application so no need to implements
+            }
+        }
+        /// <summary>
+        /// Executes the specified delegate, on the thread that owns the 
+        /// UI object's underlying window handle, with the specified list of arguments.
+        /// </summary>
+        /// <param name="del">
+        /// A delegate to a method that takes parameters of the same number and type that 
+        /// are contained in the args parameter.
+        /// </param>
+        /// <param name="args">
+        /// An array of objects to pass as arguments to the specified method. 
+        /// This parameter can be null if the method takes no arguments. 
+        /// </param>
+        /// <returns>
+        /// An Object that contains the return value from the delegate being invoked, 
+        /// or null if the delegate has no return value.
+        /// </returns>
+        public static object Invoke(Delegate del, params object[] args)
+        {
+            object result = null;
+
+            if (del == null || del.Method == null)
+                return result;
+
+            int requiredParameters = del.Method.GetParameters().Length;
+            // Check that the correct number of arguments have been supplied
+            if (requiredParameters != args.Length)
+            {
+                throw new ArgumentException(string.Format(
+                     "{0} arguments provided when {1} {2} required.",
+                     args.Length, requiredParameters,
+                     ((requiredParameters == 1) ? "is" : "are")));
+            }
+
+            // Get a local copy of the invocation list in case it changes
+            Delegate[] delegates = del.GetInvocationList();
+            if (delegates != null && delegates.Length > 0)
+            {
+                foreach (Delegate sink in delegates)
+                {
+                    try
+                    {
+                        result = __Invoke(sink, args);
+                    }
+                    catch (ObjectDisposedException) { }
+                    catch (Exception)
+                    {
+                        //Console.WriteLine(ex);
+                    }
+                    finally { }
+                }
+            }
+            return result;
+        }
+
+        #endregion
+
+        #region Wpf helper class
+
+        /// <summary>
+        /// Wpf helper class.
+        /// </summary>
+        public static class Wpf
+        {
+            /// <summary>
+            /// Application DoEvents (WPF).
+            /// </summary>
+            /// <param name="dp">The DispatcherPriority mode.</param>
+            /// <param name="simple">True for simple mode.</param>
+            public static void DoEvents(DispatcherPriority dp = DispatcherPriority.Render, bool simple = true)
+            {
+                if (!simple)
+                {
+                    if (null != Dispatcher.CurrentDispatcher)
+                    {
+                        var frame = new DispatcherFrame();
+                        Dispatcher.CurrentDispatcher.BeginInvoke(dp,
+                            new DispatcherOperationCallback((object parameter) =>
+                            {
+                                ((DispatcherFrame)parameter).Continue = false;
+                                return null;
+                            }), frame);
+                        Dispatcher.PushFrame(frame);
+                    }
+                }
+                else
+                {
+                    if (null != Dispatcher.CurrentDispatcher)
+                    {
+                        Dispatcher.CurrentDispatcher.Invoke(dp, new Action(() => { }));
+                    }
+                }
+            }
+        }
 
         #endregion
     }
@@ -132,24 +401,24 @@ namespace NLib.Serial
 
         #region NLib Wrapper
 
-        private void DoEvents()
+        protected void DoEvents()
         {
-            Application.DoEvents();
+            DelegateHelper.DoEvents();
         }
 
-        private void Log(MethodBase med, string messsage)
+        protected void Log(MethodBase med, string messsage)
         {
             // Write log
         }
 
-        private void Error(MethodBase med, string messsage)
+        protected void Error(MethodBase med, string messsage)
         {
             // Write error
         }
 
-        private void Invoke(Delegate method)
+        protected void Invoke(Delegate method, params object[] args)
         {
-
+            DelegateHelper.Invoke(method, args);
         }
 
         #endregion
@@ -391,7 +660,7 @@ namespace NLib.Serial
     /// <summary>
     /// The SerialDeviceData class.
     /// </summary>
-    public abstract class SerialDeviceData
+    public abstract class SerialDeviceData : INotifyPropertyChanged
     {
         #region Constructor and Destructor
 
@@ -409,6 +678,73 @@ namespace NLib.Serial
 
         #endregion
 
+        #region Private Methods
+
+        /// <summary>
+        /// Internal Raise Property Changed event (Lamda function).
+        /// </summary>
+        /// <param name="selectorExpression">The Expression function.</param>
+
+        private void InternalRaise<T>(Expression<Func<T>> selectorExpression)
+        {
+            if (null == selectorExpression)
+            {
+                throw new ArgumentNullException("selectorExpression");
+                // return;
+            }
+            var me = selectorExpression.Body as MemberExpression;
+
+            // Nullable properties can be nested inside of a convert function
+            if (null == me)
+            {
+                var ue = selectorExpression.Body as UnaryExpression;
+                if (null != ue)
+                {
+                    me = ue.Operand as MemberExpression;
+                }
+            }
+
+            if (null == me)
+            {
+                throw new ArgumentException("The body must be a member expression");
+                // return;
+            }
+            Raise(me.Member.Name);
+        }
+
+        #endregion
+
+        #region Protected Methods
+
+        /// <summary>
+        /// Raise Property Changed event.
+        /// </summary>
+        /// <param name="propertyName">The property name.</param>
+        protected void Raise(string propertyName)
+        {
+            // raise event.
+            if (null != PropertyChanged)
+            {
+                DelegateHelper.Invoke(PropertyChanged, this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        /// <summary>
+        /// Raise Property Changed event (Lamda function).
+        /// </summary>
+        /// <param name="actions">The array of lamda expression's functions.</param>
+        protected void Raise(params Expression<Func<object>>[] actions)
+        {
+            if (null != actions && actions.Length > 0)
+            {
+                foreach (var item in actions)
+                {
+                    if (null != item) InternalRaise(item);
+                }
+            }
+        }
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
@@ -421,6 +757,15 @@ namespace NLib.Serial
         /// </summary>
         /// <param name="buffers">The buffer data.</param>
         public abstract void Parse(byte[] buffers);
+
+        #endregion
+
+        #region Public Events
+
+        /// <summary>
+        /// The PropertyChanged event.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
 
         #endregion
     }
