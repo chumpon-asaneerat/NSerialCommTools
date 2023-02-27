@@ -147,6 +147,11 @@ namespace NLib.Serial.Devices
             // Write error
         }
 
+        private void Invoke(Delegate method)
+        {
+
+        }
+
         #endregion
 
         #region Thread Related Methods
@@ -204,8 +209,8 @@ namespace NLib.Serial.Devices
                                 _comm.Read(buffers, 0, byteToRead);
                                 queues.AddRange(buffers);
                             }
-                            // process rx queue.
-                            ProcessRXQueue();
+                            // process rx queue in main ui thread.
+                            Invoke(new Action(() => { ProcessRXQueue(); }));
                         }
                     }
                 }
@@ -347,10 +352,14 @@ namespace NLib.Serial.Devices
 
         #region RX Data processing
 
-        protected void ProcessRXQueue()
-        {
-
-        }
+        /// <summary>
+        /// Gets RX Queues.
+        /// </summary>
+        protected List<byte> Queues { get { return queues; } }
+        /// <summary>
+        /// Process RX Queue.
+        /// </summary>
+        protected abstract void ProcessRXQueue();
 
         #endregion
 
@@ -386,6 +395,8 @@ namespace NLib.Serial.Devices
     {
         #region Internal Variables
 
+        private SerialPortConfig _config = null;
+
         #endregion
 
         #region Constructor and Destructor
@@ -393,7 +404,10 @@ namespace NLib.Serial.Devices
         /// <summary>
         /// Constructor.
         /// </summary>
-        public SerialDeviceEmulator() : base() { }
+        public SerialDeviceEmulator() : base() 
+        {
+            _config = new SerialPortConfig();
+        }
         /// <summary>
         /// Destructor.
         /// </summary>
@@ -410,7 +424,10 @@ namespace NLib.Serial.Devices
         /// Start.
         /// </summary>
         public void Start() 
-        { 
+        {
+            if (null == _config)
+                _config = new SerialPortConfig();
+            OpenPort(_config);
         }
         /// <summary>
         /// Shutdown.
@@ -418,6 +435,23 @@ namespace NLib.Serial.Devices
         public void Shutdown() 
         {
             ClosePort();
+        }
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Gets or sets Serial Port Config.
+        /// </summary>
+        public SerialPortConfig Config 
+        {
+            get
+            {
+                if (null == _config) _config = new SerialPortConfig();
+                return _config;
+            }
+            set { _config = value; }  
         }
 
         #endregion
@@ -434,6 +468,8 @@ namespace NLib.Serial.Devices
     {
         #region Internal Variables
 
+        private SerialPortConfig _config = null;
+
         #endregion
 
         #region Constructor and Destructor
@@ -441,7 +477,10 @@ namespace NLib.Serial.Devices
         /// <summary>
         /// Constructor.
         /// </summary>
-        public SerialDeviceTerminal() : base() { }
+        public SerialDeviceTerminal() : base() 
+        {
+            _config = new SerialPortConfig();
+        }
         /// <summary>
         /// Destructor.
         /// </summary>
@@ -459,6 +498,9 @@ namespace NLib.Serial.Devices
         /// </summary>
         public void Connect() 
         {
+            if (null == _config) 
+                _config = new SerialPortConfig();
+            OpenPort(_config);
         }
         /// <summary>
         /// Disconnect.
@@ -466,6 +508,23 @@ namespace NLib.Serial.Devices
         public void Disconnect() 
         {
             ClosePort();
+        }
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Gets or sets Serial Port Config.
+        /// </summary>
+        public SerialPortConfig Config
+        {
+            get 
+            { 
+                if (null == _config) _config = new SerialPortConfig();
+                return _config; 
+            }
+            set { _config = value; }
         }
 
         #endregion
