@@ -36,8 +36,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TFO1", "TFO1", "{750363DC-A
 		Documents\LuckyTex Devices\TFO1\80199.jpg = Documents\LuckyTex Devices\TFO1\80199.jpg
 		Documents\LuckyTex Devices\TFO1\80201.jpg = Documents\LuckyTex Devices\TFO1\80201.jpg
 		Documents\LuckyTex Devices\TFO1\Serial_Log.txt = Documents\LuckyTex Devices\TFO1\Serial_Log.txt
-		Documents\LuckyTex Devices\TFO1\Serial_Log1.log = Documents\LuckyTex Devices\TFO1\Serial_Log1.log
-		Documents\LuckyTex Devices\TFO1\Serial_Loghex_text.log = Documents\LuckyTex Devices\TFO1\Serial_Loghex_text.log
 		Documents\LuckyTex Devices\TFO1\S__70369364.jpg = Documents\LuckyTex Devices\TFO1\S__70369364.jpg
 		Documents\LuckyTex Devices\TFO1\S__70434999.jpg = Documents\LuckyTex Devices\TFO1\S__70434999.jpg
 		Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.01.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.01.txt
@@ -78,8 +76,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Weight SPUN", "Weight SPUN", "{8727ABE7-44F8-43CA-922B-249D6223248A}"
 	ProjectSection(SolutionItems) = preProject
 		Documents\LuckyTex Devices\WEIGHT SPUN\51396f61-a182-42c2-a28e-255ac7f0acf5.mp4 = Documents\LuckyTex Devices\WEIGHT SPUN\51396f61-a182-42c2-a28e-255ac7f0acf5.mp4
-		Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspun.log = Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspun.log
-		Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspuntext.log = Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspuntext.log
+		Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspun.txt = Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspun.txt
+		Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspuntext.txt = Documents\LuckyTex Devices\WEIGHT SPUN\Serial_Logspuntext.txt
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Devices", "01.Core\NLib.Serial.Devices\NLib.Serial.Devices.csproj", "{32FAE440-947B-4B8F-A710-2CB8887136D5}"
