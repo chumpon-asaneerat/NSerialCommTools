@@ -6,7 +6,8 @@
         mc:Ignorable="d"
         Title="Serial Device Emulator"
         Height="450"
-        Width="800">
+        Width="800"
+        Loaded="Window_Loaded">
     <Grid>
         <TabControl>
             <TabItem Header="TFO1">

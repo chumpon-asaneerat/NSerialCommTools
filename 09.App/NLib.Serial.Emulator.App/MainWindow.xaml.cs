@@ -12,6 +12,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using NLib.Serial.Devices;
+using NLib.Serial.Emulators;
+
 namespace NLib.Serial.Emulator.App
 {
     /// <summary>
@@ -22,6 +25,14 @@ namespace NLib.Serial.Emulator.App
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            TFO1Data data = new TFO1Data();
+            data.F = 0;
+            var buffers = data.ToByteArray();
+            Console.WriteLine(ByteArrayHelper.ToHexString(buffers));
         }
     }
 }

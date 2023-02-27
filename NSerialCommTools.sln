@@ -41,8 +41,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TFO1", "TFO1", "{750363DC-A
 		Documents\LuckyTex Devices\TFO1\S__70434999.jpg = Documents\LuckyTex Devices\TFO1\S__70434999.jpg
 		Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.01.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.01.txt
 		Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.02.HEX.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.02.HEX.txt
-		Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.02.String.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.02.String.txt
 		Documents\LuckyTex Devices\TFO1\TFO.Weight.Response.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Response.txt
+		Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.02.HEX2.txt = Documents\LuckyTex Devices\TFO1\TFO.Weight.Attemp.02.HEX2.txt
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TFO3", "TFO3", "{DEA42806-3F1D-4029-A6A4-804F8DC7E7B5}"
