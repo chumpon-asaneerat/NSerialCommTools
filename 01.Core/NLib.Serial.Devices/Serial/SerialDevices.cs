@@ -353,7 +353,7 @@ namespace NLib.Serial
 
         public static string ToHexString(byte[] bytes)
         {
-            return BitConverter.ToString(bytes).Replace('-', ' '); ;
+            return BitConverter.ToString(bytes).Replace('-', ' ');
         }
 
         #endregion
