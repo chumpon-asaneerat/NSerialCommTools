@@ -71,7 +71,7 @@ namespace NLib.Serial.Terminals
         /// </summary>
         protected override void ProcessRXQueue()
         {
-
+            
         }
 
         #endregion

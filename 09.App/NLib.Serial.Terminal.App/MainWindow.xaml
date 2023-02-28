@@ -3,10 +3,25 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:NLib.Serial.Terminal.App"
+        xmlns:winformCtrl="clr-namespace:System.ComponentModel.Design;assembly=System.Design"
         mc:Ignorable="d"
         Title="Serial Device Terminal"
         Height="450"
-        Width="800">
-    <Grid />
+        Width="800"
+        Loaded="Window_Loaded"
+        Unloaded="Window_Unloaded">
+    <Grid>
+        <TabControl>
+            <TabItem Header="TFO1">
+                <DockPanel LastChildFill="True">
+                    <DockPanel DockPanel.Dock="Top" LastChildFill="True">
+                        <Grid />
+                    </DockPanel>
+                    <WindowsFormsHost>
+                        <winformCtrl:ByteViewer x:Name="viewer" Dock="Fill" />
+                    </WindowsFormsHost>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </Window>

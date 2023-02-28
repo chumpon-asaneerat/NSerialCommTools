@@ -175,7 +175,10 @@ namespace NLib.Serial
                     Dispatcher dispatcher = null;
 
                     PropertyInfo prop = del.Target.GetType().GetProperty("Dispatcher");
-                    dispatcher = prop.GetValue(del.Target, null) as Dispatcher;
+                    if (null != prop)
+                    {
+                        dispatcher = prop.GetValue(del.Target, null) as Dispatcher;
+                    }
                     //dispatcher = DynamicAccess.Get(del.Target, "Dispatcher") as Dispatcher;
 
                     if (null != dispatcher && !dispatcher.CheckAccess())
@@ -498,7 +501,12 @@ namespace NLib.Serial
                                 queues.AddRange(buffers);
                             }
                             // process rx queue in main ui thread.
-                            Invoke(new Action(() => { ProcessRXQueue(); }));
+                            Invoke(new Action(() => 
+                            { 
+                                ProcessRXQueue();
+                                // Raise event.
+                                Invoke(OnRx, this, EventArgs.Empty);
+                            }));
                         }
                     }
                 }
@@ -643,7 +651,7 @@ namespace NLib.Serial
         /// <summary>
         /// Gets RX Queues.
         /// </summary>
-        protected List<byte> Queues { get { return queues; } }
+        public List<byte> Queues { get { return queues; } }
         /// <summary>
         /// Process RX Queue.
         /// </summary>
@@ -664,6 +672,10 @@ namespace NLib.Serial
 
         #region Public Methods
 
+        /// <summary>
+        /// Send.
+        /// </summary>
+        /// <param name="data">The data buffer to send.</param>
         public void Send(byte[] data)
         {
             if (null != _comm && !_comm.IsOpen)
@@ -693,6 +705,15 @@ namespace NLib.Serial
         /// Checks is port opened.
         /// </summary>
         public bool IsOpen { get { return (null != _comm && _comm.IsOpen); } }
+
+        #endregion
+
+        #region Public Events
+
+        /// <summary>
+        /// The OnRx event handler.
+        /// </summary>
+        public event EventHandler OnRx;
 
         #endregion
     }
