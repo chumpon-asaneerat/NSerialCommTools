@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region Using
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +17,8 @@ using System.Windows.Shapes;
 using NLib.Serial.Devices;
 using NLib.Serial.Emulators;
 
+#endregion
+
 namespace NLib.Serial.Emulator.App
 {
     /// <summary>
@@ -22,10 +26,19 @@ namespace NLib.Serial.Emulator.App
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Constructor
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
         }
+
+        #endregion
+
+        #region Loaded/Unloaded
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -37,6 +50,8 @@ namespace NLib.Serial.Emulator.App
         {
             TFO1Device.Instance.Shutdown();
         }
+
+        #endregion
 
         private void cmdTFO1Send_Click(object sender, RoutedEventArgs e)
         {

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#region Using
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +18,8 @@ using System.Windows.Shapes;
 using NLib.Serial.Devices;
 using NLib.Serial.Terminals;
 
+#endregion
+
 namespace NLib.Serial.Terminal.App
 {
     /// <summary>
@@ -23,10 +27,19 @@ namespace NLib.Serial.Terminal.App
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Constructor
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
         }
+
+        #endregion
+
+        #region Loaded/Unloaded
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -40,6 +53,8 @@ namespace NLib.Serial.Terminal.App
             TFO1Terminal.Instance.Disconnect();
             TFO1Terminal.Instance.OnRx -= TFO1_OnRx;
         }
+
+        #endregion
 
         private void TFO1_OnRx(object sender, EventArgs e)
         {
