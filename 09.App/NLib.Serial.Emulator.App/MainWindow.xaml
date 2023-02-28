@@ -7,11 +7,17 @@
         Title="Serial Device Emulator"
         Height="450"
         Width="800"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        Unloaded="Window_Unloaded">
     <Grid>
         <TabControl>
             <TabItem Header="TFO1">
                 <DockPanel LastChildFill="True">
+                    <DockPanel DockPanel.Dock="Top" LastChildFill="True">
+                        <Button x:Name="cmdTFO1Send" DockPanel.Dock="Left" Content="Send" Width="150"
+                                Click="cmdTFO1Send_Click"/>
+                        <Grid />
+                    </DockPanel>
                     <Grid />
                 </DockPanel>
             </TabItem>

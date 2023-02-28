@@ -29,19 +29,24 @@ namespace NLib.Serial.Emulator.App
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            /*
-            //string ret = Encoding.ASCII.GetString(new byte[] { 0x83 });
-            string ret = char.ConvertFromUtf32(0x83);
-            byte[] rets = Encoding.ASCII.GetBytes(ret);
-            Console.WriteLine(rets);
-            */
-            TFO1Data data = new TFO1Data();
+            TFO1Device.Instance.Config.PortName = "COM4";
+            TFO1Device.Instance.Start();
+        }
+
+        private void Window_Unloaded(object sender, RoutedEventArgs e)
+        {
+            TFO1Device.Instance.Shutdown();
+        }
+
+        private void cmdTFO1Send_Click(object sender, RoutedEventArgs e)
+        {
+            var data = TFO1Device.Instance.Value;
             data.F = 0;
             data.A = 366;
             data.W0 = 23;
             data.W4 = (decimal)343.5;
             var buffers = data.ToByteArray();
-            Console.WriteLine(ByteArrayHelper.ToHexString(buffers));
+            TFO1Device.Instance.Send(buffers);
         }
     }
 }

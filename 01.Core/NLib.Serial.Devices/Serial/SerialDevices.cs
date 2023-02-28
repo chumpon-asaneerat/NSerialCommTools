@@ -346,36 +346,6 @@ namespace NLib.Serial
     /// </summary>
     public class ByteArrayHelper
     {
-        #region Comment out
-        /*
-        private static readonly uint[] _lookup32 = CreateLookup32();
-
-        private static uint[] CreateLookup32()
-        {
-            var result = new uint[256];
-            for (int i = 0; i < 256; i++)
-            {
-                string s = i.ToString("X2");
-                result[i] = ((uint)s[0]) + ((uint)s[1] << 16);
-            }
-            return result;
-        }
-
-        public static string ToHexString(byte[] bytes)
-        {
-            var lookup32 = _lookup32;
-            var result = new char[bytes.Length * 2];
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                var val = lookup32[bytes[i]];
-                result[2 * i] = (char)val;
-                result[2 * i + 1] = (char)(val >> 16);
-            }
-            return new string(result);
-        }
-        */
-        #endregion
-
         #region ToHexString
 
         public static string ToHexString(byte[] bytes)
@@ -692,12 +662,37 @@ namespace NLib.Serial
 
         #endregion
 
+        #region Public Methods
+
+        public void Send(byte[] data)
+        {
+            if (null != _comm && !_comm.IsOpen)
+                return;
+            if (null == data || data.Length <= 0)
+                return;
+            MethodBase med = MethodBase.GetCurrentMethod();
+            try
+            {
+                _comm.Write(data, 0, data.Length);
+            }
+            catch (Exception ex)
+            {
+                Error(med, ex.ToString());
+            }
+        }
+
+        #endregion
+
         #region Public Properties
 
         /// <summary>
         /// Checks is thread still processing.
         /// </summary>
         public bool IsProcessing { get { return (null != _th && _isProcessing); } }
+        /// <summary>
+        /// Checks is port opened.
+        /// </summary>
+        public bool IsOpen { get { return (null != _comm && _comm.IsOpen); } }
 
         #endregion
     }
