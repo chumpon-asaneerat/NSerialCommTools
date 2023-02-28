@@ -42,6 +42,9 @@ namespace NLib.Serial.Emulator.App
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            System.Windows.Forms.Application.EnableVisualStyles();
+            System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+
             TFO1Device.Instance.Config.PortName = "COM4";
             TFO1Device.Instance.Start();
         }

@@ -43,6 +43,9 @@ namespace NLib.Serial.Terminal.App
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            System.Windows.Forms.Application.EnableVisualStyles();
+            System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+
             TFO1Terminal.Instance.Config.PortName = "COM3";
             TFO1Terminal.Instance.OnRx += TFO1_OnRx;
             TFO1Terminal.Instance.Connect();
