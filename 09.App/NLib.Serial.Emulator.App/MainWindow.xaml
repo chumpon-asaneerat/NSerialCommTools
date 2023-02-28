@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NLib.Serial.Emulator.App.Controls"
         mc:Ignorable="d"
         Title="Serial Device Emulator"
         Height="450"
@@ -13,15 +14,22 @@
         <TabControl>
             <TabItem Header="TFO1">
                 <DockPanel LastChildFill="True">
-                    <DockPanel DockPanel.Dock="Top" LastChildFill="True">
-                        <Button x:Name="cmdTFO1Send"
-                                DockPanel.Dock="Left"
-                                Content="Send"
-                                Width="150"
-                                Click="cmdTFO1Send_Click" />
-                        <Grid />
-                    </DockPanel>
-                    <Grid />
+                    <local:TFO1EmulatorPage x:Name="TFO1Page" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="PH Meter">
+                <DockPanel LastChildFill="True">
+                    <local:PHMeterEmulatorPage x:Name="PHMeterPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Weight QA">
+                <DockPanel LastChildFill="True">
+                    <local:WeightQAEmulatorPage x:Name="WeightQAPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Weight SPUN">
+                <DockPanel LastChildFill="True">
+                    <local:WeightSPUNEmulatorPage x:Name="WeightSPUNPage" />
                 </DockPanel>
             </TabItem>
         </TabControl>

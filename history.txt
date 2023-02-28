@@ -7,8 +7,9 @@ Implements #49
 Implements #48
 - 
 
+[Commit]
 Implements #47
-- 
+- Implements NLib.Serial.Devices project #22.
 
 [Commit]
 Implements #46
