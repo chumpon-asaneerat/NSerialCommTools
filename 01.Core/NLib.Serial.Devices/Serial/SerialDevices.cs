@@ -69,6 +69,89 @@ namespace NLib.Serial
         public Handshake Handshake { get; set; }
 
         #endregion
+
+        #region Static Methods
+
+        /// <summary>
+        /// Gets avaliable port names.
+        /// </summary>
+        /// <returns>Returns avaliable port names</returns>
+        public static List<string> GetPortNames()
+        {
+            var rets = new List<string>();
+            foreach (string s in SerialPort.GetPortNames())
+            {
+                rets.Add(s);
+            }
+            return rets;
+        }
+        /// <summary>
+        /// Gets avaliable supports parities.
+        /// </summary>
+        /// <returns>Returns supports parities</returns>
+        public static List<string> GetParities()
+        {
+            var rets = new List<string>();
+            foreach (string s in Enum.GetNames(typeof(Parity)))
+            {
+                rets.Add(s);
+            }
+            return rets;
+        }
+        /// Gets Parity from string.
+        /// </summary>
+        /// <param name="value">The Parity value in string.</param>
+        /// <returns>Returns Parity value.</returns>
+        public Parity GetParity(string value)
+        {
+            return (Parity)Enum.Parse(typeof(Parity), value, true);
+        }
+        /// <summary>
+        /// Gets avaliable supports stop bits.
+        /// </summary>
+        /// <returns>Returns supports stop bits</returns>
+        public static List<string> GetStopBits()
+        {
+            var rets = new List<string>();
+            foreach (string s in Enum.GetNames(typeof(StopBits)))
+            {
+                rets.Add(s);
+            }
+            return rets;
+        }
+        /// <summary>
+        /// Gets StopBits from string.
+        /// </summary>
+        /// <param name="value">The StopBits value in string.</param>
+        /// <returns>Returns StopBits value.</returns>
+        public StopBits GetStopBits(string value)
+        {
+            return (StopBits)Enum.Parse(typeof(StopBits), value, true);
+        }
+        /// <summary>
+        /// Gets avaliable supports handshakes.
+        /// </summary>
+        /// <returns>Returns supports handshakes</returns>
+        public static List<string> GetHandshakes()
+        {
+            var rets = new List<string>();
+            foreach (string s in Enum.GetNames(typeof(Handshake)))
+            {
+                rets.Add(s);
+            }
+            return rets;
+        }
+        /// <summary>
+        /// Gets Handshake from string.
+        /// </summary>
+        /// <param name="value">The handshake value in string.</param>
+        /// <returns>Returns Handshake value.</returns>
+        public Handshake GetHandshake(string value)
+        {
+            return (Handshake)Enum.Parse(typeof(Handshake), value, true);
+        }
+
+        #endregion
     }
 
     #endregion

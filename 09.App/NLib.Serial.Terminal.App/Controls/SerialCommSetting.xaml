@@ -7,54 +7,68 @@
              d:DesignHeight="50"
              d:DesignWidth="800">
     <DockPanel LastChildFill="True">
-        <!-- PORT NAME -->
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Width="100"
+        <!--  PORT NAME  -->
+        <StackPanel Orientation="Vertical"
+                    DockPanel.Dock="Left"
+                    Width="100"
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock Text="Port Name:" />
             <ComboBox x:Name="cbPortNames" />
         </StackPanel>
-        <!-- BOAD RATE -->
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Width="100"
+        <!--  BOAD RATE  -->
+        <StackPanel Orientation="Vertical"
+                    DockPanel.Dock="Left"
+                    Width="100"
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock Text="Boadrate:" />
             <TextBox x:Name="txtBoadRate" />
         </StackPanel>
-        <!-- PARITY -->
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Width="100"
+        <!--  PARITY  -->
+        <StackPanel Orientation="Vertical"
+                    DockPanel.Dock="Left"
+                    Width="100"
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock Text="Parity:" />
             <ComboBox x:Name="cbParities" />
         </StackPanel>
-        <!-- DATA BITS -->
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Width="100"
+        <!--  DATA BITS  -->
+        <StackPanel Orientation="Vertical"
+                    DockPanel.Dock="Left"
+                    Width="100"
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock Text="Data Bits:" />
-            <TextBox x:Name="txtDataBit" Text=""/>
+            <TextBox x:Name="txtDataBit" Text="" />
         </StackPanel>
-        <!-- STOP BITS -->
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Width="100"
+        <!--  STOP BITS  -->
+        <StackPanel Orientation="Vertical"
+                    DockPanel.Dock="Left"
+                    Width="100"
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock Text="Stop Bits:" />
             <ComboBox x:Name="cbStopBits" />
         </StackPanel>
-        <!-- HANDSHAKE -->
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Width="100"
+        <!--  HANDSHAKE  -->
+        <StackPanel Orientation="Vertical"
+                    DockPanel.Dock="Left"
+                    Width="100"
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock Text="Handshake:" />
             <ComboBox x:Name="cbHandshakes" />
         </StackPanel>
-        <!-- CONNECT/DISCONNECT -->
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Width="100"
+        <!--  CONNECT/DISCONNECT  -->
+        <StackPanel Orientation="Vertical"
+                    DockPanel.Dock="Left"
+                    Width="100"
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock x:Name="txtConnectStatus" Text="Status: -" />
-            <Button x:Name="cmdTogleConnect" Content="Connect"/>
+            <Button x:Name="cmdTogleConnect" Content="Connect" />
         </StackPanel>
         <Grid />
     </DockPanel>
