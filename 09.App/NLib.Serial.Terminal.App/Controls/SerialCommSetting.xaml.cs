@@ -64,6 +64,28 @@ namespace NLib.Serial.Terminal.App.Controls
                 EnableInputs(false);
                 return;
             }
+
+            var portNames = SerialPortConfig.GetPortNames();
+            foreach (var s in portNames) { cbPortNames.Items.Add(s); }
+            cbPortNames.SelectedIndex = (portNames.Count > 0) ? 0 : -1;
+
+            txtBoadRate.Text = "9600";
+
+            var parities = SerialPortConfig.GetParities();
+            foreach (var s in parities) { cbParities.Items.Add(s); }
+            cbParities.SelectedIndex = (parities.Count > 0) ? 0 : -1;
+
+            txtDataBit.Text = "8";
+
+            var stopbits = SerialPortConfig.GetStopBits();
+            foreach (var s in stopbits) { cbStopBits.Items.Add(s); }
+            cbStopBits.SelectedIndex = (stopbits.Count > 0) ? 0 : -1;
+
+            var handshakes = SerialPortConfig.GetHandshakes();
+            foreach (var s in handshakes) { cbHandshakes.Items.Add(s); }
+            cbHandshakes.SelectedIndex = (handshakes.Count > 0) ? 0 : -1;
+
+            EnableInputs(true);
         }
 
         #endregion
