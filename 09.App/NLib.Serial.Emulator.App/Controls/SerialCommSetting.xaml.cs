@@ -64,6 +64,47 @@ namespace NLib.Serial.Emulator.App.Controls
                 EnableInputs(false);
                 return;
             }
+
+            var portNames = SerialPortConfig.GetPortNames();
+            foreach (var s in portNames) { cbPortNames.Items.Add(s); }
+            cbPortNames.SelectedIndex = (portNames.Count > 0) ? 0 : -1;
+
+            txtBoadRate.Text = "9600";
+
+            var parities = SerialPortConfig.GetParities();
+            foreach (var s in parities) { cbParities.Items.Add(s); }
+            cbParities.SelectedIndex = (parities.Count > 0) ? 0 : -1;
+
+            txtDataBit.Text = "8";
+
+            var stopbits = SerialPortConfig.GetStopBits();
+            foreach (var s in stopbits) { cbStopBits.Items.Add(s); }
+            cbStopBits.SelectedIndex = (stopbits.Count > 0) ? 0 : -1;
+
+            var handshakes = SerialPortConfig.GetHandshakes();
+            foreach (var s in handshakes) { cbHandshakes.Items.Add(s); }
+            cbHandshakes.SelectedIndex = (handshakes.Count > 0) ? 0 : -1;
+
+            EnableInputs(true);
+        }
+
+        private void UpdateCurrentSetting()
+        {
+            if (null == _device || null == _device.Config)
+                return;
+            try
+            {
+                _device.Config.PortName = cbPortNames.SelectedItem.ToString();
+                _device.Config.BaudRate = int.Parse(txtBoadRate.Text);
+                _device.Config.Parity = SerialPortConfig.GetParity(cbStopBits.SelectedItem.ToString());
+                _device.Config.DataBits = int.Parse(txtDataBit.Text);
+                _device.Config.StopBits = SerialPortConfig.GetStopBits(cbStopBits.SelectedItem.ToString());
+                _device.Config.Handshake = SerialPortConfig.GetHandshake(cbHandshakes.SelectedItem.ToString());
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
         #endregion

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -86,6 +87,25 @@ namespace NLib.Serial.Terminal.App.Controls
             cbHandshakes.SelectedIndex = (handshakes.Count > 0) ? 0 : -1;
 
             EnableInputs(true);
+        }
+
+        private void UpdateCurrentSetting()
+        {
+            if (null == _device || null == _device.Config)
+                return;
+            try
+            {
+                _device.Config.PortName = cbPortNames.SelectedItem.ToString();
+                _device.Config.BaudRate = int.Parse(txtBoadRate.Text);
+                _device.Config.Parity = SerialPortConfig.GetParity(cbStopBits.SelectedItem.ToString());
+                _device.Config.DataBits = int.Parse(txtDataBit.Text);
+                _device.Config.StopBits = SerialPortConfig.GetStopBits(cbStopBits.SelectedItem.ToString());
+                _device.Config.Handshake = SerialPortConfig.GetHandshake(cbHandshakes.SelectedItem.ToString());
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
         #endregion

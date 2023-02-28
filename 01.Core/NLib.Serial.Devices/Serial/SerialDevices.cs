@@ -102,7 +102,7 @@ namespace NLib.Serial
         /// </summary>
         /// <param name="value">The Parity value in string.</param>
         /// <returns>Returns Parity value.</returns>
-        public Parity GetParity(string value)
+        public static Parity GetParity(string value)
         {
             return (Parity)Enum.Parse(typeof(Parity), value, true);
         }
@@ -124,7 +124,7 @@ namespace NLib.Serial
         /// </summary>
         /// <param name="value">The StopBits value in string.</param>
         /// <returns>Returns StopBits value.</returns>
-        public StopBits GetStopBits(string value)
+        public static StopBits GetStopBits(string value)
         {
             return (StopBits)Enum.Parse(typeof(StopBits), value, true);
         }
@@ -146,7 +146,7 @@ namespace NLib.Serial
         /// </summary>
         /// <param name="value">The handshake value in string.</param>
         /// <returns>Returns Handshake value.</returns>
-        public Handshake GetHandshake(string value)
+        public static Handshake GetHandshake(string value)
         {
             return (Handshake)Enum.Parse(typeof(Handshake), value, true);
         }
