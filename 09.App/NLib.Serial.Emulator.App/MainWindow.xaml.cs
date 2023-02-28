@@ -29,8 +29,17 @@ namespace NLib.Serial.Emulator.App
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            /*
+            //string ret = Encoding.ASCII.GetString(new byte[] { 0x83 });
+            string ret = char.ConvertFromUtf32(0x83);
+            byte[] rets = Encoding.ASCII.GetBytes(ret);
+            Console.WriteLine(rets);
+            */
             TFO1Data data = new TFO1Data();
             data.F = 0;
+            data.A = 366;
+            data.W0 = 23;
+            data.W4 = (decimal)343.5;
             var buffers = data.ToByteArray();
             Console.WriteLine(ByteArrayHelper.ToHexString(buffers));
         }

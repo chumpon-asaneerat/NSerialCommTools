@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Reflection;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 #endregion
 
@@ -48,12 +49,64 @@ namespace NLib.Serial.Devices
         /// <returns>Returns content in byte array.</returns>
         public override byte[] ToByteArray()
         {
-            string output = string.Empty;
+            List<byte> buffers = new List<byte>();
+            string output;
             // F      0.0
-            output += F.ToString("F1").PadLeft(9, ' ');
+            output = "F" + F.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // H      0.0.
+            output = "H" + H.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // Q      0.0.
+            output = "Q" + Q.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // X      0.0.
+            output = "X" + X.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // A    366.0.
+            output = "A" + A.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // 0    23.0.
+            output = "0" + W0.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // 4    343.5.
+            output = "4" + W4.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // 1      0.0.
+            output = "1" + W1.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // 2       0.
+            output = "2" + W2.ToString("D0").PadLeft(8, ' ') + ascii.x0D;
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            // B..
+            //output += "B" + ascii.GetString(B) + ascii.x0D;
+            output = "B";
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            buffers.Add(B);
+            buffers.Add(0x0D);
+            // C20. 02. 2023. MON 09:20AM.
+            output = "C";
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            output = C.Day.ToString("D2");
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            buffers.Add(0xF4);
+            output = " " + C.Month.ToString("D2");
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            buffers.Add(0xF3);
+            output = " " + C.Year.ToString("D4");
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            buffers.Add(0xF2);
+            output = " " + C.ToString("ddd HH:mmtt", DateTimeFormatInfo.InvariantInfo).ToUpperInvariant();
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            buffers.Add(0x0D);
+            // V1..
+            output = "V";
+            buffers.AddRange(Encoding.ASCII.GetBytes(output));
+            buffers.Add(V);
+            buffers.Add(0x0D);
+            buffers.Add(0x0A);
 
-            var buffers = Encoding.ASCII.GetBytes(output);
-            return buffers;
+            return buffers.ToArray();
         }
         /// <summary>
         /// Parse byte array and update content.

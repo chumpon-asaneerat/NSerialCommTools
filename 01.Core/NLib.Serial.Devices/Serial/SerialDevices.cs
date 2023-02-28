@@ -711,6 +711,16 @@ namespace NLib.Serial
     /// </summary>
     public abstract class SerialDeviceData : INotifyPropertyChanged
     {
+        #region Consts
+
+        public class ascii
+        {
+            public static string x0D = "\x0D";
+            public static string x0A = "\x0A";
+        }
+
+        #endregion
+
         #region Constructor and Destructor
 
         /// <summary>
