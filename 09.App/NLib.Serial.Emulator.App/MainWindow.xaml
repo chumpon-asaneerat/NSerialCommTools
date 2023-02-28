@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:winformCtrl="clr-namespace:System.ComponentModel.Design;assembly=System.Design"
         xmlns:local="clr-namespace:NLib.Serial.Emulator.App.Controls"
         mc:Ignorable="d"
         Title="Serial Device Emulator"
@@ -30,6 +31,16 @@
             <TabItem Header="Weight SPUN">
                 <DockPanel LastChildFill="True">
                     <local:WeightSPUNEmulatorPage x:Name="WeightSPUNPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="HEX View">
+                <DockPanel LastChildFill="True">
+                    <DockPanel DockPanel.Dock="Top" LastChildFill="True">
+                        <Grid />
+                    </DockPanel>
+                    <WindowsFormsHost>
+                        <winformCtrl:ByteViewer x:Name="viewer" Dock="Fill" />
+                    </WindowsFormsHost>
                 </DockPanel>
             </TabItem>
         </TabControl>

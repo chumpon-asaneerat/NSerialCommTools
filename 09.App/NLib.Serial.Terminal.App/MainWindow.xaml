@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:winformCtrl="clr-namespace:System.ComponentModel.Design;assembly=System.Design"
+        xmlns:local="clr-namespace:NLib.Serial.Terminal.App.Controls"
         mc:Ignorable="d"
         Title="Serial Device Terminal"
         Height="450"
@@ -12,7 +13,28 @@
         Unloaded="Window_Unloaded">
     <Grid>
         <TabControl>
+            <!--  COMMENT OUT  -->
             <TabItem Header="TFO1">
+                <DockPanel LastChildFill="True">
+                    <local:TFO1TerminalPage x:Name="TFO1Page" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="PH Meter">
+                <DockPanel LastChildFill="True">
+                    <local:PHMeterTerminalPage x:Name="PHMeterPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Weight QA">
+                <DockPanel LastChildFill="True">
+                    <local:WeightQATerminalPage x:Name="WeightQAPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Weight SPUN">
+                <DockPanel LastChildFill="True">
+                    <local:WeightSPUNTerminalPage x:Name="WeightSPUNPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="HEX View">
                 <DockPanel LastChildFill="True">
                     <DockPanel DockPanel.Dock="Top" LastChildFill="True">
                         <Grid />
