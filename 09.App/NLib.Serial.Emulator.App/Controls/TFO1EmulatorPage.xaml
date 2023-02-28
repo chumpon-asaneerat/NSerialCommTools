@@ -8,7 +8,9 @@
              d:DesignHeight="450"
              d:DesignWidth="800">
     <DockPanel LastChildFill="True">
-        <local:SerialCommSetting x:Name="ctrlSetting" DockPanel.Dock="Top" Height="50" />
+        <local:SerialCommSetting x:Name="ctrlSetting"
+                                 DockPanel.Dock="Top"
+                                 Height="50" />
         <Grid />
     </DockPanel>
 </UserControl>

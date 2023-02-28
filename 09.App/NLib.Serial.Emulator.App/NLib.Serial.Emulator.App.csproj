@@ -68,6 +68,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\WeightQAEmulatorPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\WeightSPUNEmulatorPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -84,6 +92,12 @@
     </Compile>
     <Compile Include="Controls\TFO1EmulatorPage.xaml.cs">
       <DependentUpon>TFO1EmulatorPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WeightQAEmulatorPage.xaml.cs">
+      <DependentUpon>WeightQAEmulatorPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WeightSPUNEmulatorPage.xaml.cs">
+      <DependentUpon>WeightSPUNEmulatorPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
