@@ -476,6 +476,8 @@ namespace NLib.Serial
         {
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+
+            _config = new SerialPortConfig();
         }
 
         /// <summary>
@@ -968,7 +970,6 @@ namespace NLib.Serial
         /// </summary>
         public SerialDeviceEmulator() : base() 
         {
-            _config = new SerialPortConfig();
             Value = new T();
         }
         /// <summary>
@@ -1027,7 +1028,6 @@ namespace NLib.Serial
         /// </summary>
         public SerialDeviceTerminal() : base() 
         {
-            _config = new SerialPortConfig();
             Value = new T();
         }
         /// <summary>
