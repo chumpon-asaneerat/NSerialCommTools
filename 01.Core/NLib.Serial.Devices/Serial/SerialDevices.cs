@@ -372,6 +372,8 @@ namespace NLib.Serial
 
         private bool _isExit = false;
 
+        private SerialPortConfig _config = null;
+
         private SerialPort _comm = null;
 
         private bool _isProcessing = false;
@@ -527,6 +529,15 @@ namespace NLib.Serial
 
         #region Open/Close port
 
+        /// <summary>
+        /// OpenPort.
+        /// </summary>
+        protected void OpenPort()
+        {
+            if (null == _config)
+                _config = new SerialPortConfig();
+            OpenPort(_config);
+        }
         /// <summary>
         /// OpenPort.
         /// </summary>
@@ -698,6 +709,18 @@ namespace NLib.Serial
         #region Public Properties
 
         /// <summary>
+        /// Gets or sets Serial Port Config.
+        /// </summary>
+        public SerialPortConfig Config
+        {
+            get
+            {
+                if (null == _config) _config = new SerialPortConfig();
+                return _config;
+            }
+            set { _config = value; }
+        }
+        /// <summary>
         /// Checks is thread still processing.
         /// </summary>
         public bool IsProcessing { get { return (null != _th && _isProcessing); } }
@@ -855,12 +878,6 @@ namespace NLib.Serial
     public abstract class SerialDeviceEmulator<T> : SerialDevice
         where T : SerialDeviceData, new()
     {
-        #region Internal Variables
-
-        private SerialPortConfig _config = null;
-
-        #endregion
-
         #region Constructor and Destructor
 
         /// <summary>
@@ -888,9 +905,7 @@ namespace NLib.Serial
         /// </summary>
         public void Start() 
         {
-            if (null == _config)
-                _config = new SerialPortConfig();
-            OpenPort(_config);
+            OpenPort();
         }
         /// <summary>
         /// Shutdown.
@@ -904,18 +919,6 @@ namespace NLib.Serial
 
         #region Public Properties
 
-        /// <summary>
-        /// Gets or sets Serial Port Config.
-        /// </summary>
-        public SerialPortConfig Config 
-        {
-            get
-            {
-                if (null == _config) _config = new SerialPortConfig();
-                return _config;
-            }
-            set { _config = value; }  
-        }
         /// <summary>
         /// Gets or sets content value.
         /// </summary>
@@ -934,12 +937,6 @@ namespace NLib.Serial
     public abstract class SerialDeviceTerminal<T> : SerialDevice
         where T : SerialDeviceData, new()
     {
-        #region Internal Variables
-
-        private SerialPortConfig _config = null;
-
-        #endregion
-
         #region Constructor and Destructor
 
         /// <summary>
@@ -967,9 +964,7 @@ namespace NLib.Serial
         /// </summary>
         public void Connect() 
         {
-            if (null == _config) 
-                _config = new SerialPortConfig();
-            OpenPort(_config);
+            OpenPort();
         }
         /// <summary>
         /// Disconnect.
@@ -983,18 +978,6 @@ namespace NLib.Serial
 
         #region Public Properties
 
-        /// <summary>
-        /// Gets or sets Serial Port Config.
-        /// </summary>
-        public SerialPortConfig Config
-        {
-            get 
-            { 
-                if (null == _config) _config = new SerialPortConfig();
-                return _config; 
-            }
-            set { _config = value; }
-        }
         /// <summary>
         /// Gets or sets content value.
         /// </summary>
