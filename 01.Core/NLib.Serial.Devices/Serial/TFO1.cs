@@ -10,8 +10,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Collections;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
+using NLib.Serial.Devices;
 
 #endregion
 
@@ -114,7 +113,7 @@ namespace NLib.Serial.Devices
         /// <param name="buffers">The buffer data.</param>
         public override void Parse(byte[] buffers)
         {
-            
+
         }
 
         #endregion
