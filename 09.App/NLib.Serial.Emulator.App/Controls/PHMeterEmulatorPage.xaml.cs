@@ -79,7 +79,20 @@ namespace NLib.Serial.Emulator.App.Controls
 
             onSync = true;
 
+            DateTime dt = DateTime.Now;
+
+            txtDateTime.Text = dt.ToString("yyyy-MM-dd HH:mm",
+                System.Globalization.DateTimeFormatInfo.InvariantInfo);
+
             var data = PHMeterDevice.Instance.Value;
+            try
+            {
+                data.pH = decimal.Parse(txtpH.Text);
+                data.TempC = decimal.Parse(txtTempC.Text);
+                data.Date = dt;
+            }
+            catch { }
+
             var buffers = data.ToByteArray();
             PHMeterDevice.Instance.Send(buffers);
 

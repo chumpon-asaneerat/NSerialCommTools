@@ -43,6 +43,10 @@ namespace NLib.Serial.Devices
         }
 
         #endregion
+
+        #region Public Properties
+
+        #endregion
     }
 
     #endregion
@@ -95,6 +99,10 @@ namespace NLib.Serial.Emulators
         {
             Shutdown();
         }
+
+        #endregion
+
+        #region Private Methods
 
         #endregion
 

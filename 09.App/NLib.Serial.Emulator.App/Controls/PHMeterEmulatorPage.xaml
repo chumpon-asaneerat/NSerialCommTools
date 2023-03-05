@@ -13,6 +13,52 @@
         <local:SerialCommSetting x:Name="ctrlSetting"
                                  DockPanel.Dock="Top"
                                  Height="50" />
+        <DockPanel DockPanel.Dock="Left"
+                   LastChildFill="True"
+                   Margin="0,5">
+            <StackPanel Orientation="Vertical">
+                <!--  pH  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="pH: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtpH"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  TempC  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="Temp(c): "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtTempC"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  DateTime  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="Date/Time: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtDateTime"
+                             Text=""
+                             Width="150"
+                             FontSize="18" />
+                </StackPanel>
+            </StackPanel>
+            <Grid />
+        </DockPanel>
         <Grid />
     </DockPanel>
 </UserControl>
