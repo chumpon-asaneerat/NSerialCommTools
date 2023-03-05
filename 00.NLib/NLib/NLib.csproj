@@ -1,0 +1,297 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{41A9D6C0-C833-403F-9BC1-EECDC246A428}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NLib</RootNamespace>
+    <AssemblyName>NLib</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\Executables\Production\Common\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>..\..\Executables\Production\Common\NLib.xml</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>softbase.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Data.OracleClient" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Design" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Management.Instrumentation" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Printing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Activation" />
+    <Reference Include="System.ServiceModel.Channels" />
+    <Reference Include="System.ServiceModel.Discovery" />
+    <Reference Include="System.ServiceModel.Web" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="WindowsFormsIntegration" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Core\Application\AppInstance.cs" />
+    <Compile Include="Core\Application\ApplicationManager.cs" />
+    <Compile Include="Core\Patterns\Retry.cs" />
+    <Compile Include="Core\Reflection\PropertyMaps.cs" />
+    <Compile Include="Core\Threads\NETWorkerThreads.cs" />
+    <Compile Include="Core\Threads\NThreads.cs" />
+    <Compile Include="Data\Common\Common.cs" />
+    <Compile Include="Data\Common\GenerateMethods.cs" />
+    <Compile Include="Data\Common\NDbConfig.cs" />
+    <Compile Include="Data\Common\NDbFactory.cs" />
+    <Compile Include="Data\Common\NDbFormatter.cs" />
+    <Compile Include="Data\Common\NDbTasks.cs" />
+    <Compile Include="Data\Common\Schemas.cs" />
+    <Compile Include="Data\Configs\Native\GeneralDbConfig.cs" />
+    <Compile Include="Data\Configs\Native\OracleConfig.cs" />
+    <Compile Include="Data\Configs\Native\SqlServerConfig.cs" />
+    <Compile Include="Data\Configs\Odbc\OdbcConfig.cs" />
+    <Compile Include="Data\Configs\OleDb\ExcelConfig.cs" />
+    <Compile Include="Data\Configs\OleDb\MsAccessConfig.cs" />
+    <Compile Include="Data\Configs\OleDb\OleDbConfig.cs" />
+    <Compile Include="Data\Factories\Native\OracleConnectionFactory.cs" />
+    <Compile Include="Data\Factories\Native\SqlServerConnectionFactory.cs" />
+    <Compile Include="Data\Factories\Odbc\InformixConnectionFactory.cs" />
+    <Compile Include="Data\Factories\Odbc\OdbcConnectionFactory.cs" />
+    <Compile Include="Data\Factories\OleDb\ExcelConnectionFactory.cs" />
+    <Compile Include="Data\Factories\OleDb\MsAccessConnectionFactory.cs" />
+    <Compile Include="Data\Factories\OleDb\OleDbConnectionFactory.cs" />
+    <Compile Include="Data\NDbConnection.cs" />
+    <Compile Include="Data\ORM\PersistanceFactory.cs" />
+    <Compile Include="Design\TypeConverters.cs" />
+    <Compile Include="Design\UITypeEditors.cs" />
+    <Compile Include="Devices\SerialPorts\Components\SerialPortAccess.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Devices\SerialPorts\Forms\InfoForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Devices\SerialPorts\Forms\SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Devices\SerialPorts\Forms\TerminalForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Devices\SerialPorts\SerialPorts.cs" />
+    <Compile Include="Documents\NDocument.cs" />
+    <Compile Include="Documents\Not Work\NDocuments.cs" />
+    <Compile Include="Extensions\DataBindings.cs" />
+    <Compile Include="Extensions\DataRows.cs" />
+    <Compile Include="Extensions\Files.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\DdeContext.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\DdeMessageLoop.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\DdeRegistrationEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\DdeTransaction.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\IDdeTransactionFilter.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeCallbackActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeConversationActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeErrorActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeLinkActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeMessageActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeMonitor.cs" />
+    <Compile Include="Frameworks\Dde\Advanced\Monitor\DdeStringActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Client\DdeAdviseEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Client\DdeClient.cs" />
+    <Compile Include="Frameworks\Dde\Client\DdeDisconnectedEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Common\DdeEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Common\DdeException.cs" />
+    <Compile Include="Frameworks\Dde\Components\DdeClients.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Wcf\Wcf.Common.cs" />
+    <None Include="Frameworks\Dde\DdeHistory.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\DdemlContext.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\DdemlRegistrationEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\DdemlTransaction.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\IDdemlTransactionFilter.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlCallbackActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlConversationActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlErrorActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlLinkActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlMessageActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlMonitor.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Advanced\Monitor\DdemlStringActivityEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Client\DdemlAdviseEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Client\DdemlClient.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Client\DdemlDisconnectedEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Ddeml.cs" />
+    <Compile Include="Frameworks\Dde\Internal\DdemlEventArgs.cs" />
+    <Compile Include="Frameworks\Dde\Internal\DdemlException.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Server\DdemlConversation.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Server\DdemlServer.cs" />
+    <Compile Include="Frameworks\Dde\Internal\Utility\WeakReferenceDictionary.cs" />
+    <Compile Include="Frameworks\Dde\Server\DdeConversation.cs" />
+    <Compile Include="Frameworks\Dde\Server\DdeServer.cs" />
+    <Compile Include="Networks\NetworkShares.cs" />
+    <Compile Include="Networks\Pingers.cs" />
+    <Compile Include="UI\Controls\PropertyGrid\PropertyGridEx.cs" />
+    <Compile Include="UI\Controls\Services\PageContentManager.cs" />
+    <Compile Include="Utils\Networks\NetworkUtils.cs" />
+    <Compile Include="Utils\Tools\CPM.cs" />
+    <Compile Include="Utils\Tools\SevenZip.cs" />
+    <Compile Include="Core\Logs\LogManager.cs" />
+    <Compile Include="Core\IO\NFolders.cs" />
+    <Compile Include="Utils\Win32\ControlPanelAccess.cs" />
+    <Compile Include="Utils\Win32\DataSourceUtils.cs" />
+    <Compile Include="Utils\Win32\RegistryUtils.cs" />
+    <Compile Include="Utils\Win32\ShellAPI.cs" />
+    <Compile Include="Utils\Win32\Timers.cs" />
+    <Compile Include="Utils\Win32\WinSys.cs" />
+    <Compile Include="Core\Application\Controllers\ConsoleController.cs" />
+    <Compile Include="Core\Application\Controllers\IApplicationController.cs" />
+    <Compile Include="Core\Application\Controllers\WinAppContoller.cs" />
+    <Compile Include="Core\Application\Controllers\WinServiceContoller.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Core\Application\Controllers\WpfAppContoller.cs" />
+    <Compile Include="Core\Application\Environments.cs" />
+    <Compile Include="Core\Commons\GC.cs" />
+    <Compile Include="Core\Commons\NDebugs.cs" />
+    <Compile Include="Core\Commons\Results.cs" />
+    <Compile Include="Core\Commons\Sorts.cs" />
+    <Compile Include="Core\IO\BitOps.cs" />
+    <Compile Include="Core\IO\Common.cs" />
+    <Compile Include="Core\IO\Files.cs" />
+    <Compile Include="Core\IO\Folders.cs" />
+    <Compile Include="Core\IO\Impersonation.cs" />
+    <Compile Include="Core\IO\UAC.cs" />
+    <Compile Include="Core\Process\ProcessManager.cs" />
+    <Compile Include="Core\Reflection\Common.cs" />
+    <Compile Include="Core\Reflection\DelegateInvoker.cs" />
+    <Compile Include="Core\Reflection\DynamicAccess.cs" />
+    <Compile Include="Core\Reflection\Emit\Assists.cs" />
+    <Compile Include="Core\Reflection\PropertyAccess.cs" />
+    <Compile Include="Core\Reflection\TypeEx.cs" />
+    <Compile Include="Core\Reflection\TypeUtils.cs" />
+    <Compile Include="Core\Reflection\VariableAccess.cs" />
+    <Compile Include="Core\Xml\XmlFile.cs" />
+    <Compile Include="Core\Xml\XmlManager.cs" />
+    <Compile Include="Extensions\Applications.cs" />
+    <Compile Include="Extensions\DateTime.cs" />
+    <Compile Include="Extensions\Debugs.cs" />
+    <Compile Include="Resource\Dde\DDE.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DDE.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Resource\resource.cs" />
+    <Compile Include="UI\Controls\Utils\GUI.cs" />
+    <Compile Include="Utils\Documents\Offices.cs" />
+    <Compile Include="Utils\NET\ConvertUtils.cs" />
+    <Compile Include="Utils\NET\EnumUtils.cs" />
+    <Compile Include="Utils\NET\FileUtils.cs" />
+    <Compile Include="Utils\NET\FrameworkUtils.cs" />
+    <EmbeddedResource Include="Devices\SerialPorts\Forms\InfoForm.resx">
+      <DependentUpon>InfoForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Devices\SerialPorts\Forms\SettingsForm.resx">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Devices\SerialPorts\Forms\TerminalForm.resx">
+      <DependentUpon>TerminalForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resource\MSOffices\access2003.7z" />
+    <EmbeddedResource Include="Resource\MSOffices\access2K.7z" />
+    <EmbeddedResource Include="Resource\MSOffices\excel2003.7z" />
+    <EmbeddedResource Include="Resource\MSOffices\excel97.7z" />
+    <EmbeddedResource Include="Resource\MSOffices\Word2003.7z" />
+    <EmbeddedResource Include="Resource\MSOffices\WordXP.7z" />
+    <None Include="Resource\Compressions\7-zip.chm" />
+    <Compile Include="Utils\NET\ImageUtils.cs" />
+    <Compile Include="Utils\NET\NETTypeCache.cs" />
+    <Compile Include="Utils\NET\NumericUtils.cs" />
+    <Compile Include="Utils\NET\ResourceAccess.cs" />
+    <Compile Include="Extensions\Delegates.cs" />
+    <Compile Include="Extensions\INPC.cs" />
+    <Compile Include="Extensions\ListCollections.cs" />
+    <Compile Include="Extensions\Objects.cs" />
+    <Compile Include="Extensions\Shells.cs" />
+    <Compile Include="Extensions\String.cs" />
+    <Compile Include="Extensions\ValueTypes.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\NET\StringUtils.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="softbase.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resource\Dde\DDE.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DDE.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Devices\SerialPorts\Examples\Examples.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resource\Process\CPM.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resource\Compressions\7za.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Drawing\" />
+    <Folder Include="Printings\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
