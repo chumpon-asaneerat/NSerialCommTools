@@ -42,12 +42,43 @@ namespace NLib.Serial.Terminal.App.Controls
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-
+            TFO1Terminal.Instance.OnRx += Instance_OnRx;
         }
 
         private void UserControl_Unloaded(object sender, RoutedEventArgs e)
         {
+            TFO1Terminal.Instance.OnRx -= Instance_OnRx;
+        }
 
+        #endregion
+
+        #region Rx
+
+        private void Instance_OnRx(object sender, EventArgs e)
+        {
+            UpdateTextBoxs();
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void UpdateTextBoxs()
+        {
+            var val = TFO1Terminal.Instance.Value;
+            txtF.Text = val.F.ToString("n1");
+            txtH.Text = val.H.ToString("n1");
+            txtQ.Text = val.Q.ToString("n1");
+            txtX.Text = val.X.ToString("n1");
+            txtA.Text = val.A.ToString("n1");
+            txtW0.Text = val.W0.ToString("n1");
+            txtW4.Text = val.W4.ToString("n1");
+            txtW1.Text = val.W1.ToString("n1");
+            txtW2.Text = val.W2.ToString("n0");
+            txtB.Text = val.B.ToString();
+            txtC.Text = val.C.ToString("yyyy-MM-dd HH:mm", 
+                System.Globalization.DateTimeFormatInfo.InvariantInfo);
+            txtV.Text = val.V.ToString();
         }
 
         #endregion

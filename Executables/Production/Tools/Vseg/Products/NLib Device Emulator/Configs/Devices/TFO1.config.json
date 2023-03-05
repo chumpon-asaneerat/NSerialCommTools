@@ -1,5 +1,5 @@
 {
-  "PortName": "COM4",
+  "PortName": "COM3",
   "BaudRate": 9600,
   "Parity": 0,
   "StopBits": 0,

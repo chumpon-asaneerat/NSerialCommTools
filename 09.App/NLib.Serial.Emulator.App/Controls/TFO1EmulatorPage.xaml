@@ -13,6 +13,183 @@
         <local:SerialCommSetting x:Name="ctrlSetting"
                                  DockPanel.Dock="Top"
                                  Height="50" />
+        <DockPanel DockPanel.Dock="Left"
+                   LastChildFill="True"
+                   Margin="0,5">
+            <StackPanel Orientation="Vertical">
+                <!--  F  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="F: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtF"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  H  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="H: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtH"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  Q  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="Q: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtQ"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  X  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="X: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtX"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  A  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="A: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtA"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+            </StackPanel>
+            <Grid />
+        </DockPanel>
+        <DockPanel DockPanel.Dock="Left"
+                   LastChildFill="True"
+                   Margin="0,5">
+            <StackPanel Orientation="Vertical">
+                <!--  W0  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="W0: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtW0"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  W4  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="W4: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtW4"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  W1  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="W1: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtW1"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  W2  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="W2: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtW2"
+                             Text=""
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+            </StackPanel>
+            <Grid />
+        </DockPanel>
+        <DockPanel DockPanel.Dock="Left"
+                   LastChildFill="True"
+                   Margin="0,5">
+            <StackPanel Orientation="Vertical">
+                <!--  B  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="B: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtB"
+                             Text=""
+                             Width="50"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  C  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="C: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtC"
+                             Text=""
+                             Width="150"
+                             FontSize="18"
+                             IsReadOnly="True" />
+                </StackPanel>
+                <!--  V  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="V: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtV"
+                             Text=""
+                             Width="50"
+                             FontSize="18" />
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
         <Grid />
     </DockPanel>
 </UserControl>

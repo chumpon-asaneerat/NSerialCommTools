@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -48,16 +49,65 @@ namespace NLib
             System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
             InitDevices();
+            InitTimer();
         }
 
         private void Window_Unloaded(object sender, RoutedEventArgs e)
         {
+            FreeTimer();
             FreeDevices();
         }
 
         #endregion
 
+        #region Internal Variables
+
+        private Timer _timer;
+        private bool _onSync = false;
+
+        #endregion
+
         #region Private Methods
+
+        #region Timers
+
+        private void InitTimer()
+        {
+            if (null != _timer) FreeTimer();
+            _timer = new Timer();
+            _timer.Interval = 500; // 500 ms.
+            _timer.Elapsed += _timer_Elapsed;
+            _timer.Start();
+        }
+
+        private void FreeTimer()
+        {
+            if (null != _timer)
+            {
+                try
+                {
+                    _timer.Stop();
+                    _timer.Elapsed -= _timer_Elapsed;
+                    _timer.Dispose();
+                }
+                catch { }
+            }
+            _timer = null;
+        }
+
+        private void _timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (_onSync)
+                return;
+
+            _onSync = true;
+
+            Dispatcher.Invoke(new Action(() => { SyncAndSendAll(); }));
+
+            _onSync = false;
+        }
+
+        #endregion
 
         #region Commons
 
@@ -77,19 +127,31 @@ namespace NLib
             FreeTFO1();
         }
 
+        private void SyncAndSendAll()
+        {
+            SendTFO1();
+            SendPHMeter();
+            SendWeightQA();
+            SendWeightSPUN();
+        }
+
         #endregion
 
         #region TFO1
 
         private void InitTFO1()
         {
-            TFO1Device.Instance.LoadConfig();
-            TFO1Page.Setup(TFO1Device.Instance);
+            TFO1Page.Setup();
         }
 
         private void FreeTFO1()
         {
             TFO1Device.Instance.Shutdown();
+        }
+
+        private void SendTFO1()
+        {
+            TFO1Page.Sync();
         }
 
         #endregion
@@ -98,13 +160,17 @@ namespace NLib
 
         private void InitPHMeter()
         {
-            PHMeterDevice.Instance.LoadConfig();
-            PHMeterPage.Setup(PHMeterDevice.Instance);
+            PHMeterPage.Setup();
         }
 
         private void FreePHMeter()
         {
             PHMeterDevice.Instance.Shutdown();
+        }
+
+        private void SendPHMeter()
+        {
+            PHMeterPage.Sync();
         }
 
         #endregion
@@ -113,13 +179,17 @@ namespace NLib
 
         private void InitWeightQA()
         {
-            WeightQADevice.Instance.LoadConfig();
-            WeightQAPage.Setup(WeightQADevice.Instance);
+            WeightQAPage.Setup();
         }
 
         private void FreeWeightQA()
         {
             WeightQADevice.Instance.Shutdown();
+        }
+
+        private void SendWeightQA()
+        {
+            WeightQAPage.Sync();
         }
 
         #endregion
@@ -128,8 +198,7 @@ namespace NLib
 
         private void InitWeightSPUN()
         {
-            WeightSPUNDevice.Instance.LoadConfig();
-            WeightSPUNPage.Setup(WeightSPUNDevice.Instance);
+            WeightSPUNPage.Setup();
         }
 
         private void FreeWeightSPUN()
@@ -137,19 +206,13 @@ namespace NLib
             WeightSPUNDevice.Instance.Shutdown();
         }
 
-        #endregion
-
-        #endregion
-
-        private void cmdTFO1Send_Click(object sender, RoutedEventArgs e)
+        private void SendWeightSPUN()
         {
-            var data = TFO1Device.Instance.Value;
-            data.F = 0;
-            data.A = 366;
-            data.W0 = 23;
-            data.W4 = (decimal)343.5;
-            var buffers = data.ToByteArray();
-            TFO1Device.Instance.Send(buffers);
+            WeightSPUNPage.Sync();
         }
+
+        #endregion
+
+        #endregion
     }
 }

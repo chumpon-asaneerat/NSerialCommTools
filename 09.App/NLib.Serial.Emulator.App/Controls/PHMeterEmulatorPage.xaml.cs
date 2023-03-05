@@ -38,7 +38,7 @@ namespace NLib.Serial.Emulator.App.Controls
 
         #endregion
 
-        #region Loaded/Unloader
+        #region Loaded/Unloaded
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
@@ -52,15 +52,38 @@ namespace NLib.Serial.Emulator.App.Controls
 
         #endregion
 
+        #region Internal Variables
+
+        private bool onSync = false;
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
         /// Setup.
         /// </summary>
-        /// <param name="device">The device emulator.</param>
-        public void Setup(ISerialDeviceEmulator device)
+        public void Setup()
         {
-            ctrlSetting.Setup(device);
+            PHMeterDevice.Instance.LoadConfig();
+            ctrlSetting.Setup(PHMeterDevice.Instance);
+        }
+        /// <summary>
+        /// Sync content to device.
+        /// </summary>
+        public void Sync()
+        {
+            if (!PHMeterDevice.Instance.IsOpen) return;
+
+            if (onSync) return;
+
+            onSync = true;
+
+            var data = PHMeterDevice.Instance.Value;
+            var buffers = data.ToByteArray();
+            PHMeterDevice.Instance.Send(buffers);
+
+            onSync = false;
         }
 
         #endregion

@@ -8,6 +8,7 @@
           <LogFilter Key="LogConfigManager" Enable="true" />
           <LogFilter Key="LogManager" Enable="true" />
           <LogFilter Key="SerialDevice" Enable="true" />
+          <LogFilter Key="TFO1Terminal" Enable="true" />
         </Filters>
       </FilterOptions>
     </LogFileConfig>

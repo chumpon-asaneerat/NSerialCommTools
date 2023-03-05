@@ -831,7 +831,7 @@ namespace NLib.Serial
         private bool _isProcessing = false;
         private Thread _th = null;
 
-        private object _lock = new object();
+        protected object _lock = new object();
         private List<byte> queues = new List<byte>();
 
         #endregion
@@ -1124,6 +1124,85 @@ namespace NLib.Serial
         /// Process RX Queue.
         /// </summary>
         protected abstract void ProcessRXQueue();
+
+        #endregion
+
+        #region Byte Array Methods
+
+        /// <summary>
+        /// IndexOf.
+        /// </summary>
+        /// <param name="source">The source array.</param>
+        /// <param name="pattern">The search pattern array.</param>
+        /// <returns>Returns first match occurance index.</returns>
+        protected int IndexOf(byte[] source, byte[] pattern)
+        {
+            var len = pattern.Length;
+            var limit = source.Length - len;
+            for (var i = 0; i <= limit; i++)
+            {
+                var k = 0;
+                for (; k < len; k++)
+                {
+                    if (pattern[k] != source[i + k]) break;
+                }
+                if (k == len) return i;
+            }
+            return -1;
+        }
+
+        private bool Equals(byte[] source, byte[] separator, int index)
+        {
+            for (int i = 0; i < separator.Length; ++i)
+                if (index + i >= source.Length || source[index + i] != separator[i])
+                    return false;
+            return true;
+        }
+        /*
+        private byte[] SeparateAndGetLast(byte[] source, byte[] separator)
+        {
+            for (var i = 0; i < source.Length; ++i)
+            {
+                if (Equals(source, separator, i))
+                {
+                    var index = i + separator.Length;
+                    var part = new byte[source.Length - index];
+                    Array.Copy(source, index, part, 0, part.Length);
+                    return part;
+                }
+            }
+            throw new Exception("not found");
+        }
+        */
+
+        /// <summary>
+        /// Split.
+        /// </summary>
+        /// <param name="source">The source array.</param>
+        /// <param name="separator">The separator patterns.</param>
+        /// <returns>Returns array of byte array that split by pattern.</returns>
+        protected byte[][] Split(byte[] source, byte[] separator)
+        {
+            var Parts = new List<byte[]>();
+            var Index = 0;
+            var slen = separator.Length;
+            byte[] Part;
+            for (var I = 0; I < source.Length; ++I)
+            {
+                if (Equals(source, separator, I))
+                {
+                    Part = new byte[I - Index + slen];
+                    Array.Copy(source, Index, Part, 0, Part.Length);
+                    Parts.Add(Part);
+                    Index = I + slen;
+                    I += slen - 1;
+                }
+            }
+            Part = new byte[source.Length - Index];
+            Array.Copy(source, Index, Part, 0, Part.Length);
+            Parts.Add(Part);
+            return Parts.ToArray();
+        }
 
         #endregion
 

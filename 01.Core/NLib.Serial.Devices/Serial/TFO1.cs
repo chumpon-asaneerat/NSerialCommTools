@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Reflection;
 using System.Collections;
 using NLib.Serial.Devices;
+using NLib.Devices.SerialPorts;
 
 #endregion
 
@@ -407,6 +408,284 @@ namespace NLib.Serial.Terminals
 
         #endregion
 
+        #region Private Methods
+
+        private byte[] ExtractPackage()
+        {
+            byte[] rawPackages = null;
+
+            if (null == this.Queues || this.Queues.Count <= 0)
+                return rawPackages;
+
+            byte[] buffers;
+            byte[] endPatterns = new byte[] { 0x0D, 0x0A };
+
+            if (null == endPatterns || endPatterns.Length <= 0)
+                return rawPackages;
+
+            lock (_lock)
+            {
+                // create temp buffer.
+                buffers = this.Queues.ToArray();
+            }
+
+            int idx = this.IndexOf(buffers, endPatterns);
+
+            if (idx != -1)
+            {
+                // calc length.
+                int len = idx + endPatterns.Length;
+                // prepare array size
+                rawPackages = new byte[len];
+                // copy data
+                Array.Copy(buffers, rawPackages, len);
+
+                lock (_lock)
+                {
+                    // remove extract data from queue.
+                    this.Queues.RemoveRange(0, len);
+                }
+            }
+
+            return rawPackages;
+        }
+
+        private void UpdateValues(byte[][] contents)
+        {
+            if (null == contents || contents.Length <= 0)
+                return;
+            int len = contents.Length;
+            for (int i = 0; i < len; i++)
+            {
+                UpdateValue(contents[i]);
+            }
+        }
+
+        private void UpdateValue(byte[] content)
+        {
+            if (null == content || content.Length <= 0)
+                return;
+            MethodBase med = MethodBase.GetCurrentMethod();
+
+            char hdr = (char)content[0];
+            switch (hdr)
+            {
+                case 'F':
+                    if (content.Length < 11) 
+                        break;
+                    {
+                        // F      0.0.
+                        // 46 20 20 20 20 20 20 30 2E 30 0D
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.F = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case 'H':
+                    if (content.Length < 11)
+                        break;
+                    {
+                        // H      0.0.
+                        // 48 20 20 20 20 20 20 30 2E 30 0D
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.H = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case 'Q':
+                    if (content.Length < 11)
+                        break;
+                    {
+                        // Q      0.0.
+                        // 51 20 20 20 20 20 20 30 2E 30 0D 
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.Q = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case 'X':
+                    if (content.Length < 11)
+                        break;
+                    {
+                        // X      0.0.
+                        // 58 20 20 20 20 20 20 30 2E 30 0D
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.X = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case 'A':
+                    if (content.Length < 11)
+                        break;
+                    {
+                        // A    366.0.
+                        // 41 20 20 20 20 33 36 36 2E 30 0D
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.A = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case '0':
+                    if (content.Length < 11)
+                        break;
+                    {
+                        // 0    23.0.
+                        // 30 20 20 20 20 20 32 33 2E 30 0D 
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.W0 = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case '4':
+                    if (content.Length < 11)
+                        break;
+                    {
+                        // 4    343.5.
+                        // 34 20 20 20 20 33 34 33 2E 35 0D
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.W4 = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case '1':
+                    if (content.Length < 11)
+                        break;
+                    {
+                        // 1      0.0.
+                        // 31 20 20 20 20 20 20 30 2E 30 0D 
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 9);
+                            Value.W1 = decimal.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case '2':
+                    if (content.Length < 10)
+                        break;
+                    {
+                        // 2       0.
+                        // 32 20 20 20 20 20 20 20 30 0D 
+                        try
+                        {
+                            string val = Encoding.ASCII.GetString(content, 1, 8);
+                            Value.W2 = int.Parse(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case 'B':
+                    if (content.Length < 3)
+                        break;
+                    {
+                        // B..
+                        // 42 83 0D 
+                        try
+                        {
+                            Value.B = content[1];
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case 'C':
+                    if (content.Length < 27)
+                        break;
+                    {
+                        // C20. 02. 2023. MON 09:20AM.
+                        // 43 32 30 F4 20 30 32 F3 20 32 30 32 33 F2 20 4D 4F 4E 20 30 39 3A 32 30 41 4D 0D
+                        try
+                        {
+                            string _dd = Encoding.ASCII.GetString(content, 1, 2);
+                            string _mm = Encoding.ASCII.GetString(content, 5, 2);
+                            string _yyyy = Encoding.ASCII.GetString(content, 9, 4);
+                            //string _ddd = Encoding.ASCII.GetString(content, 15, 3);
+                            string _hh = Encoding.ASCII.GetString(content, 19, 2);
+                            string _mi = Encoding.ASCII.GetString(content, 22, 2);
+                            string _ampm = Encoding.ASCII.GetString(content, 24, 2);
+
+                            int dd = int.Parse(_dd);
+                            int mm = int.Parse(_mm);
+                            int yy = int.Parse(_yyyy);
+                            int hh = int.Parse(_hh);
+                            int mi = int.Parse(_mi);
+                            if (_ampm == "AM") mi += 12;
+
+                            Value.C = new DateTime(yy, mm, dd, hh, mi, 0);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+                        }
+                    }
+                    break;
+                case 'V':
+                    if (content.Length < 4)
+                        break;
+                    {
+                        // V1..
+                        // 56 31 0D 0A 
+                        Value.V = content[1];
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        #endregion
+
         #region Onverride method(s)
 
         /// <summary>
@@ -414,7 +693,13 @@ namespace NLib.Serial.Terminals
         /// </summary>
         protected override void ProcessRXQueue()
         {
+            byte[] rawPackage = ExtractPackage();
+            if (null == rawPackage)
+                return; // no package extract.
 
+            byte[] separaters = new byte[] { 0x0D };
+            byte[][] contents = Split(rawPackage, separaters);
+            UpdateValues(contents);
         }
 
         #endregion

@@ -38,7 +38,7 @@ namespace NLib.Serial.Emulator.App.Controls
 
         #endregion
 
-        #region Loaded/Unloader
+        #region Loaded/Unloaded
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
@@ -52,15 +52,59 @@ namespace NLib.Serial.Emulator.App.Controls
 
         #endregion
 
+        #region Internal Variables
+
+        private bool onSync = false;
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
         /// Setup.
         /// </summary>
-        /// <param name="device">The device emulator.</param>
-        public void Setup(ISerialDeviceEmulator device)
+        public void Setup()
         {
-            ctrlSetting.Setup(device);
+            TFO1Device.Instance.LoadConfig();
+            ctrlSetting.Setup(TFO1Device.Instance);
+        }
+        /// <summary>
+        /// Sync content to device.
+        /// </summary>
+        public void Sync()
+        {
+            if (!TFO1Device.Instance.IsOpen) return;
+            if (onSync) return;
+
+            onSync = true;
+
+            DateTime dt = DateTime.Now;
+            
+            txtC.Text = dt.ToString("yyyy-MM-dd HH:mm", 
+                System.Globalization.DateTimeFormatInfo.InvariantInfo);
+
+            var data = TFO1Device.Instance.Value;
+            try
+            {
+                data.F = decimal.Parse(txtF.Text);
+                data.H = decimal.Parse(txtH.Text);
+                data.Q = decimal.Parse(txtQ.Text);
+                data.X = decimal.Parse(txtX.Text);
+                data.A = decimal.Parse(txtA.Text);
+                data.W0 = decimal.Parse(txtW0.Text);
+                data.W4 = decimal.Parse(txtW4.Text);
+                data.W1 = decimal.Parse(txtW1.Text);
+                data.W2 = int.Parse(txtW2.Text);
+                //data.B = byte.Parse(txtB.Text);
+                data.C = dt;
+                //data.V = byte.Parse(txtV.Text);
+            }
+            catch { }
+
+            var buffers = data.ToByteArray();
+            TFO1Device.Instance.Send(buffers);
+
+            onSync = false;
         }
 
         #endregion
