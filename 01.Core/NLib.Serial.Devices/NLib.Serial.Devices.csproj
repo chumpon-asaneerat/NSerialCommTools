@@ -53,12 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Serial\Devices\TFO1Data.cs" />
     <Compile Include="Serial\Devices\WeightQAData.cs" />
     <Compile Include="Serial\Devices\WeightSPUNData.cs" />
     <Compile Include="Serial\PHMeter.cs" />
     <Compile Include="Serial\SerialDevices.cs" />
-    <Compile Include="Serial\Emulators\TFO1Device.cs" />
     <Compile Include="Serial\Emulators\WeightQADevice.cs" />
     <Compile Include="Serial\Emulators\WeightSPUNDevice.cs" />
     <Compile Include="Serial\Terminals\TFO1Terminal.cs" />
