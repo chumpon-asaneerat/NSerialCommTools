@@ -14,6 +14,12 @@ using System.ComponentModel;
 using System.Windows.Threading;
 using System.Linq.Expressions;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+using NLib;
+using NLib.IO;
+
 #endregion
 
 namespace NLib.Serial

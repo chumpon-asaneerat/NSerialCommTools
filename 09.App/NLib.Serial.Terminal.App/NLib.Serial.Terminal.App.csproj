@@ -144,10 +144,6 @@
       <Project>{41a9d6c0-c833-403f-9bc1-eecdc246a428}</Project>
       <Name>NLib</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\01.Core\NLib.ExtensionMethods\NLib.ExtensionMethods.csproj">
-      <Project>{6b1c7c0f-a7b9-4bd3-9218-f27f40cb464f}</Project>
-      <Name>NLib.ExtensionMethods</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\01.Core\NLib.Serial.Devices\NLib.Serial.Devices.csproj">
       <Project>{32fae440-947b-4b8f-a710-2cb8887136d5}</Project>
       <Name>NLib.Serial.Devices</Name>
