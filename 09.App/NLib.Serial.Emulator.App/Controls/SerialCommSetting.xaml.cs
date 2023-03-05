@@ -41,7 +41,30 @@ namespace NLib.Serial.Emulator.App.Controls
 
         #region Internal Variables
 
-        private SerialDevice _device = null;
+        private ISerialDeviceEmulator _device = null;
+
+        #endregion
+
+        #region Button Handlers
+
+        private void cmdTogleConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (null == _device)
+                return;
+            if (!_device.IsOpen)
+            {
+                // current is Shutdown so Start
+                UpdateCurrentSetting();
+                _device.Start();
+            }
+            else
+            {
+                // current is Started so Shutdown
+                _device.Shutdown();
+            }
+
+            cmdTogleConnect.Content = (!_device.IsOpen) ? "Start" : "Shutdown";
+        }
 
         #endregion
 
@@ -100,6 +123,8 @@ namespace NLib.Serial.Emulator.App.Controls
                 _device.Config.DataBits = int.Parse(txtDataBit.Text);
                 _device.Config.StopBits = SerialPortConfig.GetStopBits(cbStopBits.SelectedItem.ToString());
                 _device.Config.Handshake = SerialPortConfig.GetHandshake(cbHandshakes.SelectedItem.ToString());
+
+                _device.SaveConfig();
             }
             catch (Exception)
             {
@@ -114,8 +139,8 @@ namespace NLib.Serial.Emulator.App.Controls
         /// <summary>
         /// Setup.
         /// </summary>
-        /// <param name="device">The device.</param>
-        public void Setup(SerialDevice device)
+        /// <param name="device">The device emulator.</param>
+        public void Setup(ISerialDeviceEmulator device)
         {
             _device = device;
             InitControls();

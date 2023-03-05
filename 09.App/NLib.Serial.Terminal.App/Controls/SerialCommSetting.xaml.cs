@@ -40,9 +40,32 @@ namespace NLib.Serial.Terminal.App.Controls
 
         #endregion
 
+        #region Button Handlers
+
+        private void cmdTogleConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (null == _device)
+                return;
+            if (!_device.IsOpen)
+            {
+                // current is disconnected so connect
+                UpdateCurrentSetting();
+                _device.Connect();
+            }
+            else
+            {
+                // current is connected so disconnect
+                _device.Disconnect();
+            }
+
+            cmdTogleConnect.Content = (!_device.IsOpen) ? "Connect" : "Disconnect";
+        }
+
+        #endregion
+
         #region Internal Variables
 
-        private SerialDevice _device = null;
+        private ISerialDeviceTerminal _device = null;
 
         #endregion
 
@@ -101,6 +124,8 @@ namespace NLib.Serial.Terminal.App.Controls
                 _device.Config.DataBits = int.Parse(txtDataBit.Text);
                 _device.Config.StopBits = SerialPortConfig.GetStopBits(cbStopBits.SelectedItem.ToString());
                 _device.Config.Handshake = SerialPortConfig.GetHandshake(cbHandshakes.SelectedItem.ToString());
+
+                _device.SaveConfig();
             }
             catch (Exception)
             {
@@ -115,8 +140,8 @@ namespace NLib.Serial.Terminal.App.Controls
         /// <summary>
         /// Setup.
         /// </summary>
-        /// <param name="device">The device.</param>
-        public void Setup(SerialDevice device)
+        /// <param name="device">The device terminal.</param>
+        public void Setup(ISerialDeviceTerminal device)
         {
             _device = device;
             InitControls();

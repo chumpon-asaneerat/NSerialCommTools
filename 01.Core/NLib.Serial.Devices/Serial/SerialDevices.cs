@@ -790,6 +790,34 @@ namespace NLib.Serial
     #region SerialDevice
 
     /// <summary>
+    /// ISerialDevice interface.
+    /// </summary>
+    public interface ISerialDevice
+    {
+        /// <summary>
+        /// Send.
+        /// </summary>
+        /// <param name="data">The data buffer to send.</param>
+        void Send(byte[] data);
+        /// <summary>
+        /// LoadConfig.
+        /// </summary>
+        void LoadConfig();
+        /// <summary>
+        /// SaveConfig.
+        /// </summary>
+        void SaveConfig();
+        /// <summary>
+        /// Gets or sets SerialPortConfig.
+        /// </summary>
+        SerialPortConfig Config { get; set; }
+        /// <summary>
+        /// Checks is port opened.
+        /// </summary>
+        bool IsOpen { get; }
+    }
+
+    /// <summary>
     /// The SerialDevice class (abstract).
     /// </summary>
     public abstract class SerialDevice
@@ -1192,9 +1220,24 @@ namespace NLib.Serial
     #region SerialDeviceEmulator
 
     /// <summary>
+    /// ISerialDeviceEmulator interface.
+    /// </summary>
+    public interface ISerialDeviceEmulator : ISerialDevice
+    {
+        /// <summary>
+        /// Start.
+        /// </summary>
+        void Start();
+        /// <summary>
+        /// Shutdown.
+        /// </summary>
+        void Shutdown();
+    }
+
+    /// <summary>
     /// The SerialDeviceEmulator class (abstract).
     /// </summary>
-    public abstract class SerialDeviceEmulator<T> : SerialDevice
+    public abstract class SerialDeviceEmulator<T> : SerialDevice, ISerialDeviceEmulator
         where T : SerialDeviceData, new()
     {
         #region Constructor and Destructor
@@ -1250,9 +1293,24 @@ namespace NLib.Serial
     #region SerialDeviceTerminal
 
     /// <summary>
+    /// ISerialDeviceTerminal interface.
+    /// </summary>
+    public interface ISerialDeviceTerminal : ISerialDevice
+    {
+        /// <summary>
+        /// Connect.
+        /// </summary>
+        void Connect();
+        /// <summary>
+        /// Disconnect.
+        /// </summary>
+        void Disconnect();
+    }
+
+    /// <summary>
     /// The SerialDeviceTerminal class (abstract).
     /// </summary>
-    public abstract class SerialDeviceTerminal<T> : SerialDevice
+    public abstract class SerialDeviceTerminal<T> : SerialDevice, ISerialDeviceTerminal
         where T : SerialDeviceData, new()
     {
         #region Constructor and Destructor

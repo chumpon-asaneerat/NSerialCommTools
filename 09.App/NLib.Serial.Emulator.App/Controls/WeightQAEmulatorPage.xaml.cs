@@ -51,5 +51,18 @@ namespace NLib.Serial.Emulator.App.Controls
         }
 
         #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Setup.
+        /// </summary>
+        /// <param name="device">The device emulator.</param>
+        public void Setup(ISerialDeviceEmulator device)
+        {
+            ctrlSetting.Setup(device);
+        }
+
+        #endregion
     }
 }

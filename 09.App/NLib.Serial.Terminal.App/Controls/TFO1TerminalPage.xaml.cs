@@ -51,5 +51,18 @@ namespace NLib.Serial.Terminal.App.Controls
         }
 
         #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Setup.
+        /// </summary>
+        /// <param name="device">The device terminal.</param>
+        public void Setup(ISerialDeviceTerminal device)
+        {
+            ctrlSetting.Setup(device);
+        }
+
+        #endregion
     }
 }

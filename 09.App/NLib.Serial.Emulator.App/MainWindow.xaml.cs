@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 
 using NLib.Serial.Devices;
 using NLib.Serial.Emulators;
+using NLib.Serial.Terminals;
 
 #endregion
 
@@ -45,14 +46,110 @@ namespace NLib
             System.Windows.Forms.Application.EnableVisualStyles();
             System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
-            TFO1Device.Instance.Config.PortName = "COM4";
-            TFO1Device.Instance.Start();
+            InitDevices();
         }
 
         private void Window_Unloaded(object sender, RoutedEventArgs e)
         {
+            FreeDevices();
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        #region Commons
+
+        private void InitDevices()
+        {
+            InitTFO1();
+            InitPHMeter();
+            InitWeightQA();
+            InitWeightSPUN();
+        }
+
+        private void FreeDevices()
+        {
+            FreeWeightSPUN();
+            FreeWeightQA();
+            FreePHMeter();
+            FreeTFO1();
+        }
+
+        #endregion
+
+        #region TFO1
+
+        private void InitTFO1()
+        {
+            
+        }
+
+        private void FreeTFO1()
+        {
             TFO1Device.Instance.Shutdown();
         }
+
+        private void TFO1_OnRx(object sender, EventArgs e)
+        {
+            /*
+            lock (TFO1Terminal.Instance)
+            {
+                var buffers = TFO1Terminal.Instance.Queues.ToArray();
+                TFO1Terminal.Instance.Queues.Clear();
+
+                List<byte> allbytes = new List<byte>();
+                var originals = viewer.GetBytes();
+                if (null != originals && originals.Length > 0) allbytes.AddRange(originals);
+                if (null != buffers && buffers.Length > 0) allbytes.AddRange(buffers);
+                viewer.SetBytes(allbytes.ToArray());
+            }
+            */
+        }
+
+        #endregion
+
+        #region PHMeter
+
+        private void InitPHMeter()
+        {
+
+        }
+
+        private void FreePHMeter()
+        {
+
+        }
+
+        #endregion
+
+        #region Weight QA
+
+        private void InitWeightQA()
+        {
+
+        }
+
+        private void FreeWeightQA()
+        {
+
+        }
+
+        #endregion
+
+        #region Weight SPUN
+
+        private void InitWeightSPUN()
+        {
+
+        }
+
+        private void FreeWeightSPUN()
+        {
+
+        }
+
+        #endregion
 
         #endregion
 

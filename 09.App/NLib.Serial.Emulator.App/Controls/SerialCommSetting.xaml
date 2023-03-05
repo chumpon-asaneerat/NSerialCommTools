@@ -68,7 +68,7 @@
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock x:Name="txtConnectStatus" Text="Status: -" />
-            <Button x:Name="cmdTogleConnect" Content="Start" />
+            <Button x:Name="cmdTogleConnect" Content="Start" Click="cmdTogleConnect_Click"/>
         </StackPanel>
         <Grid />
     </DockPanel>
