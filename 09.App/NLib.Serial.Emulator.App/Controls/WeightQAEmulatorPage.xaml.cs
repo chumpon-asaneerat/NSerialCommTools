@@ -80,6 +80,15 @@ namespace NLib.Serial.Emulator.App.Controls
             onSync = true;
 
             var data = WeightQADevice.Instance.Value;
+            try
+            {
+                data.W = decimal.Parse(txtW.Text);
+                data.O = int.Parse(txtO.Text);
+                data.Unit = txtUnit.Text.Trim().ToUpper();
+                data.Mode = txtMode.Text.Trim().ToUpper();
+            }
+            catch { }
+
             var buffers = data.ToByteArray();
             WeightQADevice.Instance.Send(buffers);
 

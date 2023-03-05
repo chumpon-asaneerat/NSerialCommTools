@@ -227,10 +227,6 @@ namespace NLib.Serial.Emulators
 
         #endregion
 
-        #region Private Methods
-
-        #endregion
-
         #region Onverride method(s)
 
         /// <summary>

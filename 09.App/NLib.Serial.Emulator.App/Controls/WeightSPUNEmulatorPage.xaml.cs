@@ -80,6 +80,12 @@ namespace NLib.Serial.Emulator.App.Controls
             onSync = true;
 
             var data = WeightSPUNDevice.Instance.Value;
+            try
+            {
+
+            }
+            catch { }
+
             var buffers = data.ToByteArray();
             WeightSPUNDevice.Instance.Send(buffers);
 

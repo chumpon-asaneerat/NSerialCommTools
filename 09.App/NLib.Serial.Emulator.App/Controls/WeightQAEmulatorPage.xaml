@@ -13,6 +13,65 @@
         <local:SerialCommSetting x:Name="ctrlSetting"
                                  DockPanel.Dock="Top"
                                  Height="50" />
+        <DockPanel DockPanel.Dock="Left"
+                   LastChildFill="True"
+                   Margin="0,5">
+            <StackPanel Orientation="Vertical">
+                <!--  W  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="W: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtW"
+                             Text="0.00"
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  O  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="O: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtO"
+                             Text="0"
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  TempC  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="Unit: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtUnit"
+                             Text="G"
+                             Width="100"
+                             FontSize="18" />
+                </StackPanel>
+                <!--  DateTime  -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="5">
+                    <TextBlock Text="Mode: "
+                               Width="100"
+                               TextAlignment="Right"
+                               FontSize="18" />
+                    <TextBox x:Name="txtMode"
+                             Text="S"
+                             Width="150"
+                             FontSize="18" />
+                </StackPanel>
+            </StackPanel>
+            <Grid />
+        </DockPanel>
         <Grid />
     </DockPanel>
 </UserControl>

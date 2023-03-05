@@ -28,8 +28,8 @@
                     <TextBox x:Name="txtpH"
                              Text=""
                              Width="100"
-                             FontSize="18" 
-                             IsReadOnly="True"/>
+                             FontSize="18"
+                             IsReadOnly="True" />
                 </StackPanel>
                 <!--  TempC  -->
                 <StackPanel Orientation="Horizontal"
@@ -42,8 +42,8 @@
                     <TextBox x:Name="txtTempC"
                              Text=""
                              Width="100"
-                             FontSize="18" 
-                             IsReadOnly="True"/>
+                             FontSize="18"
+                             IsReadOnly="True" />
                 </StackPanel>
                 <!--  DateTime  -->
                 <StackPanel Orientation="Horizontal"
@@ -56,8 +56,8 @@
                     <TextBox x:Name="txtDateTime"
                              Text=""
                              Width="150"
-                             FontSize="18" 
-                             IsReadOnly="True"/>
+                             FontSize="18"
+                             IsReadOnly="True" />
                 </StackPanel>
             </StackPanel>
             <Grid />

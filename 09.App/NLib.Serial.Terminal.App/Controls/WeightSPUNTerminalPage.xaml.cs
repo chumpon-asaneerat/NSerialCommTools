@@ -42,12 +42,36 @@ namespace NLib.Serial.Terminal.App.Controls
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-
+            WeightSPUNTerminal.Instance.OnRx += Instance_OnRx;
         }
 
         private void UserControl_Unloaded(object sender, RoutedEventArgs e)
         {
+            WeightSPUNTerminal.Instance.OnRx -= Instance_OnRx;
+        }
 
+        #endregion
+
+        #region Rx
+
+        private void Instance_OnRx(object sender, EventArgs e)
+        {
+            UpdateTextBoxs();
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void UpdateTextBoxs()
+        {
+            var val = WeightSPUNTerminal.Instance.Value;
+            /*
+            txtpH.Text = val.pH.ToString("n2");
+            txtTempC.Text = val.TempC.ToString("n1");
+            txtDateTime.Text = val.Date.ToString("yyyy-MM-dd HH:mm",
+                System.Globalization.DateTimeFormatInfo.InvariantInfo);
+            */
         }
 
         #endregion
