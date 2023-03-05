@@ -33,16 +33,6 @@
                     <local:WeightSPUNEmulatorPage x:Name="WeightSPUNPage" />
                 </DockPanel>
             </TabItem>
-            <TabItem Header="HEX View">
-                <DockPanel LastChildFill="True">
-                    <DockPanel DockPanel.Dock="Top" LastChildFill="True">
-                        <Grid />
-                    </DockPanel>
-                    <WindowsFormsHost>
-                        <winformCtrl:ByteViewer x:Name="viewer" Dock="Fill" />
-                    </WindowsFormsHost>
-                </DockPanel>
-            </TabItem>
         </TabControl>
     </Grid>
 </Window>

@@ -16,8 +16,9 @@ Implements #76
 Implements #75
 - 
 
+[Commit]
 Implements #74
-- 
+- Update projects structures #19.
 
 [Commit]
 Implements #73
