@@ -13456,6 +13456,21 @@
             </summary>
             <typeparam name="I">The server service interface type.</typeparam>
         </member>
+        <member name="T:NLib.Wcf.WcfBasicClient`1.CallState">
+            <summary />
+        </member>
+        <member name="M:NLib.Wcf.WcfBasicClient`1.CallState.#ctor">
+            <summary />
+        </member>
+        <member name="P:NLib.Wcf.WcfBasicClient`1.CallState.Timeout">
+            <summary />
+        </member>
+        <member name="P:NLib.Wcf.WcfBasicClient`1.CallState.Error">
+            <summary />
+        </member>
+        <member name="P:NLib.Wcf.WcfBasicClient`1.CallState.Completed">
+            <summary />
+        </member>
         <member name="M:NLib.Wcf.WcfBasicClient`1.Call(System.Action,System.Int32)">
             <summary>
             Execute action.

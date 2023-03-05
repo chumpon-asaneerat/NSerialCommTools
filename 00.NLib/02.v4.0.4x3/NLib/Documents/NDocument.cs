@@ -1215,7 +1215,7 @@ namespace NLib.Data
         /// <summary>
         /// Gets NDocument Type Name.
         /// </summary>
-        public static string NDocumentTypeName
+        public new static string NDocumentTypeName
         {
             get { return "Microsoft SQL Server (Native)"; }
         }
@@ -1276,7 +1276,7 @@ namespace NLib.Data
         /// <summary>
         /// Gets NDocument Type Name.
         /// </summary>
-        public static string NDocumentTypeName
+        public new static string NDocumentTypeName
         {
             get { return "Oracle (Native)"; }
         }
@@ -1337,7 +1337,7 @@ namespace NLib.Data
         /// <summary>
         /// Gets NDocument Type Name.
         /// </summary>
-        public static string NDocumentTypeName
+        public new static string NDocumentTypeName
         {
             get { return "MS Access (OLEDB)"; }
         }
@@ -1398,7 +1398,7 @@ namespace NLib.Data
         /// <summary>
         /// Gets NDocument Type Name.
         /// </summary>
-        public static string NDocumentTypeName
+        public new static string NDocumentTypeName
         {
             get { return "MS Excel (OLEDB)"; }
         }

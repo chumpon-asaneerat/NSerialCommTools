@@ -1601,9 +1601,11 @@ namespace NLib.Wcf
 
 		delegate void VoidDelegate();
 
+		/// <summary />
 		protected class CallState
 		{
-			public CallState()
+            /// <summary />
+            public CallState()
 				: base()
 			{
 				this.Timeout = false;
@@ -1611,9 +1613,12 @@ namespace NLib.Wcf
 				this.Completed = false;
 			}
 
-			public bool Timeout { get; set; }
-			public Exception Error { get; set; }
-			public bool Completed { get; set; }
+            /// <summary />
+            public bool Timeout { get; set; }
+            /// <summary />
+            public Exception Error { get; set; }
+            /// <summary />
+            public bool Completed { get; set; }
 		}
 		/// <summary>
 		/// Execute action.
