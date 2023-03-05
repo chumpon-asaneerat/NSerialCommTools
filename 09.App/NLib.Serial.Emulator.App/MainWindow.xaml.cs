@@ -83,6 +83,7 @@ namespace NLib
 
         private void InitTFO1()
         {
+            TFO1Device.Instance.LoadConfig();
             TFO1Page.Setup(TFO1Device.Instance);
         }
 
@@ -97,6 +98,7 @@ namespace NLib
 
         private void InitPHMeter()
         {
+            PHMeterDevice.Instance.LoadConfig();
             PHMeterPage.Setup(PHMeterDevice.Instance);
         }
 
@@ -111,6 +113,7 @@ namespace NLib
 
         private void InitWeightQA()
         {
+            WeightQADevice.Instance.LoadConfig();
             WeightQAPage.Setup(WeightQADevice.Instance);
         }
 
@@ -125,6 +128,7 @@ namespace NLib
 
         private void InitWeightSPUN()
         {
+            WeightSPUNDevice.Instance.LoadConfig();
             WeightSPUNPage.Setup(WeightSPUNDevice.Instance);
         }
 

@@ -82,6 +82,7 @@ namespace NLib
 
         private void InitTFO1()
         {
+            TFO1Terminal.Instance.LoadConfig();
             TFO1Terminal.Instance.OnRx += TFO1_OnRx;
             TFO1Page.Setup(TFO1Terminal.Instance);
         }
@@ -115,6 +116,7 @@ namespace NLib
 
         private void InitPHMeter()
         {
+            PHMeterTerminal.Instance.LoadConfig();
             PHMeterTerminal.Instance.OnRx += PHMeter_OnRx;
             PHMeterPage.Setup(PHMeterTerminal.Instance);
         }
@@ -136,6 +138,7 @@ namespace NLib
 
         private void InitWeightQA()
         {
+            WeightQATerminal.Instance.LoadConfig();
             WeightQATerminal.Instance.OnRx += WeightSPUN_OnRx;
             WeightQAPage.Setup(WeightQATerminal.Instance);
         }
@@ -157,6 +160,7 @@ namespace NLib
 
         private void InitWeightSPUN()
         {
+            WeightSPUNTerminal.Instance.LoadConfig();
             WeightSPUNTerminal.Instance.OnRx += WeightSPUN_OnRx;
             WeightSPUNPage.Setup(WeightSPUNTerminal.Instance);
         }
