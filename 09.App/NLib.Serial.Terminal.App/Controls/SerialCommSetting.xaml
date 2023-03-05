@@ -41,7 +41,7 @@
                     VerticalAlignment="Center"
                     Margin="2">
             <TextBlock Text="Data Bits:" />
-            <TextBox x:Name="txtDataBit" Text="" />
+            <TextBox x:Name="txtDataBit" Text="8" />
         </StackPanel>
         <!--  STOP BITS  -->
         <StackPanel Orientation="Vertical"

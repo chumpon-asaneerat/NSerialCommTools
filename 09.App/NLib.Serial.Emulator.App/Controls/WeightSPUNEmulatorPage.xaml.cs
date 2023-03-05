@@ -82,7 +82,9 @@ namespace NLib.Serial.Emulator.App.Controls
             var data = WeightSPUNDevice.Instance.Value;
             try
             {
-
+                data.W = decimal.Parse(txtW.Text);
+                data.O = txtO.Text.Trim();
+                data.Unit = txtUnit.Text.Trim();
             }
             catch { }
 

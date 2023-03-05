@@ -66,12 +66,9 @@ namespace NLib.Serial.Terminal.App.Controls
         private void UpdateTextBoxs()
         {
             var val = WeightSPUNTerminal.Instance.Value;
-            /*
-            txtpH.Text = val.pH.ToString("n2");
-            txtTempC.Text = val.TempC.ToString("n1");
-            txtDateTime.Text = val.Date.ToString("yyyy-MM-dd HH:mm",
-                System.Globalization.DateTimeFormatInfo.InvariantInfo);
-            */
+            txtW.Text = val.W.ToString("n2");
+            txtO.Text = val.O;
+            txtUnit.Text = val.Unit;
         }
 
         #endregion

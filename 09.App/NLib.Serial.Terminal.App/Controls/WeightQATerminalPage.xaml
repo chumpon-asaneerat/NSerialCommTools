@@ -45,7 +45,7 @@
                              FontSize="18"
                              IsReadOnly="True" />
                 </StackPanel>
-                <!--  TempC  -->
+                <!--  Unit  -->
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="5">
@@ -59,7 +59,7 @@
                              FontSize="18"
                              IsReadOnly="True" />
                 </StackPanel>
-                <!--  DateTime  -->
+                <!--  Mode  -->
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="5">
