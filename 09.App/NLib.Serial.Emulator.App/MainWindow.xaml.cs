@@ -15,6 +15,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using NLib.Serial.Devices;
+using NLib.Serial.Emulator.App.Controls;
 using NLib.Serial.Emulators;
 using NLib.Serial.Terminals;
 
@@ -82,29 +83,12 @@ namespace NLib
 
         private void InitTFO1()
         {
-            
+            TFO1Page.Setup(TFO1Device.Instance);
         }
 
         private void FreeTFO1()
         {
             TFO1Device.Instance.Shutdown();
-        }
-
-        private void TFO1_OnRx(object sender, EventArgs e)
-        {
-            /*
-            lock (TFO1Terminal.Instance)
-            {
-                var buffers = TFO1Terminal.Instance.Queues.ToArray();
-                TFO1Terminal.Instance.Queues.Clear();
-
-                List<byte> allbytes = new List<byte>();
-                var originals = viewer.GetBytes();
-                if (null != originals && originals.Length > 0) allbytes.AddRange(originals);
-                if (null != buffers && buffers.Length > 0) allbytes.AddRange(buffers);
-                viewer.SetBytes(allbytes.ToArray());
-            }
-            */
         }
 
         #endregion

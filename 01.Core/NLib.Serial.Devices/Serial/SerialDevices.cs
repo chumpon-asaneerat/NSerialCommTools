@@ -957,6 +957,10 @@ namespace NLib.Serial
         {
             SerialPortConfig cfg;
 
+            var folder = ConfigFolder;
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
             string fileName = Path.Combine(ConfigFolder, ConfigFileName);
             if (!ConfigExists(fileName))
             {
@@ -1168,8 +1172,16 @@ namespace NLib.Serial
         public void SaveConfig()
         {
             var cfg = Config;
-            string fileName = Path.Combine(ConfigFolder, ConfigFileName);
-            NJson.SaveToFile(cfg, fileName, false);
+            if (null != cfg)
+            {
+                var folder = ConfigFolder;
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+
+                string cfgFileName = ConfigFileName;
+                string fileName = Path.Combine(ConfigFolder, cfgFileName);
+                NJson.SaveToFile(cfg, fileName, false);
+            }
         }
 
         #endregion

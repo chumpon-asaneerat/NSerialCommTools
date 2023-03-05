@@ -42,7 +42,7 @@ namespace NLib
                     /*  This property is required */
                     CompanyName = "Vseg",
                     /*  This property is required */
-                    ProductName = "NLib Device Terminal",
+                    ProductName = "NLib Device Emulator",
                     /* For Application Version */
                     Version = "1",
                     Minor = "0",
