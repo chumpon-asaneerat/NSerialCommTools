@@ -109,6 +109,15 @@ namespace NLib.Serial.Emulators
         }
 
         #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Gets Device Name.
+        /// </summary>
+        public override string DeviceName { get { return "WeightQA"; } }
+
+        #endregion
     }
 
     #endregion
@@ -173,6 +182,15 @@ namespace NLib.Serial.Terminals
         {
 
         }
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Gets Device Name.
+        /// </summary>
+        public override string DeviceName { get { return "WeightQA"; } }
 
         #endregion
     }

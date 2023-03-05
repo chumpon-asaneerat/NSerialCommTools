@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LogConfig>
+  <FileConfigs>
+    <LogFileConfig Prefix="app" Enable="true" Mode="Start" FileSize="1048576" FileLimit="5">
+      <Format Value="[$type$]|&lt;$thread$&gt;|&lt;$classname$.$methodname$&gt;|$message$" />
+      <FilterOptions AutoEnable="true">
+        <Filters>
+          <LogFilter Key="LogConfigManager" Enable="true" />
+          <LogFilter Key="LogManager" Enable="true" />
+          <LogFilter Key="SerialDevice" Enable="true" />
+        </Filters>
+      </FilterOptions>
+    </LogFileConfig>
+  </FileConfigs>
+</LogConfig>
