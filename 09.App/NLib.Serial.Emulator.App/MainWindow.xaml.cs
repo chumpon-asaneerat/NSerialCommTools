@@ -19,7 +19,7 @@ using NLib.Serial.Emulators;
 
 #endregion
 
-namespace NLib.Serial.Emulator.App
+namespace NLib
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

@@ -20,7 +20,7 @@ using NLib.Serial.Terminals;
 
 #endregion
 
-namespace NLib.Serial.Terminal.App
+namespace NLib
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
