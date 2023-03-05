@@ -23,6 +23,14 @@ namespace NLib.Serial.Devices
     /// </summary>
     public class PHMeterData : SerialDeviceData
     {
+        #region Internal Variables
+
+        private decimal _pH = decimal.Zero;
+        private decimal _TempC = decimal.Zero;
+        private DateTime _Date = DateTime.Now;
+
+        #endregion
+
         #region Override Methods
 
         /// <summary>
@@ -123,10 +131,6 @@ namespace NLib.Serial.Devices
         #endregion
 
         #region Public Properties
-
-        private decimal _pH = decimal.Zero;
-        private decimal _TempC = decimal.Zero;
-        private DateTime _Date = DateTime.Now;
 
         public decimal pH 
         {
@@ -302,6 +306,167 @@ namespace NLib.Serial.Terminals
 
         #endregion
 
+        #region Private Methods
+
+        private byte[] ExtractPackage()
+        {
+            byte[] rawPackages = null;
+
+            if (null == this.Queues || this.Queues.Count <= 0)
+                return rawPackages;
+
+            byte[] buffers;
+            byte[] endPatterns = new byte[] { 0x0D, 0x0A };
+
+            if (null == endPatterns || endPatterns.Length <= 0)
+                return rawPackages;
+
+            lock (_lock)
+            {
+                // create temp buffer.
+                buffers = this.Queues.ToArray();
+            }
+
+            int idx = this.IndexOf(buffers, endPatterns);
+
+            if (idx != -1)
+            {
+                // calc length.
+                int len = idx + endPatterns.Length;
+                // prepare array size
+                rawPackages = new byte[len];
+                // copy data
+                Array.Copy(buffers, rawPackages, len);
+
+                lock (_lock)
+                {
+                    // remove extract data from queue.
+                    this.Queues.RemoveRange(0, len);
+                }
+            }
+
+            return rawPackages;
+        }
+
+        private void UpdateValues(byte[][] contents)
+        {
+            if (null == contents || contents.Length <= 0)
+                return;
+            int len = contents.Length;
+            for (int i = 0; i < len; i++)
+            {
+                UpdateValue(contents[i]);
+            }
+        }
+
+        private void UpdateValue(byte[] content)
+        {
+            if (null == content || content.Length <= 0)
+                return;
+            MethodBase med = MethodBase.GetCurrentMethod();
+
+            string line = Encoding.ASCII.GetString(content);
+            if (string.IsNullOrEmpty(line))
+                return;
+
+            line = line.Trim(); // trim string to remove new line.
+
+            if (line.Contains("ATC") && line.Contains("pH"))
+            {
+                // pH and Temp
+                try
+                {
+                    // Get pH
+                    int iPh = line.IndexOf("pH");
+                    string sPh = line.Substring(0, iPh);
+                    Value.pH = decimal.Parse(sPh);
+
+                    var elems = line.Split(new string[] { "pH" }, StringSplitOptions.RemoveEmptyEntries);
+                    string lNext = (null != elems && elems.Length >= 2) ? elems[1] : null;
+                    if (string.IsNullOrEmpty(lNext))
+                        return;
+
+                    // Get Temp C
+                    int iTmp = lNext.IndexOf("C ATC");
+                    if (iTmp > 1)
+                    {
+                        string sTmp = lNext.Substring(0, iTmp - 1);
+                        Value.TempC = decimal.Parse(sTmp);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    med.Err(ex);
+                }
+            }
+            else if (line.Contains("ATC") && !line.Contains("pH"))
+            {
+                // Temp Only
+                try
+                {
+                    int iTmp = line.IndexOf("C ATC");
+                    if (iTmp > 1)
+                    {
+                        string sTmp = line.Substring(0, iTmp - 1);
+                        Value.TempC = decimal.Parse(sTmp);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    med.Err(ex);
+                }
+            }
+            else if (!line.Contains("ATC") && line.Contains("pH"))
+            {
+                // pH only
+                try
+                {
+                    int iPh = line.IndexOf("pH");
+                    string sPh = line.Substring(0, iPh);
+                    Value.pH = decimal.Parse(sPh);
+                }
+                catch (Exception ex)
+                {
+                    med.Err(ex);
+                }
+            }
+            else if (line.Contains("-"))
+            {
+                // assume date
+                DateTime dt = Value.Date;
+                try
+                {
+                    DateTime val = DateTime.ParseExact(line, "dd-MMM-yyyy",
+                        DateTimeFormatInfo.InvariantInfo);
+                    Value.Date = new DateTime(val.Year, val.Month, val.Day, dt.Hour, dt.Minute, 0);
+                }
+                catch (Exception ex)
+                {
+                    med.Err(ex);
+                    Value.Date = dt;
+                }
+            }
+            else if (line.Contains(":"))
+            {
+                // assume time
+                DateTime dt = Value.Date;
+                try
+                {
+                    DateTime val = DateTime.ParseExact(line, "HH:mm",
+                        DateTimeFormatInfo.InvariantInfo);
+
+                    Value.Date = new DateTime(dt.Year, dt.Month, dt.Day, val.Hour, val.Minute, 0);
+                }
+                catch (Exception ex)
+                {
+                    med.Err(ex);
+                    Value.Date = dt;
+                }
+            }
+        }
+
+        #endregion
+
         #region Onverride method(s)
 
         /// <summary>
@@ -309,7 +474,13 @@ namespace NLib.Serial.Terminals
         /// </summary>
         protected override void ProcessRXQueue()
         {
+            byte[] rawPackage = ExtractPackage();
+            if (null == rawPackage)
+                return; // no package extract.
 
+            byte[] separaters = new byte[] { 0x0D, 0x0A };
+            byte[][] contents = Split(rawPackage, separaters);
+            UpdateValues(contents);
         }
 
         #endregion

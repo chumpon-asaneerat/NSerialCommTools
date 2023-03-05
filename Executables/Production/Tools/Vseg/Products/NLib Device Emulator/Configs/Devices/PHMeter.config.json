@@ -1,8 +1,8 @@
 {
-  "PortName": "COM6",
+  "PortName": "COM5",
   "BaudRate": 9600,
   "Parity": 0,
   "StopBits": 1,
-  "DataBits": 0,
+  "DataBits": 8,
   "Handshake": 0
 }

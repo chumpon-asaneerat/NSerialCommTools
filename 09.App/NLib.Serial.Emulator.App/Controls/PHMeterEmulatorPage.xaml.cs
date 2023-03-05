@@ -55,6 +55,7 @@ namespace NLib.Serial.Emulator.App.Controls
         #region Internal Variables
 
         private bool onSync = false;
+        private Random rand = new Random();
 
         #endregion
 
@@ -93,7 +94,8 @@ namespace NLib.Serial.Emulator.App.Controls
             }
             catch { }
 
-            var buffers = data.ToByteArray();
+            int atcCnt = rand.Next(1, 3);
+            var buffers = data.ToByteArray(atcCnt);
             PHMeterDevice.Instance.Send(buffers);
 
             onSync = false;

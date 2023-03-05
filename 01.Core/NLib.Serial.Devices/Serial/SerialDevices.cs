@@ -831,6 +831,8 @@ namespace NLib.Serial
         private bool _isProcessing = false;
         private Thread _th = null;
 
+        private int _maxRxQueueSize = 1000;
+
         protected object _lock = new object();
         private List<byte> queues = new List<byte>();
 
@@ -902,6 +904,7 @@ namespace NLib.Serial
                 {
                     if (null != _comm)
                     {
+                        // Read data and add to queue
                         int byteToRead = _comm.BytesToRead;
                         if (byteToRead > 0)
                         {
@@ -909,8 +912,22 @@ namespace NLib.Serial
                             {
                                 byte[] buffers = new byte[byteToRead];
                                 _comm.Read(buffers, 0, byteToRead);
-                                queues.AddRange(buffers);
+
+                                if (queues.Count < _maxRxQueueSize)
+                                {
+                                    queues.AddRange(buffers);
+                                }
                             }
+                        }
+
+                        // check queue has avaliable data.
+                        int cnt = 0;
+                        lock (_lock)
+                        {
+                            cnt = queues.Count;
+                        }
+                        if (cnt > 0)
+                        {
                             // process rx queue in main ui thread.
                             ProcessRXQueue();
                             // Raise event.
@@ -921,7 +938,7 @@ namespace NLib.Serial
                 catch (TimeoutException) { }
                 catch (Exception) { }
 
-                Thread.Sleep(50);
+                Thread.Sleep(10);
                 Application.DoEvents();
             }
             FreeRXThread();
@@ -1031,6 +1048,9 @@ namespace NLib.Serial
             if (null != _comm)
                 return; // already connected.
 
+            // clear queue
+            ClearQueue();
+
             #region Set port
 
             try
@@ -1110,6 +1130,9 @@ namespace NLib.Serial
                 catch { }
             }
             _comm = null;
+
+            // clear queue
+            ClearQueue();
         }
 
         #endregion
@@ -1232,6 +1255,18 @@ namespace NLib.Serial
                 med.Err(med, ex);
             }
         }
+        /// <summary>
+        /// Clear queue.
+        /// </summary>
+        public void ClearQueue()
+        {
+            // clear queue
+            lock (_lock)
+            {
+                if (null == queues) queues = new List<byte>();
+                queues.Clear();
+            }
+        }
 
         #endregion
 
@@ -1293,6 +1328,14 @@ namespace NLib.Serial
         /// Checks is port opened.
         /// </summary>
         public bool IsOpen { get { return (null != _comm && _comm.IsOpen); } }
+        /// <summary>
+        /// Gets or sets Max Rx Queue Size. Default is 1000 bytes.
+        /// </summary>
+        public int MaxRxQueueSize 
+        { 
+            get { return _maxRxQueueSize; } 
+            set { _maxRxQueueSize = value; } 
+        }
 
         #endregion
 
