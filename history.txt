@@ -19,8 +19,12 @@ Implements #55
 Implements #54
 - 
 
+[Commit]
 Implements #53
-- 
+- Add NLib libraries
+  - Add Lastest version
+  - Add v4.0.4x1
+  - Add v4.0.4x3
 
 [Commit]
 Implements #52

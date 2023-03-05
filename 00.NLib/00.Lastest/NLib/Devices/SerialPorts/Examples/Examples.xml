@@ -1,0 +1,63 @@
+﻿<Comment>
+  <Member name="SerialPortAccess">
+    <example>
+      The following example demonstrates how to used The SerialPortAccess class.
+      To begin create new Form and Add 2 SerialPortAccess components, 2 TextBoxes, 2 Buttons and 2 ListBoxes
+      <code lang="C#">
+        using System;
+        using System.Collections.Generic;
+        using System.ComponentModel;
+        using System.Data;
+        using System.Drawing;
+        using System.Text;
+        using System.Windows.Forms;
+
+        private void Form45_Load(object sender, EventArgs e)
+        {
+        serial1.ApplyDefaultSetting("COM5:");
+        serial2.ApplyDefaultSetting("COM6:");
+        serial1.Open();
+        serial2.Open();
+        }
+
+        private void Form45_FormClosing(object sender, FormClosingEventArgs e)
+        {
+        serial1.Close();
+        serial2.Close();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+        if (serial1.Online) serial1.Send(textBox1.Text);
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+        if (serial2.Online) serial2.Send(textBox2.Text);
+        }
+
+        private void serial1_OnTerminalRx(string ch, bool newline)
+        {
+        if (ch.Trim().EndsWith("CR>") || ch.Trim().EndsWith("LF>"))
+        {
+        if (recvData1.Length > 0) listBox1.Items.Add(recvData1);
+
+        recvData1 = string.Empty;
+        }
+        else recvData1 += ch.Trim();
+        }
+
+        private void serial2_OnTerminalRx(string ch, bool newline)
+        {
+        if (ch.Trim().EndsWith("CR>") || ch.Trim().EndsWith("LF>"))
+        {
+        if (recvData2.Length > 0) listBox2.Items.Add(recvData2);
+
+        recvData2 = string.Empty;
+        }
+        else recvData2 += ch.Trim();
+        }
+      </code>
+    </example>
+  </Member>
+</Comment>
