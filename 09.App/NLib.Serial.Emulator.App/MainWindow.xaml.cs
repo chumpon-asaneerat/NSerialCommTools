@@ -97,12 +97,12 @@ namespace NLib
 
         private void InitPHMeter()
         {
-
+            PHMeterPage.Setup(PHMeterDevice.Instance);
         }
 
         private void FreePHMeter()
         {
-
+            PHMeterDevice.Instance.Shutdown();
         }
 
         #endregion
@@ -111,12 +111,12 @@ namespace NLib
 
         private void InitWeightQA()
         {
-
+            WeightQAPage.Setup(WeightQADevice.Instance);
         }
 
         private void FreeWeightQA()
         {
-
+            WeightQADevice.Instance.Shutdown();
         }
 
         #endregion
@@ -125,12 +125,12 @@ namespace NLib
 
         private void InitWeightSPUN()
         {
-
+            WeightSPUNPage.Setup(WeightSPUNDevice.Instance);
         }
 
         private void FreeWeightSPUN()
         {
-
+            WeightSPUNDevice.Instance.Shutdown();
         }
 
         #endregion

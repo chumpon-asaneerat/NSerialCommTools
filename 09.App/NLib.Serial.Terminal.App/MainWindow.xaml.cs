@@ -82,8 +82,8 @@ namespace NLib
 
         private void InitTFO1()
         {
-            TFO1Terminal.Instance.Config.PortName = "COM3";
             TFO1Terminal.Instance.OnRx += TFO1_OnRx;
+            TFO1Page.Setup(TFO1Terminal.Instance);
         }
 
         private void FreeTFO1()
@@ -115,10 +115,17 @@ namespace NLib
 
         private void InitPHMeter()
         {
-
+            PHMeterTerminal.Instance.OnRx += PHMeter_OnRx;
+            PHMeterPage.Setup(PHMeterTerminal.Instance);
         }
 
         private void FreePHMeter()
+        {
+            PHMeterTerminal.Instance.Disconnect();
+            PHMeterTerminal.Instance.OnRx -= PHMeter_OnRx;
+        }
+
+        private void PHMeter_OnRx(object sender, EventArgs e)
         {
 
         }
@@ -129,10 +136,17 @@ namespace NLib
 
         private void InitWeightQA()
         {
-
+            WeightQATerminal.Instance.OnRx += WeightSPUN_OnRx;
+            WeightQAPage.Setup(WeightQATerminal.Instance);
         }
 
         private void FreeWeightQA()
+        {
+            WeightQATerminal.Instance.Disconnect();
+            WeightQATerminal.Instance.OnRx -= WeightQA_OnRx;
+        }
+
+        private void WeightQA_OnRx(object sender, EventArgs e)
         {
 
         }
@@ -143,10 +157,17 @@ namespace NLib
 
         private void InitWeightSPUN()
         {
-
+            WeightSPUNTerminal.Instance.OnRx += WeightSPUN_OnRx;
+            WeightSPUNPage.Setup(WeightSPUNTerminal.Instance);
         }
 
         private void FreeWeightSPUN()
+        {
+            WeightSPUNTerminal.Instance.Disconnect();
+            WeightSPUNTerminal.Instance.OnRx -= WeightSPUN_OnRx;
+        }
+
+        private void WeightSPUN_OnRx(object sender, EventArgs e)
         {
 
         }
