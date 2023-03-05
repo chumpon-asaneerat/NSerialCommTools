@@ -68,6 +68,15 @@
     <Compile Include="Serial\Terminals\WeightSPUNTerminal.cs" />
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\..\00.NLib\00.Lastest\NLib\NLib.csproj">
+      <Project>{41a9d6c0-c833-403f-9bc1-eecdc246a428}</Project>
+      <Name>NLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NLib.ExtensionMethods\NLib.ExtensionMethods.00.Lastest.csproj">
+      <Project>{6b1c7c0f-a7b9-4bd3-9218-f27f40cb464f}</Project>
+      <Name>NLib.ExtensionMethods.00.Lastest</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
