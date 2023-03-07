@@ -26,7 +26,6 @@ namespace NLib.Serial.Devices
         #region Internal Variables
 
         private decimal _W = decimal.Zero;
-        private int _O = 0;
         private string _Unit = "G";
         private string _Mode = "S";
 
@@ -48,8 +47,12 @@ namespace NLib.Serial.Devices
             string output;
             // +007.12/3 G S..
             // 2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A
-            output = "+" + W.ToString("F2").PadLeft(6, '0');
-            output += "/" + O.ToString("D0");
+
+            string actualW = W.ToString("F3").PadLeft(7, '0');
+            string firstPart = actualW.Substring(0, actualW.Length - 1);
+            string lastDigit = actualW.Substring(actualW.Length - 1, 1);
+            output = "+" + firstPart;
+            output += "/" + lastDigit;
             output += " " + unit;
             output += " " + mode;
             output += ascii.x0D + ascii.x0A;
@@ -79,19 +82,6 @@ namespace NLib.Serial.Devices
                 {
                     _W = value;
                     Raise(() => this.W);
-                }
-            }
-        }
-
-        public int O
-        {
-            get { return _O; }
-            set
-            {
-                if (_O != value)
-                {
-                    _O = value;
-                    Raise(() => this.O);
                 }
             }
         }
@@ -318,7 +308,12 @@ namespace NLib.Serial.Terminals
 
             string[] elems = line.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             if (null == elems || elems.Length < 2) return;
-            string w = elems[0].Trim();
+            string sUM = elems[1].Trim();
+            string[] elems2 = sUM.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+            if (null == elems2 || elems2.Length < 3) return;
+
+
+            string w = elems[0].Trim() + elems2[0].Trim();
             try
             {
                 Value.W = decimal.Parse(w);
@@ -328,12 +323,8 @@ namespace NLib.Serial.Terminals
                 med.Err(ex);
             }
 
-            string sUM = elems[1].Trim();
-            string[] elems2 = sUM.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-            if (null == elems2 || elems2.Length < 3) return;
             try
             {
-                Value.O = int.Parse(elems2[0]);
                 Value.Unit = elems2[1].Trim().ToUpper();
                 Value.Mode = elems2[2].Trim().ToUpper();
             }

@@ -2,7 +2,7 @@
   "PortName": "COM3",
   "BaudRate": 9600,
   "Parity": 0,
-  "StopBits": 0,
+  "StopBits": 1,
   "DataBits": 8,
   "Handshake": 0
 }

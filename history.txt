@@ -22,8 +22,10 @@ Implements #84
 Implements #83
 - 
 
+[Commit]
 Implements #82
-- 
+- Implements NLib.Serial.Devices project #33.
+  - Fixed WeightQA protocol.
 
 [Commit]
 Implements #81

@@ -83,7 +83,6 @@ namespace NLib.Serial.Emulator.App.Controls
             try
             {
                 data.W = decimal.Parse(txtW.Text);
-                data.O = int.Parse(txtO.Text);
                 data.Unit = txtUnit.Text.Trim().ToUpper();
                 data.Mode = txtMode.Text.Trim().ToUpper();
             }

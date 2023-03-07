@@ -26,21 +26,7 @@
                                TextAlignment="Right"
                                FontSize="18" />
                     <TextBox x:Name="txtW"
-                             Text="0.00"
-                             Width="100"
-                             FontSize="18"
-                             IsReadOnly="True" />
-                </StackPanel>
-                <!--  O  -->
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="5">
-                    <TextBlock Text="O: "
-                               Width="100"
-                               TextAlignment="Right"
-                               FontSize="18" />
-                    <TextBox x:Name="txtO"
-                             Text="0"
+                             Text="0.000"
                              Width="100"
                              FontSize="18"
                              IsReadOnly="True" />

@@ -66,8 +66,7 @@ namespace NLib.Serial.Terminal.App.Controls
         private void UpdateTextBoxs()
         {
             var val = WeightQATerminal.Instance.Value;
-            txtW.Text = val.W.ToString("n2");
-            txtO.Text = val.O.ToString("D0");
+            txtW.Text = val.W.ToString("n3");
             txtUnit.Text = val.Unit.ToString();
             txtMode.Text = val.Mode.ToString();
         }
