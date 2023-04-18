@@ -19,8 +19,10 @@ Implements #85
 Implements #84
 - 
 
+[Commit]
 Implements #83
-- 
+- Update App projects
+  - Replace Unloaded handler to Closing handler.
 
 [Commit]
 Implements #82

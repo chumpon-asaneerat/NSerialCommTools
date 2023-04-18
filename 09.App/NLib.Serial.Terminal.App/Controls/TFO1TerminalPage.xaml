@@ -170,7 +170,7 @@
                              Width="50"
                              FontSize="18"
                              IsReadOnly="True"
-                             Visibility="Hidden"/>
+                             Visibility="Hidden" />
                 </StackPanel>
                 <!--  C  -->
                 <StackPanel Orientation="Horizontal"
@@ -198,8 +198,8 @@
                              Text=""
                              Width="50"
                              FontSize="18"
-                             IsReadOnly="True" 
-                             Visibility="Hidden"/>
+                             IsReadOnly="True"
+                             Visibility="Hidden" />
                 </StackPanel>
             </StackPanel>
         </DockPanel>

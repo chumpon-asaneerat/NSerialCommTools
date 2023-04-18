@@ -41,7 +41,7 @@ namespace NLib
 
         #endregion
 
-        #region Loaded/Unloaded
+        #region Loaded/Closing
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -52,7 +52,7 @@ namespace NLib
             InitTimer();
         }
 
-        private void Window_Unloaded(object sender, RoutedEventArgs e)
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             FreeTimer();
             FreeDevices();
