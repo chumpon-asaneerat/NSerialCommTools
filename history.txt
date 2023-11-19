@@ -13,8 +13,10 @@ Implements #87
 Implements #86
 - 
 
+[Commit]
 Implements #85
-- 
+- Update App projects
+  - Add JIK6CABDevice Terminal
 
 [Commit]
 Implements #84

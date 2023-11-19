@@ -67,6 +67,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Controls\JIK6CABTerminalPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\PHMeterTerminalPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -94,6 +98,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Controls\JIK6CABTerminalPage.xaml.cs">
+      <DependentUpon>JIK6CABTerminalPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\PHMeterTerminalPage.xaml.cs">
       <DependentUpon>PHMeterTerminalPage.xaml</DependentUpon>
