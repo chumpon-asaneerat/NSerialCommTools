@@ -4,8 +4,10 @@ Implements #90
 Implements #89
 - 
 
+[Commit]
 Implements #88
-- 
+- Update App projects
+  - Add JIK6CABDevice serial data log
 
 [Commit]
 Implements #87

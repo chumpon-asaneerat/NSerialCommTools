@@ -88,6 +88,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Emulator.App", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Terminal.App", "09.App\NLib.Serial.Terminal.App\NLib.Serial.Terminal.App.csproj", "{45543D45-3584-4C63-BAC1-578177B132CB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "JIK6CAB", "JIK6CAB", "{D12D966E-B886-473E-86C6-DBE76C1619E0}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.log = Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.log
+		Documents\LuckyTex Devices\JIK6CAB\jik_hex_2.log = Documents\LuckyTex Devices\JIK6CAB\jik_hex_2.log
+		Documents\LuckyTex Devices\JIK6CAB\jik_txt_1.log = Documents\LuckyTex Devices\JIK6CAB\jik_txt_1.log
+		Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.log = Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.log
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +133,7 @@ Global
 		{32FAE440-947B-4B8F-A710-2CB8887136D5} = {E643A486-6F09-4B8D-A991-4390DB5FFF7B}
 		{33E96A44-C1CC-4900-ABCC-0755C73F6A6D} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 		{45543D45-3584-4C63-BAC1-578177B132CB} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
+		{D12D966E-B886-473E-86C6-DBE76C1619E0} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}
