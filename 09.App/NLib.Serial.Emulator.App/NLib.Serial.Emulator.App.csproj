@@ -67,6 +67,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Controls\JIK6CABEmulatorPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\PHMeterEmulatorPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -94,6 +98,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Controls\JIK6CABEmulatorPage.xaml.cs">
+      <DependentUpon>JIK6CABEmulatorPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\PHMeterEmulatorPage.xaml.cs">
       <DependentUpon>PHMeterEmulatorPage.xaml</DependentUpon>

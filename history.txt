@@ -16,8 +16,11 @@ Implements #86
 Implements #85
 - 
 
+[Commit]
 Implements #84
-- 
+- Update App projects
+  - Add JIK6CABDevice class
+  - Add JIK6CABDevice Emulator
 
 [Commit]
 Implements #83
