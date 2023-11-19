@@ -1,8 +1,9 @@
 Implements #90
 - 
 
+[Commit]
 Implements #89
-- 
+- Rebuild all projects
 
 [Commit]
 Implements #88
