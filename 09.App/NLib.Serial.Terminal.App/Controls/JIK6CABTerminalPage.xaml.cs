@@ -67,7 +67,7 @@ namespace NLib.Serial.Terminal.App.Controls
         private void UpdateTextBoxs()
         {
             var val = JIK6CABTerminal.Instance.Value;
-            txtDateTime.Text = val.Date.ToString("yyyy-MM-dd HH:mm",
+            txtDateTime.Text = val.Date.ToString("yyyy-MM-dd HH:mm:ss",
                 System.Globalization.DateTimeFormatInfo.InvariantInfo);
             txtTW.Text = val.TW.ToString("n2");
             txtTU.Text = val.TUnit;

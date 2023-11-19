@@ -90,10 +90,10 @@ namespace NLib.Serial.Emulator.App.Controls
                 data.Date = dt;
                 data.TW = decimal.Parse(txtTW.Text);
                 data.TUnit = txtTU.Text;
-                data.NW = decimal.Parse(txtTW.Text);
-                data.NUnit = txtTU.Text;
-                data.GW = decimal.Parse(txtTW.Text);
-                data.GUnit = txtTU.Text;
+                data.NW = decimal.Parse(txtNW.Text);
+                data.NUnit = txtNU.Text;
+                data.GW = decimal.Parse(txtGW.Text);
+                data.GUnit = txtGU.Text;
                 data.PCS = decimal.Parse(txtPCS.Text);
             }
             catch { }

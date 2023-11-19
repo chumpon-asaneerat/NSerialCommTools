@@ -117,10 +117,12 @@ namespace NLib
             InitPHMeter();
             InitWeightQA();
             InitWeightSPUN();
+            InitJIK6CAB();
         }
 
         private void FreeDevices()
         {
+            FreeJIK6CAB();
             FreeWeightSPUN();
             FreeWeightQA();
             FreePHMeter();
@@ -133,6 +135,7 @@ namespace NLib
             SendPHMeter();
             SendWeightQA();
             SendWeightSPUN();
+            SendJIK6CAB();
         }
 
         #endregion
@@ -209,6 +212,25 @@ namespace NLib
         private void SendWeightSPUN()
         {
             WeightSPUNPage.Sync();
+        }
+
+        #endregion
+
+        #region JIK6CAB
+
+        private void InitJIK6CAB()
+        {
+            JIK6CABPage.Setup();
+        }
+
+        private void FreeJIK6CAB()
+        {
+            JIK6CABDevice.Instance.Shutdown();
+        }
+
+        private void SendJIK6CAB()
+        {
+            JIK6CABPage.Sync();
         }
 
         #endregion

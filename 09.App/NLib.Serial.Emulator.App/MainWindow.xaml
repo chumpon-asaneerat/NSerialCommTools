@@ -32,6 +32,11 @@
                     <local:WeightSPUNEmulatorPage x:Name="WeightSPUNPage" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="JIK6CAB">
+                <DockPanel LastChildFill="True">
+                    <local:JIK6CABEmulatorPage x:Name="JIK6CABPage" />
+                </DockPanel>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

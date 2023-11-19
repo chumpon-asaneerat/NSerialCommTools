@@ -10,6 +10,7 @@
           <LogFilter Key="SerialDevice" Enable="true" />
           <LogFilter Key="TFO1Terminal" Enable="true" />
           <LogFilter Key="PHMeterTerminal" Enable="true" />
+          <LogFilter Key="JIK6CABTerminal" Enable="true" />
         </Filters>
       </FilterOptions>
     </LogFileConfig>

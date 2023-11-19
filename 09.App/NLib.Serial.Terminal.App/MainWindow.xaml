@@ -34,6 +34,11 @@
                     <local:WeightSPUNTerminalPage x:Name="WeightSPUNPage" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="JIK6CAB">
+                <DockPanel LastChildFill="True">
+                    <local:JIK6CABTerminalPage x:Name="JIK6CABPage" />
+                </DockPanel>
+            </TabItem>
             <TabItem Header="HEX View">
                 <DockPanel LastChildFill="True">
                     <DockPanel DockPanel.Dock="Top" LastChildFill="True">

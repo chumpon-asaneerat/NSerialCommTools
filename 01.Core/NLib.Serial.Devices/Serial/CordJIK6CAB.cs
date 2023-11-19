@@ -13,6 +13,7 @@ using System.Collections;
 using NLib.Serial.Devices;
 using System.CodeDom;
 using static NLib.NGC;
+using Newtonsoft.Json.Linq;
 
 #endregion
 
@@ -470,24 +471,28 @@ namespace NLib.Serial.Terminals
                 {
                     if (!bCompleted)
                     {
+                        string[] elems = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                         if (!tw.HasValue)
                         {
-                            string w = line.Substring(0, 6);
+                            string w = (elems.Length > 0) ? elems[0] : "0";
                             tw = decimal.Parse(w);
-                            tu = line.Substring(6, 3);
+                            tu = (elems.Length > 1) ? elems[1] : "kg";
+                            return;
                         }
-                        else if (!nw.HasValue)
+                        if (!nw.HasValue)
                         {
-                            string w = line.Substring(0, 6);
+                            string w = (elems.Length > 0) ? elems[0] : "0";
                             nw = decimal.Parse(w);
-                            nu = line.Substring(6, 3);
+                            nu = (elems.Length > 1) ? elems[1] : "kg";
+                            return;
                         }
-                        else if (!gw.HasValue)
+                        if (!gw.HasValue)
                         {
-                            string w = line.Substring(0, 6);
+                            string w = (elems.Length > 0) ? elems[0] : "0";
                             gw = decimal.Parse(w);
                             // extract unit
-                            gu = line.Substring(6, 3);
+                            gu = (elems.Length > 1) ? elems[1] : "kg";
+                            return;
                         }
                     }
                 }
@@ -496,16 +501,18 @@ namespace NLib.Serial.Terminals
                     med.Err(ex);
                 }
             }
-            else if (!line.Contains("pcs"))
+            else if (line.Contains("pcs"))
             {
                 // pcs only
                 try
                 {
                     if (!bCompleted)
                     {
-                        if (pcs.HasValue)
+                        string[] elems = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (!pcs.HasValue)
                         {
-                            string sPCS = line.Substring(0, 5);
+                            string sPCS = (elems.Length > 0) ? elems[0] : "0";
                             pcs = decimal.Parse(sPCS);
                         }
                     }
@@ -537,13 +544,13 @@ namespace NLib.Serial.Terminals
                 if (!bCompleted)
                 {
                     // assume time
-                    DateTime dt = date.HasValue ? date.Value : DateTime.Today;
+                    DateTime dt = (date.HasValue) ? date.Value : DateTime.Now;
                     try
                     {
                         DateTime val = DateTime.ParseExact(line, "HH:mm:ss",
                             DateTimeFormatInfo.InvariantInfo);
 
-                        date = new DateTime(dt.Year, dt.Month, dt.Day, val.Hour, val.Minute, 0);
+                        date = new DateTime(dt.Year, dt.Month, dt.Day, val.Hour, val.Minute, val.Second);
                     }
                     catch (Exception ex)
                     {
@@ -552,28 +559,36 @@ namespace NLib.Serial.Terminals
                     }
                 }
             }
-            else if (line.Contains("P1"))
+            else if (line.Contains("KJIK"))
             {
-                bCompleted = false;
-                date = new DateTime?();
-                tw = new decimal?();
-                tu = null;
-                nw = new decimal?();
-                nu = null;
-                gw = new decimal?();
-                gu = null;
+                if (bCompleted)
+                {
+                    bCompleted = false;
+                    date = new DateTime?();
+                    tw = new decimal?();
+                    tu = null;
+                    nw = new decimal?();
+                    nu = null;
+                    gw = new decimal?();
+                    gu = null;
+                    pcs = new decimal?();
+                }
             }
             else if (line.Contains("P1"))
             {
-                // Detected End of pagkage so assign to object.
-                Value.Date = (date.HasValue) ? date.Value : DateTime.Now;
-                Value.TW = (tw.HasValue) ? tw.Value : decimal.Zero;
-                Value.TUnit = tu;
-                Value.NW = (nw.HasValue) ? nw.Value : decimal.Zero;
-                Value.NUnit = nu;
-                Value.GW = (tw.HasValue) ? gw.Value : decimal.Zero;
-                Value.GUnit = gu;
-                bCompleted = true;
+                if (!bCompleted)
+                {
+                    // Detected End of pagkage so assign to object.
+                    Value.Date = (date.HasValue) ? date.Value : DateTime.Now;
+                    Value.TW = (tw.HasValue) ? tw.Value : decimal.Zero;
+                    Value.TUnit = tu;
+                    Value.NW = (nw.HasValue) ? nw.Value : decimal.Zero;
+                    Value.NUnit = nu;
+                    Value.GW = (gw.HasValue) ? gw.Value : decimal.Zero;
+                    Value.GUnit = gu;
+                    Value.PCS = (pcs.HasValue) ? pcs.Value : decimal.Zero;
+                    bCompleted = true;
+                }
             }
         }
 

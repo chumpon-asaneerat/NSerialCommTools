@@ -27,7 +27,7 @@
                                FontSize="18" />
                     <TextBox x:Name="txtDateTime"
                              Text=""
-                             Width="150"
+                             Width="200"
                              FontSize="18" />
                 </StackPanel>
                 <!--  TW  -->
