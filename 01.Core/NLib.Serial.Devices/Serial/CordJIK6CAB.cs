@@ -522,15 +522,24 @@ namespace NLib.Serial.Terminals
                     med.Err(ex);
                 }
             }
-            else if (line.Contains("-"))
+            else if (line.Contains("-") || line.Contains("/"))
             {
                 if (!bCompleted)
                 {
                     try
                     {
-                        DateTime val = DateTime.ParseExact(line, "dd-MMM-yyyy",
-                            DateTimeFormatInfo.InvariantInfo);
-                        date = new DateTime(val.Year, val.Month, val.Day);
+                        if (line.Contains("-"))
+                        {
+                            DateTime val = DateTime.ParseExact(line, "dd-MMM-yyyy",
+                                DateTimeFormatInfo.InvariantInfo);
+                            date = new DateTime(val.Year, val.Month, val.Day);
+                        }
+                        else if (line.Contains("/"))
+                        {
+                            DateTime val = DateTime.ParseExact(line, "dd/MMM/yyyy",
+                                DateTimeFormatInfo.InvariantInfo);
+                            date = new DateTime(val.Year, val.Month, val.Day);
+                        }
                     }
                     catch (Exception ex)
                     {

@@ -7,8 +7,10 @@ Implements #89
 Implements #88
 - 
 
+[Commit]
 Implements #87
-- 
+- Update App projects
+  - Update JIK6CABDevice class
 
 [Commit]
 Implements #86
