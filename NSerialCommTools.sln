@@ -90,10 +90,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Terminal.App", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "JIK6CAB", "JIK6CAB", "{D12D966E-B886-473E-86C6-DBE76C1619E0}"
 	ProjectSection(SolutionItems) = preProject
-		Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.log = Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.log
-		Documents\LuckyTex Devices\JIK6CAB\jik_hex_2.log = Documents\LuckyTex Devices\JIK6CAB\jik_hex_2.log
-		Documents\LuckyTex Devices\JIK6CAB\jik_txt_1.log = Documents\LuckyTex Devices\JIK6CAB\jik_txt_1.log
-		Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.log = Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.log
+		Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.txt = Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.txt
+		Documents\LuckyTex Devices\JIK6CAB\jik_hex_2.txt = Documents\LuckyTex Devices\JIK6CAB\jik_hex_2.txt
+		Documents\LuckyTex Devices\JIK6CAB\jik_txt_1.txt = Documents\LuckyTex Devices\JIK6CAB\jik_txt_1.txt
+		Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.txt = Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.txt
 	EndProjectSection
 EndProject
 Global
