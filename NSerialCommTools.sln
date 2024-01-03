@@ -96,6 +96,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "JIK6CAB", "JIK6CAB", "{D12D
 		Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.txt = Documents\LuckyTex Devices\JIK6CAB\jik_txt_2.txt
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DEFENDER3000", "DEFENDER3000", "{0D978359-41BC-4127-A95A-CF69704D115D}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\DEFENDER3000\DEFENDER3000_hex.txt = Documents\LuckyTex Devices\DEFENDER3000\DEFENDER3000_hex.txt
+		Documents\LuckyTex Devices\DEFENDER3000\DEFENDER3000_txt.txt = Documents\LuckyTex Devices\DEFENDER3000\DEFENDER3000_txt.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -134,6 +140,7 @@ Global
 		{33E96A44-C1CC-4900-ABCC-0755C73F6A6D} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 		{45543D45-3584-4C63-BAC1-578177B132CB} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 		{D12D966E-B886-473E-86C6-DBE76C1619E0} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{0D978359-41BC-4127-A95A-CF69704D115D} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}

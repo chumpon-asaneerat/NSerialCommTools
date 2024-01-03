@@ -25,8 +25,10 @@ Implements #93
 Implements #92
 - 
 
+[Commit]
 Implements #91
-- 
+- Update App projects
+  - Add DEFENDER3000 serial data log
 
 [Commit]
 Implements #90
