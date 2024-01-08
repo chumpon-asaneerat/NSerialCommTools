@@ -118,10 +118,12 @@ namespace NLib
             InitWeightQA();
             InitWeightSPUN();
             InitJIK6CAB();
+            InitDEFENDER3000();
         }
 
         private void FreeDevices()
         {
+            FreeDEFENDER3000();
             FreeJIK6CAB();
             FreeWeightSPUN();
             FreeWeightQA();
@@ -136,6 +138,7 @@ namespace NLib
             SendWeightQA();
             SendWeightSPUN();
             SendJIK6CAB();
+            SendDEFENDER3000();
         }
 
         #endregion
@@ -231,6 +234,25 @@ namespace NLib
         private void SendJIK6CAB()
         {
             JIK6CABPage.Sync();
+        }
+
+        #endregion
+
+        #region DEFENDER3000
+
+        private void InitDEFENDER3000()
+        {
+            CordDEFENDER3000Page.Setup();
+        }
+
+        private void FreeDEFENDER3000()
+        {
+            CordDEFENDER3000Device.Instance.Shutdown();
+        }
+
+        private void SendDEFENDER3000()
+        {
+            CordDEFENDER3000Page.Sync();
         }
 
         #endregion

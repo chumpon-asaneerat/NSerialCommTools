@@ -67,10 +67,12 @@ namespace NLib
             InitWeightQA();
             InitWeightSPUN();
             InitJIK6CAB();
+            InitDEFENDER3000();
         }
 
         private void FreeDevices()
         {
+            FreeDEFENDER3000();
             FreeJIK6CAB();
             FreeWeightSPUN();
             FreeWeightQA();
@@ -196,6 +198,28 @@ namespace NLib
         }
 
         private void JIK6CAB_OnRx(object sender, EventArgs e)
+        {
+
+        }
+
+        #endregion
+
+        #region DEFENDER3000
+
+        private void InitDEFENDER3000()
+        {
+            CordDEFENDER3000Terminal.Instance.LoadConfig();
+            CordDEFENDER3000Terminal.Instance.OnRx += DEFENDER3000_OnRx;
+            CordDEFENDER3000Page.Setup(CordDEFENDER3000Terminal.Instance);
+        }
+
+        private void FreeDEFENDER3000()
+        {
+            CordDEFENDER3000Terminal.Instance.Disconnect();
+            CordDEFENDER3000Terminal.Instance.OnRx -= DEFENDER3000_OnRx;
+        }
+
+        private void DEFENDER3000_OnRx(object sender, EventArgs e)
         {
 
         }

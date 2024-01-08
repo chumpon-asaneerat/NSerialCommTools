@@ -13,8 +13,9 @@ Implements #97
 Implements #96
 - 
 
+[Commit]
 Implements #95
-- 
+- Add Suppors CordDEFENDER3000 #4
 
 [Commit]
 Implements #94
