@@ -39,6 +39,11 @@
                     <local:JIK6CABTerminalPage x:Name="JIK6CABPage" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="DEFENDER3000">
+                <DockPanel LastChildFill="True">
+                    <local:CordDEFENDER3000TerminalPage x:Name="CordDEFENDER3000Page" />
+                </DockPanel>
+            </TabItem>
             <TabItem Header="HEX View">
                 <DockPanel LastChildFill="True">
                     <DockPanel DockPanel.Dock="Top" LastChildFill="True">

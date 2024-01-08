@@ -37,6 +37,11 @@
                     <local:JIK6CABEmulatorPage x:Name="JIK6CABPage" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="DEFENDER3000">
+                <DockPanel LastChildFill="True">
+                    <local:CordDEFENDER3000EmulatorPage x:Name="CordDEFENDER3000Page" />
+                </DockPanel>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>
