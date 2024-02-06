@@ -53,7 +53,7 @@ namespace NLib.Serial.Devices
             {
                 // 3.01pH 25.5.C ATC..
                 // 33 2E 30 31 70 48 20 32 35 2E 35 F8 43 20 41 54 43 0D 0A
-                output = pH.ToString("F2") + "pH " + TempC.ToString("F1");
+                output = ((double)pH).ToString("F2") + "pH " + ((double)TempC).ToString("F1");
                 buffers.AddRange(Encoding.ASCII.GetBytes(output));
                 buffers.Add(0xF8);
                 output = "C ATC" + ascii.x0D + ascii.x0A;
@@ -81,13 +81,13 @@ namespace NLib.Serial.Devices
             // PH + NEW LINE
             // 3.01pH..
             // 33 2E 30 31 70 48 0D 0A
-            output = pH.ToString("F2") + "pH" + ascii.x0D + ascii.x0A;
+            output = ((double)pH).ToString("F2") + "pH" + ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
 
             // Temp C + ATC + NEW LINE
             // 25.5.C ATC..
             // 32 35 2E 35 F8 43 20 41 54 43 0D 0A
-            output = TempC.ToString("F1");
+            output = ((double)TempC).ToString("F1");
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             buffers.Add(0xF8);
             output = "C ATC" + ascii.x0D + ascii.x0A;

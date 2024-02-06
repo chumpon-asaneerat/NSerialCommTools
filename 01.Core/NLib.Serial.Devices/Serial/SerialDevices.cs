@@ -490,6 +490,13 @@ namespace NLib.Serial.Json
             get { return Folders.Assemblies.CurrentExecutingAssembly; }
         }
         /// <summary>
+        /// Gets application config path name.
+        /// </summary>
+        public static string AppConfigPath
+        {
+            get { return Path.Combine(Folders.Assemblies.CurrentExecutingAssembly, "Configs"); }
+        }
+        /// <summary>
         /// Gets product path.
         /// </summary>
         public static string ProductPath
@@ -515,7 +522,7 @@ namespace NLib.Serial
         /// <summary>
         /// Constructor.
         /// </summary>
-        public SerialPortConfig() 
+        public SerialPortConfig()
         {
             this.PortName = "COM1";
             this.BaudRate = 9600;
@@ -528,6 +535,10 @@ namespace NLib.Serial
 
         #region Public Properties
 
+        /// <summary>
+        /// Gets or sets Defice Name.
+        /// </summary>
+        public string DeviceName { get; set; }    
         /// <summary>
         /// Gets or sets Port Name (i.e. COM1, COM2,... ).
         /// </summary>
@@ -962,7 +973,7 @@ namespace NLib.Serial
 
         private string ConfigFolder
         {
-            get { return Path.Combine(NJson.ProductPath, "Devices"); }
+            get { return Path.Combine(NJson.AppConfigPath, "Devices"); }
         }
 
         private string ConfigFileName

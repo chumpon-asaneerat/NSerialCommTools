@@ -48,7 +48,7 @@ namespace NLib.Serial.Devices
             // +007.12/3 G S..
             // 2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A
 
-            string actualW = W.ToString("F3").PadLeft(7, '0');
+            string actualW = ((double)W).ToString("F3").PadLeft(7, '0');
             string firstPart = actualW.Substring(0, actualW.Length - 1);
             string lastDigit = actualW.Substring(actualW.Length - 1, 1);
             output = "+" + firstPart;

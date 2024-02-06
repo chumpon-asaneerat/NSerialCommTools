@@ -52,28 +52,28 @@ namespace NLib.Serial.Devices
             List<byte> buffers = new List<byte>();
             string output;
             // F      0.0
-            output = "F" + F.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "F" + ((double)F).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // H      0.0.
-            output = "H" + H.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "H" + ((double)H).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // Q      0.0.
-            output = "Q" + Q.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "Q" + ((double)Q).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // X      0.0.
-            output = "X" + X.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "X" + ((double)X).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // A    366.0.
-            output = "A" + A.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "A" + ((double)A).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // 0    23.0.
-            output = "0" + W0.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "0" + ((double)W0).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // 4    343.5.
-            output = "4" + W4.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "4" + ((double)W4).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // 1      0.0.
-            output = "1" + W1.ToString("F1").PadLeft(9, ' ') + ascii.x0D;
+            output = "1" + ((double)W1).ToString("F1").PadLeft(9, ' ') + ascii.x0D;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // 2       0.
             output = "2" + W2.ToString("D0").PadLeft(8, ' ') + ascii.x0D;

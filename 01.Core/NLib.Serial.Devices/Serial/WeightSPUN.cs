@@ -53,7 +53,7 @@ namespace NLib.Serial.Devices
 
             //     20.0 kg    G..
             // 20 20 20 20 32 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A
-            output = W.ToString("F1").PadLeft(8, ' ');
+            output = ((double)W).ToString("F1").PadLeft(8, ' ');
             output += " " + unit.PadLeft(2, ' ');
             output += " " + O.PadLeft(4, ' ');
             output += ascii.x0D + ascii.x0A;

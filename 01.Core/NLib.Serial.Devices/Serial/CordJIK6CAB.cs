@@ -71,15 +71,15 @@ namespace NLib.Serial.Devices
             // T.W with Unit.
             //   0.00 kg
             // 20 20 30 2E 30 30 20 6B 67 0D 0A
-            output = TW.ToString("F1").PadLeft(6, ' ');
+            output = TW.ToString("G").PadLeft(6, ' ');
             output += " " + TUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
-            // N.W.
+            // G.W.
             //   1.94 kg
             // 20 20 31 2E 39 34 20 6B 67 0D 0A
-            output = NW.ToString("F1").PadLeft(6, ' ');
-            output += " " + NUnit.PadLeft(2, ' ');
+            output = GW.ToString("G").PadLeft(6, ' ');
+            output += " " + GUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // Unknown 1
@@ -94,24 +94,24 @@ namespace NLib.Serial.Devices
             output = "0";
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
-            // G.W.
+            // N.W.
             //   1.94 kg
             // 20 20 31 2E 39 34 20 6B 67 0D 0A
-            output = GW.ToString("F1").PadLeft(6, ' ');
-            output += " " + GUnit.PadLeft(2, ' ');
+            output = NW.ToString("G").PadLeft(6, ' ');
+            output += " " + NUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
-            // ?? (same value as G.W.)
+            // ?? (same value as N.W.)
             //   1.94 kg
             // 20 20 31 2E 39 34 20 6B 67 0D 0A
-            output = GW.ToString("F1").PadLeft(6, ' ');
-            output += " " + GUnit.PadLeft(2, ' ');
+            output = NW.ToString("G").PadLeft(6, ' ');
+            output += " " + NUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // PCS
             //     0 pcs
             // 20 20 20 20 30 20 70 63 73 0D 0A
-            output = PCS.ToString("F1").PadLeft(5, ' ');
+            output = PCS.ToString("G").PadLeft(5, ' ');
             output += " pcs";
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
@@ -460,7 +460,9 @@ namespace NLib.Serial.Terminals
 
             string line = Encoding.ASCII.GetString(content);
             if (string.IsNullOrEmpty(line))
+            {
                 return;
+            }
 
             line = line.Trim(); // trim string to remove new line.
 
@@ -477,22 +479,23 @@ namespace NLib.Serial.Terminals
                             string w = (elems.Length > 0) ? elems[0] : "0";
                             tw = decimal.Parse(w);
                             tu = (elems.Length > 1) ? elems[1] : "kg";
-                            return;
                         }
-                        if (!nw.HasValue)
-                        {
-                            string w = (elems.Length > 0) ? elems[0] : "0";
-                            nw = decimal.Parse(w);
-                            nu = (elems.Length > 1) ? elems[1] : "kg";
-                            return;
-                        }
-                        if (!gw.HasValue)
+                        else if (tw.HasValue && !gw.HasValue)
                         {
                             string w = (elems.Length > 0) ? elems[0] : "0";
                             gw = decimal.Parse(w);
-                            // extract unit
                             gu = (elems.Length > 1) ? elems[1] : "kg";
-                            return;
+                        }
+                        else if (tw.HasValue && gw.HasValue && !nw.HasValue)
+                        {
+                            string w = (elems.Length > 0) ? elems[0] : "0";
+                            nw = decimal.Parse(w);
+                            // extract unit
+                            nu = (elems.Length > 1) ? elems[1] : "kg";
+                        }
+                        else
+                        {
+
                         }
                     }
                 }
@@ -572,14 +575,14 @@ namespace NLib.Serial.Terminals
             {
                 if (bCompleted)
                 {
-                    bCompleted = false;
+                    bCompleted = false; // Set start package flag
                     date = new DateTime?();
                     tw = new decimal?();
                     tu = null;
-                    nw = new decimal?();
-                    nu = null;
                     gw = new decimal?();
                     gu = null;
+                    nw = new decimal?();
+                    nu = null;
                     pcs = new decimal?();
                 }
             }
@@ -596,7 +599,7 @@ namespace NLib.Serial.Terminals
                     Value.GW = (gw.HasValue) ? gw.Value : decimal.Zero;
                     Value.GUnit = gu;
                     Value.PCS = (pcs.HasValue) ? pcs.Value : decimal.Zero;
-                    bCompleted = true;
+                    bCompleted = true; // Set end package flag
                 }
             }
         }
