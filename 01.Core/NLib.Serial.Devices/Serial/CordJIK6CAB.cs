@@ -71,14 +71,14 @@ namespace NLib.Serial.Devices
             // T.W with Unit.
             //   0.00 kg
             // 20 20 30 2E 30 30 20 6B 67 0D 0A
-            output = TW.ToString("G").PadLeft(6, ' ');
+            output = ((double)TW).ToString("F2").PadLeft(6, ' ');
             output += " " + TUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // G.W.
             //   1.94 kg
             // 20 20 31 2E 39 34 20 6B 67 0D 0A
-            output = GW.ToString("G").PadLeft(6, ' ');
+            output = ((double)GW).ToString("F2").PadLeft(6, ' ');
             output += " " + GUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
@@ -97,14 +97,14 @@ namespace NLib.Serial.Devices
             // N.W.
             //   1.94 kg
             // 20 20 31 2E 39 34 20 6B 67 0D 0A
-            output = NW.ToString("G").PadLeft(6, ' ');
+            output = ((double)NW).ToString("F2").PadLeft(6, ' ');
             output += " " + NUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
             // ?? (same value as N.W.)
             //   1.94 kg
             // 20 20 31 2E 39 34 20 6B 67 0D 0A
-            output = NW.ToString("G").PadLeft(6, ' ');
+            output = ((double)NW).ToString("F2").PadLeft(6, ' ');
             output += " " + NUnit.PadLeft(2, ' ');
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));

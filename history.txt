@@ -4,8 +4,9 @@ Implements #100
 Implements #99
 - 
 
+[Commit]
 Implements #98
-- 
+- Fixed all device round value #2.
 
 [Commit]
 Implements #97
