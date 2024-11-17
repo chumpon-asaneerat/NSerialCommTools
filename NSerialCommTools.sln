@@ -102,6 +102,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DEFENDER3000", "DEFENDER300
 		Documents\LuckyTex Devices\DEFENDER3000\DEFENDER3000_txt.txt = Documents\LuckyTex Devices\DEFENDER3000\DEFENDER3000_txt.txt
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MS204TS00", "MS204TS00", "{059A6091-694E-478A-BAD7-C5F914C2A8CE}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\MS204TS00\332318.jpg = Documents\LuckyTex Devices\MS204TS00\332318.jpg
+		Documents\LuckyTex Devices\MS204TS00\77698A3E-076D-4D41-82F0-1FECA45DB13E.jpg = Documents\LuckyTex Devices\MS204TS00\77698A3E-076D-4D41-82F0-1FECA45DB13E.jpg
+		Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) -  NPT Mettler QDMS Hex.log = Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) -  NPT Mettler QDMS Hex.log
+		Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.log = Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.log
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +149,7 @@ Global
 		{45543D45-3584-4C63-BAC1-578177B132CB} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 		{D12D966E-B886-473E-86C6-DBE76C1619E0} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 		{0D978359-41BC-4127-A95A-CF69704D115D} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{059A6091-694E-478A-BAD7-C5F914C2A8CE} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}
