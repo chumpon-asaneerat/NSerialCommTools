@@ -28,8 +28,9 @@ Implements #112
 Implements #111
 - 
 
+[Commit]
 Implements #110
-- 
+- Recompile all projects
 
 [Commit]
 Implements #109
