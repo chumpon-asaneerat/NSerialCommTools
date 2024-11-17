@@ -45,9 +45,9 @@ namespace NLib
                     ProductName = "NLib Device Terminal",
                     /* For Application Version */
                     Version = "1",
-                    Minor = "0",
-                    Build = "0",
-                    LastUpdate = new DateTime(2023, 3, 5, 21, 0, 0)
+                    Minor = "1",
+                    Build = "110",
+                    LastUpdate = new DateTime(2024, 11, 17, 16, 10, 0)
                 },
                 /* Setup Storage */
                 Storage = new NAppStorage()
