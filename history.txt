@@ -1,11 +1,42 @@
+Implements #120
+- 
+
+Implements #119
+- 
+
+Implements #118
+- 
+
+Implements #117
+- 
+
+Implements #116
+- 
+
+Implements #115
+- 
+
+Implements #114
+- 
+
+Implements #113
+- 
+
+Implements #112
+- 
+
+Implements #111
+- 
+
 Implements #110
 - 
 
 Implements #109
 - 
 
+[Commit]
 Implements #108
-- 
+- prepare history.txt
 
 [Commit]
 Implements #107
