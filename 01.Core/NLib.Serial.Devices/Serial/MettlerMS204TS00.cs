@@ -13,23 +13,24 @@ using System.Collections;
 using NLib.Serial.Devices;
 using System.CodeDom;
 using static NLib.NGC;
+using Newtonsoft.Json.Linq;
 
 #endregion
 
 namespace NLib.Serial.Devices
 {
-    #region CordDEFENDER3000Data
+    #region MettlerMS204TS00Data
 
     /// <summary>
-    /// The WeightQAData class.
+    /// The MettlerMS204TS00Data class.
     /// </summary>
-    public class CordDEFENDER3000Data : SerialDeviceData
+    public class MettlerMS204TS00Data : SerialDeviceData
     {
         #region Internal Variables
 
+        private string _mode = "N"; // Net
         private decimal _W = decimal.Zero;
-        private string _Unit = "kg";
-        private string _O = "G";
+        private string _Unit = "g"; // g
 
         #endregion
 
@@ -43,20 +44,38 @@ namespace NLib.Serial.Devices
         {
             List<byte> buffers = new List<byte>();
 
+            string mode = (string.IsNullOrEmpty(Unit.Trim())) ? "N" : Unit.Trim();
+            if (mode.Length > 2)
+            {
+                mode = mode.Substring(0, 2);
+            }
             string unit = (string.IsNullOrEmpty(Unit.Trim())) ? "kg" : Unit.Trim();
             if (unit.Length > 2)
             {
                 unit = unit.Substring(0, 2);
             }
 
-            string output;
+            string output = "";
+            output += " " + mode.PadLeft(5, ' ');
+            // MODE (Net)
+            //      N
+            // 20 20 20 20 20 4E
+            output += " "; // space
 
-            // ^KJIK000
-            // 20 20 20 30 2E 33 36 30 20 6B 67 20 20 20 20 47 0D 0A
-            output = ((double)W).ToString("F3").PadLeft(8, ' ');
-            output += " " + unit.PadLeft(2, ' ');
-            output += " " + O.PadLeft(4, ' ');
-            output += ascii.x0D + ascii.x0A;
+            // Weight
+            //        0.3749
+            // 20 20 20 20 20 20 20 30 2E 33 37 34 36
+            output = " " + ((double)W).ToString("0.0000").PadLeft(12, ' ');
+
+            // Unit
+            //  g, kg
+            // 20 67 20 20 20
+            output += " " + unit.PadRight(4, ' ');
+            // Space and end of package
+            // ..
+            // 0D 0A
+            output += "   " + ascii.x0D + ascii.x0A;
+
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
 
             return buffers.ToArray();
@@ -73,6 +92,19 @@ namespace NLib.Serial.Devices
         #endregion
 
         #region Public Properties
+
+        public string Mode
+        {
+            get { return _mode; }
+            set
+            {
+                if (_mode != value)
+                {
+                    _mode = value;
+                    Raise(() => this.Mode);
+                }
+            }
+        }
 
         public decimal W
         {
@@ -100,19 +132,6 @@ namespace NLib.Serial.Devices
             }
         }
 
-        public string O
-        {
-            get { return _O; }
-            set
-            {
-                if (_O != value)
-                {
-                    _O = value;
-                    Raise(() => this.O);
-                }
-            }
-        }
-
         #endregion
     }
 
@@ -121,28 +140,28 @@ namespace NLib.Serial.Devices
 
 namespace NLib.Serial.Emulators
 {
-    #region CordDEFENDER3000Device
+    #region MettlerMS204TS00Device
 
     /// <summary>
-    /// The CordDEFENDER3000Device class.
+    /// The MettlerMS204TS00Device class.
     /// </summary>
-    public class CordDEFENDER3000Device : SerialDeviceEmulator<CordDEFENDER3000Data>
+    public class MettlerMS204TS00Device : SerialDeviceEmulator<MettlerMS204TS00Data>
     {
         #region Singelton Access
 
-        private static CordDEFENDER3000Device _instance = null;
+        private static MettlerMS204TS00Device _instance = null;
         /// <summary>
         /// Singelton Access.
         /// </summary>
-        public static CordDEFENDER3000Device Instance
+        public static MettlerMS204TS00Device Instance
         {
             get
             {
                 if (null == _instance)
                 {
-                    lock (typeof(CordDEFENDER3000Device))
+                    lock (typeof(MettlerMS204TS00Device))
                     {
-                        _instance = new CordDEFENDER3000Device();
+                        _instance = new MettlerMS204TS00Device();
                     }
                 }
                 return _instance;
@@ -156,13 +175,13 @@ namespace NLib.Serial.Emulators
         /// <summary>
         /// Constructor.
         /// </summary>
-        private CordDEFENDER3000Device()
+        private MettlerMS204TS00Device()
         {
         }
         /// <summary>
         /// Destructor.
         /// </summary>
-        ~CordDEFENDER3000Device()
+        ~MettlerMS204TS00Device()
         {
             Shutdown();
         }
@@ -186,7 +205,7 @@ namespace NLib.Serial.Emulators
         /// <summary>
         /// Gets Device Name.
         /// </summary>
-        public override string DeviceName { get { return "CordDEFENDER3000"; } }
+        public override string DeviceName { get { return "Mettler Toledo - MS204TS00"; } }
 
         #endregion
     }
@@ -196,28 +215,28 @@ namespace NLib.Serial.Emulators
 
 namespace NLib.Serial.Terminals
 {
-    #region CordDEFENDER3000Terminal
+    #region MettlerMS204TS00Terminal
 
     /// <summary>
-    /// The CordDEFENDER3000Terminal class.
+    /// The MettlerMS204TS00Terminal class.
     /// </summary>
-    public class CordDEFENDER3000Terminal : SerialDeviceTerminal<CordDEFENDER3000Data>
+    public class MettlerMS204TS00Terminal : SerialDeviceTerminal<MettlerMS204TS00Data>
     {
         #region Singelton Access
 
-        private static CordDEFENDER3000Terminal _instance = null;
+        private static MettlerMS204TS00Terminal _instance = null;
         /// <summary>
         /// Singelton Access.
         /// </summary>
-        public static CordDEFENDER3000Terminal Instance
+        public static MettlerMS204TS00Terminal Instance
         {
             get
             {
                 if (null == _instance)
                 {
-                    lock (typeof(CordDEFENDER3000Terminal))
+                    lock (typeof(MettlerMS204TS00Terminal))
                     {
-                        _instance = new CordDEFENDER3000Terminal();
+                        _instance = new MettlerMS204TS00Terminal();
                     }
                 }
                 return _instance;
@@ -231,13 +250,13 @@ namespace NLib.Serial.Terminals
         /// <summary>
         /// Constructor.
         /// </summary>
-        private CordDEFENDER3000Terminal()
+        private MettlerMS204TS00Terminal()
         {
         }
         /// <summary>
         /// Destructor.
         /// </summary>
-        ~CordDEFENDER3000Terminal()
+        ~MettlerMS204TS00Terminal()
         {
             Disconnect();
         }
@@ -305,31 +324,65 @@ namespace NLib.Serial.Terminals
 
             string line = Encoding.ASCII.GetString(content);
             if (string.IsNullOrEmpty(line))
+            {
                 return;
-
-            string[] elems = line.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-            if (null == elems || elems.Length < 3) return;
-            string w = elems[0].Trim();
-            try
-            {
-                Value.W = decimal.Parse(w);
-            }
-            catch (Exception ex)
-            {
-                med.Err(ex);
             }
 
-            string unit = elems[1].Trim();
-            string o = elems[2].Trim();
+            line = line.Trim(); // trim string to remove new line.
 
-            try
+            if (line.Contains("N") || line.Contains("G") || line.Contains("T")) 
             {
-                Value.O = o;
-                Value.Unit = unit;
-            }
-            catch (Exception ex2)
-            {
-                med.Err(ex2);
+                if (line.Contains("N")) 
+                    Value.Mode = "N";
+                else if (line.Contains("G")) 
+                    Value.Mode = "G";
+                else if (line.Contains("T")) 
+                    Value.Mode = "T";
+                else Value.Mode = "N"; // default.
+
+                // Net, Gross, Tare
+                string[] elems = line.Split(new string[] { "N", "G", "T" }, StringSplitOptions.RemoveEmptyEntries);
+                if (elems.Length >= 2)
+                {
+                    string val = elems[1].Trim().ToUpper();
+                    if (string.IsNullOrEmpty(val))
+                    {
+                        Value.W = decimal.Zero;
+                        Value.Unit = "g"; // default Unit.
+                    }
+
+                    string[] wgs = null;
+                    if (val.Contains("KG"))
+                    {
+                        Value.Unit = "kg"; // update Unit
+                        wgs = val.Split(new string[] { "KG" }, StringSplitOptions.RemoveEmptyEntries);
+                    }
+                    else if (val.Contains("G"))
+                    {
+                        Value.Unit = "g"; // update Unit
+                        wgs = val.Split(new string[] { "G" }, StringSplitOptions.RemoveEmptyEntries);
+                    }
+
+                    if (null != wgs && wgs.Length >= 2)
+                    {
+                        try
+                        {
+                            var wg = wgs[0].Trim();
+                            Value.W = decimal.Parse(wg);
+                        }
+                        catch (Exception ex)
+                        {
+                            med.Err(ex);
+
+                            Value.W = decimal.Zero;
+                        }
+                    }
+                    else
+                    {
+                        Value.W = decimal.Zero;
+                        Value.Unit = "g"; // default Unit.
+                    }
+                }
             }
         }
 
@@ -358,7 +411,7 @@ namespace NLib.Serial.Terminals
         /// <summary>
         /// Gets Device Name.
         /// </summary>
-        public override string DeviceName { get { return "CordDEFENDER3000"; } }
+        public override string DeviceName { get { return "Mettler Toledo - MS204TS00"; } }
 
         #endregion
     }
