@@ -42,6 +42,11 @@
                     <local:CordDEFENDER3000EmulatorPage x:Name="CordDEFENDER3000Page" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="Mettler MS204TS00">
+                <DockPanel LastChildFill="True">
+                    <local:MettlerMS204TS00EmulatorPage x:Name="MettlerMS204TS00Page" />
+                </DockPanel>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

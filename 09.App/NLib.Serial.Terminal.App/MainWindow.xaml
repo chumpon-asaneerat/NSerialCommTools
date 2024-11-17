@@ -44,6 +44,11 @@
                     <local:CordDEFENDER3000TerminalPage x:Name="CordDEFENDER3000Page" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="Mettler MS204TS00">
+                <DockPanel LastChildFill="True">
+                    <local:MettlerMS204TS00TerminalPage x:Name="MettlerMS204TS00Page" />
+                </DockPanel>
+            </TabItem>
             <TabItem Header="HEX View">
                 <DockPanel LastChildFill="True">
                     <DockPanel DockPanel.Dock="Top" LastChildFill="True">

@@ -44,28 +44,28 @@ namespace NLib.Serial.Devices
         {
             List<byte> buffers = new List<byte>();
 
-            string mode = (string.IsNullOrEmpty(Unit.Trim())) ? "N" : Unit.Trim();
+            string mode = (string.IsNullOrEmpty(Mode.Trim())) ? "N" : Mode.Trim();
             if (mode.Length > 2)
             {
                 mode = mode.Substring(0, 2);
             }
-            string unit = (string.IsNullOrEmpty(Unit.Trim())) ? "kg" : Unit.Trim();
+            string unit = (string.IsNullOrEmpty(Unit.Trim())) ? "g" : Unit.Trim();
             if (unit.Length > 2)
             {
                 unit = unit.Substring(0, 2);
             }
 
             string output = "";
-            output += " " + mode.PadLeft(5, ' ');
+
             // MODE (Net)
             //      N
             // 20 20 20 20 20 4E
-            output += " "; // space
+            output += " " + mode.PadLeft(5, ' ');
 
             // Weight
             //        0.3749
             // 20 20 20 20 20 20 20 30 2E 33 37 34 36
-            output = " " + ((double)W).ToString("0.0000").PadLeft(12, ' ');
+            output += " " + ((double)W).ToString("0.0000").PadLeft(12, ' ');
 
             // Unit
             //  g, kg
@@ -74,7 +74,7 @@ namespace NLib.Serial.Devices
             // Space and end of package
             // ..
             // 0D 0A
-            output += "   " + ascii.x0D + ascii.x0A;
+            output += ascii.x0D + ascii.x0A;
 
             buffers.AddRange(Encoding.ASCII.GetBytes(output));
 

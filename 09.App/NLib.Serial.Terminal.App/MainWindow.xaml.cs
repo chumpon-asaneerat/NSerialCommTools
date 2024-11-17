@@ -68,10 +68,12 @@ namespace NLib
             InitWeightSPUN();
             InitJIK6CAB();
             InitDEFENDER3000();
+            InitMettlerMS204TS00();
         }
 
         private void FreeDevices()
         {
+            FreeMettlerMS204TS00();
             FreeDEFENDER3000();
             FreeJIK6CAB();
             FreeWeightSPUN();
@@ -220,6 +222,28 @@ namespace NLib
         }
 
         private void DEFENDER3000_OnRx(object sender, EventArgs e)
+        {
+
+        }
+
+        #endregion
+
+        #region MettlerMS204TS00
+
+        private void InitMettlerMS204TS00()
+        {
+            MettlerMS204TS00Terminal.Instance.LoadConfig();
+            MettlerMS204TS00Terminal.Instance.OnRx += MettlerMS204TS00_OnRx;
+            CordDEFENDER3000Page.Setup(MettlerMS204TS00Terminal.Instance);
+        }
+
+        private void FreeMettlerMS204TS00()
+        {
+            MettlerMS204TS00Terminal.Instance.Disconnect();
+            MettlerMS204TS00Terminal.Instance.OnRx -= MettlerMS204TS00_OnRx;
+        }
+
+        private void MettlerMS204TS00_OnRx(object sender, EventArgs e)
         {
 
         }
