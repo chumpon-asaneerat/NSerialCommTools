@@ -40,7 +40,7 @@
                                TextAlignment="Right"
                                FontSize="18" />
                     <TextBox x:Name="txtMode"
-                             Text="G"
+                             Text="N"
                              Width="100"
                              FontSize="18"
                              IsReadOnly="True" />

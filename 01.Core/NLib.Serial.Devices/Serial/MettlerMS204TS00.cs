@@ -340,17 +340,26 @@ namespace NLib.Serial.Terminals
                     Value.Mode = "T";
                 else Value.Mode = "N"; // default.
 
+                // define default value
+                Value.W = decimal.Zero;
+                Value.Unit = "g"; // default Unit.
+
                 // Net, Gross, Tare
                 string[] elems = line.Split(new string[] { "N", "G", "T" }, StringSplitOptions.RemoveEmptyEntries);
+                
+                // find weight value and unit
+                string val = null;
                 if (elems.Length >= 2)
                 {
-                    string val = elems[1].Trim().ToUpper();
-                    if (string.IsNullOrEmpty(val))
-                    {
-                        Value.W = decimal.Zero;
-                        Value.Unit = "g"; // default Unit.
-                    }
+                    val = elems[1].Trim().ToUpper();
+                }
+                else if (elems.Length >= 1)
+                {
+                    val = elems[0].Trim().ToUpper();
+                }
 
+                if (!string.IsNullOrEmpty(val))
+                {
                     string[] wgs = null;
                     if (val.Contains("KG"))
                     {
@@ -363,7 +372,7 @@ namespace NLib.Serial.Terminals
                         wgs = val.Split(new string[] { "G" }, StringSplitOptions.RemoveEmptyEntries);
                     }
 
-                    if (null != wgs && wgs.Length >= 2)
+                    if (null != wgs && wgs.Length >= 1)
                     {
                         try
                         {
@@ -373,14 +382,7 @@ namespace NLib.Serial.Terminals
                         catch (Exception ex)
                         {
                             med.Err(ex);
-
-                            Value.W = decimal.Zero;
                         }
-                    }
-                    else
-                    {
-                        Value.W = decimal.Zero;
-                        Value.Unit = "g"; // default Unit.
                     }
                 }
             }

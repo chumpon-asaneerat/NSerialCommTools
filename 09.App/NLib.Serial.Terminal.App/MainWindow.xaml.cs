@@ -234,7 +234,7 @@ namespace NLib
         {
             MettlerMS204TS00Terminal.Instance.LoadConfig();
             MettlerMS204TS00Terminal.Instance.OnRx += MettlerMS204TS00_OnRx;
-            CordDEFENDER3000Page.Setup(MettlerMS204TS00Terminal.Instance);
+            MettlerMS204TS00Page.Setup(MettlerMS204TS00Terminal.Instance);
         }
 
         private void FreeMettlerMS204TS00()
