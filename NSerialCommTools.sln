@@ -106,8 +106,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MS204TS00", "MS204TS00", "{
 	ProjectSection(SolutionItems) = preProject
 		Documents\LuckyTex Devices\MS204TS00\332318.jpg = Documents\LuckyTex Devices\MS204TS00\332318.jpg
 		Documents\LuckyTex Devices\MS204TS00\77698A3E-076D-4D41-82F0-1FECA45DB13E.jpg = Documents\LuckyTex Devices\MS204TS00\77698A3E-076D-4D41-82F0-1FECA45DB13E.jpg
-		Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) -  NPT Mettler QDMS Hex.log = Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) -  NPT Mettler QDMS Hex.log
-		Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.log = Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.log
+		Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) -  NPT Mettler QDMS Hex.txt = Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) -  NPT Mettler QDMS Hex.txt
+		Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.txt = Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.txt
 	EndProjectSection
 EndProject
 Global
