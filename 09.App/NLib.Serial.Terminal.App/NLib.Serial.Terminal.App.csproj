@@ -75,6 +75,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\MettlerMS204TS00TerminalPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\PHMeterTerminalPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -108,6 +112,9 @@
     </Compile>
     <Compile Include="Controls\JIK6CABTerminalPage.xaml.cs">
       <DependentUpon>JIK6CABTerminalPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MettlerMS204TS00TerminalPage.xaml.cs">
+      <DependentUpon>MettlerMS204TS00TerminalPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\PHMeterTerminalPage.xaml.cs">
       <DependentUpon>PHMeterTerminalPage.xaml</DependentUpon>
