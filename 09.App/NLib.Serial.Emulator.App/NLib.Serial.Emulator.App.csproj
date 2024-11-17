@@ -75,6 +75,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\MettlerMS204TS00EmulatorPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\PHMeterEmulatorPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -108,6 +112,9 @@
     </Compile>
     <Compile Include="Controls\JIK6CABEmulatorPage.xaml.cs">
       <DependentUpon>JIK6CABEmulatorPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MettlerMS204TS00EmulatorPage.xaml.cs">
+      <DependentUpon>MettlerMS204TS00EmulatorPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\PHMeterEmulatorPage.xaml.cs">
       <DependentUpon>PHMeterEmulatorPage.xaml</DependentUpon>
