@@ -44,7 +44,7 @@ namespace NLib.Serial.Devices
         {
             List<byte> buffers = new List<byte>();
 
-            string mode = (string.IsNullOrEmpty(Mode.Trim())) ? "N" : Mode.Trim();
+            string mode = (string.IsNullOrEmpty(Mode.Trim())) ? string.Empty : Mode.Trim();
             if (mode.Length > 2)
             {
                 mode = mode.Substring(0, 2);
@@ -330,59 +330,49 @@ namespace NLib.Serial.Terminals
 
             line = line.Trim(); // trim string to remove new line.
 
-            if (line.Contains("N") || line.Contains("G") || line.Contains("T")) 
+            // after trim check first char
+            if (line[0] == 'N' || line[0] == 'G' || line[0] == 'T' || !char.IsNumber(line[0]))
             {
-                if (line.Contains("N")) 
-                    Value.Mode = "N";
-                else if (line.Contains("G")) 
-                    Value.Mode = "G";
-                else if (line.Contains("T")) 
-                    Value.Mode = "T";
-                else Value.Mode = "N"; // default.
+                Value.Mode = line[0].ToString();
+                // remove mode char.
+                line = line.Substring(1, line.Length - 1);
+            }
+            else
+            {
+                Value.Mode = ""; // No mode.
+            }
 
-                // define default value
-                Value.W = decimal.Zero;
-                Value.Unit = "g"; // default Unit.
+            // define default value
+            Value.W = decimal.Zero;
+            Value.Unit = "g"; // default Unit.
 
-                // Net, Gross, Tare
-                string[] elems = line.Split(new string[] { "N", "G", "T" }, StringSplitOptions.RemoveEmptyEntries);
-                
-                // find weight value and unit
-                string val = null;
-                if (elems.Length >= 2)
+            // find weight value and unit
+            string val = line.Trim().ToUpper();
+
+            if (!string.IsNullOrEmpty(val))
+            {
+                string[] wgs = null;
+                if (val.Contains("KG"))
                 {
-                    val = elems[1].Trim().ToUpper();
+                    Value.Unit = "kg"; // update Unit
+                    wgs = val.Split(new string[] { "KG" }, StringSplitOptions.RemoveEmptyEntries);
                 }
-                else if (elems.Length >= 1)
+                else if (val.Contains("G"))
                 {
-                    val = elems[0].Trim().ToUpper();
+                    Value.Unit = "g"; // update Unit
+                    wgs = val.Split(new string[] { "G" }, StringSplitOptions.RemoveEmptyEntries);
                 }
 
-                if (!string.IsNullOrEmpty(val))
+                if (null != wgs && wgs.Length >= 1)
                 {
-                    string[] wgs = null;
-                    if (val.Contains("KG"))
+                    try
                     {
-                        Value.Unit = "kg"; // update Unit
-                        wgs = val.Split(new string[] { "KG" }, StringSplitOptions.RemoveEmptyEntries);
+                        var wg = wgs[0].Trim();
+                        Value.W = decimal.Parse(wg);
                     }
-                    else if (val.Contains("G"))
+                    catch (Exception ex)
                     {
-                        Value.Unit = "g"; // update Unit
-                        wgs = val.Split(new string[] { "G" }, StringSplitOptions.RemoveEmptyEntries);
-                    }
-
-                    if (null != wgs && wgs.Length >= 1)
-                    {
-                        try
-                        {
-                            var wg = wgs[0].Trim();
-                            Value.W = decimal.Parse(wg);
-                        }
-                        catch (Exception ex)
-                        {
-                            med.Err(ex);
-                        }
+                        med.Err(ex);
                     }
                 }
             }

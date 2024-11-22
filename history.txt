@@ -19,8 +19,9 @@ Implements #115
 Implements #114
 - 
 
+[Commit]
 Implements #113
-- 
+- Update logic for device Mettler MS204TS00
 
 [Commit]
 Implements #112
