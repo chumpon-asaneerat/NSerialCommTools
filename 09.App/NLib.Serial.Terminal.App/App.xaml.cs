@@ -46,8 +46,8 @@ namespace NLib
                     /* For Application Version */
                     Version = "1",
                     Minor = "1",
-                    Build = "110",
-                    LastUpdate = new DateTime(2024, 11, 17, 16, 10, 0)
+                    Build = "115",
+                    LastUpdate = new DateTime(2024, 11, 22, 13, 40, 0)
                 },
                 /* Setup Storage */
                 Storage = new NAppStorage()
