@@ -7,6 +7,30 @@
 
 ---
 
+## CRITICAL DOCUMENTATION STANDARDS
+
+### Diagram Requirements
+**ALL DIAGRAMS MUST USE MERMAID SYNTAX ONLY**
+- ❌ NO ASCII art diagrams (using characters like ┌─┐│└)
+- ❌ NO plain text box diagrams
+- ✅ ONLY Mermaid diagram syntax in code blocks
+
+### Mermaid Diagram Types to Use:
+- **Component/Architecture:** `graph TD` or `graph LR`
+- **Flowcharts:** `flowchart TD` or `flowchart LR`
+- **Sequence:** `sequenceDiagram`
+- **Class:** `classDiagram`
+- **State:** `stateDiagram-v2`
+- **Entity Relationship:** `erDiagram`
+
+### Quality Checklist for All Documents:
+- [ ] All diagrams are in Mermaid format
+- [ ] No ASCII art used anywhere
+- [ ] Diagrams render correctly in Markdown viewers
+- [ ] Proper Mermaid syntax validation
+
+---
+
 ## Overall Progress
 - [ ] Phase 1: Project Analysis
 - [ ] Phase 2: Core Documentation

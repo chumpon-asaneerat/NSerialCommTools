@@ -65,6 +65,29 @@ Create detailed documentation that explains how the code works, including:
      - WeightQA
      - WeightSPUN
 
+## CRITICAL DOCUMENTATION STANDARDS
+
+### Diagram Requirements
+**ALL DIAGRAMS MUST USE MERMAID SYNTAX ONLY**
+- ❌ NO ASCII art diagrams (using characters like ┌─┐│└)
+- ❌ NO plain text box diagrams
+- ✅ ONLY Mermaid diagram syntax in code blocks
+
+### Mermaid Diagram Types to Use:
+- **Component/Architecture:** `graph TD` or `graph LR`
+- **Flowcharts:** `flowchart TD` or `flowchart LR`
+- **Sequence:** `sequenceDiagram`
+- **Class:** `classDiagram`
+- **State:** `stateDiagram-v2`
+- **Entity Relationship:** `erDiagram`
+
+### Example Format:
+```mermaid
+graph TD
+    A[Component A] --> B[Component B]
+    B --> C[Component C]
+```
+
 ## Documentation Process
 
 ### IMPORTANT: Use Tracking File
