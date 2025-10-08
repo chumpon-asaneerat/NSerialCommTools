@@ -4,6 +4,6 @@ Error: Lexical error on line 24. Unrecognized text.
 ...ParseTime: Contains :        CheckLineT
 -----------------------^
 
-Also Please put log hex/text dump from Documents\LuckyTex related Devices documents in device-*.md 
+Also Please add section to put log hex/text dump from Documents\LuckyTex related Devices documents in device-*.md 
 
 
