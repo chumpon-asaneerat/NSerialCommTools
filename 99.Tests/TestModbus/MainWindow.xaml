@@ -5,8 +5,64 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TestModbus"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        Title="MainWindow" Height="450" Width="800"
+        Loaded="Window_Loaded">
+    <DockPanel LastChildFill="True">
+        <DockPanel LastChildFill="True" DockPanel.Dock="Top">
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="IP Address" />
+                <TextBox Text="{Binding IPAddress}" Width="100" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="Port" />
+                <TextBox Text="{Binding Port}" Width="100" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="Start Address" />
+                <TextBox Text="{Binding StartAddress}" Width="100" />
+            </StackPanel>
+            <Grid />
+        </DockPanel>
+        <DockPanel LastChildFill="True" DockPanel.Dock="Top">
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="Coils" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="No of Points" />
+                <TextBox x:Name="txtNoOfPoints" Text="6" Width="100" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <Button x:Name="cmdReadCoils" Content="Read" Padding="1" Width="70" Click="cmdReadCoils_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <Button x:Name="cmdWriteCoils" Content="Write" Padding="1" Width="70" Click="cmdWriteCoils_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="Coils Values" />
+                <TextBox x:Name="txtCoils" Text="" Width="300" />
+            </StackPanel>
+            <Grid />
+        </DockPanel>
+        <DockPanel LastChildFill="True" DockPanel.Dock="Top">
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="Coils" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="No of Inputs" />
+                <TextBox x:Name="txtNoOfInputs" Text="6" Width="100" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <Button x:Name="cmdReadInputs" Content="Read" Padding="1" Width="70" Click="cmdReadInputs_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <Button x:Name="cmdWriteInputs" Content="Write" Padding="1" Width="70" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Margin="5">
+                <TextBlock Text="Inputs Values" />
+                <TextBox x:Name="txtInputs" Text="" Width="300" />
+            </StackPanel>
+            <Grid />
+        </DockPanel>
+        <Grid />
+    </DockPanel>
 </Window>
