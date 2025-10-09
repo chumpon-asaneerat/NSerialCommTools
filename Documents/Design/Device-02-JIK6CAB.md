@@ -472,6 +472,56 @@ E              # Status
 
 ---
 
+## Log Data Reference
+
+### Captured Log Data (from LuckyTex Devices)
+
+These log dumps were captured from actual JIK6CAB devices and used as reference for implementing the serial communication protocol.
+
+#### Text Format Log (jik_txt_1.txt)
+```
+^KJIK000
+2023-11-07
+17:19:38
+  0.00 kg
+  1.94 kg
+0
+0
+  1.94 kg
+  1.94 kg
+    0 pcs
+
+
+E
+~P1
+```
+
+#### Hexadecimal Format Log (jik_hex_1.txt)
+```
+5E 4B 4A 49 4B 30 30 30 0D 0A 32 30 32 33 2D 31    ^KJIK000..2023-1
+31 2D 30 37 0D 0A 31 37 3A 31 39 3A 32 36 0D 0A    1-07..17:19:26..
+20 20 30 2E 30 30 20 6B 67 0D 0A 20 20 31 2E 39      0.00 kg..  1.9
+34 20 6B 67 0D 0A 30 0D 0A 30 0D 0A 20 20 31 2E    4 kg..0..0..  1.
+39 34 20 6B 67 0D 0A 20 20 31 2E 39 34 20 6B 67    94 kg..  1.94 kg
+0D 0A 20 20 20 20 30 20 70 63 73 0D 0A 20 0D 0A    ..    0 pcs.. ..
+20 0D 0A 45 0D 0A 7E 50 31 0D 0A                    ..E..~P1..
+```
+
+**Key Hex Observations:**
+- `5E` = `^` (Start marker prefix)
+- `4B 4A 49 4B` = `KJIK` (Device identifier)
+- `0D 0A` = CR+LF (Line endings)
+- `7E 50 31` = `~P1` (End marker)
+- Spaces = `20` (Padding for alignment)
+
+**Protocol Notes:**
+- 14-line structured package format
+- Each line terminated with CR+LF (0D 0A)
+- Weight values right-aligned with spaces
+- Empty lines contain only space character before CR+LF
+
+---
+
 ## See Also
 
 - [Device Comparison](CODE_ANALYSIS_NLib.Serial.Devices.md#device-implementations)
