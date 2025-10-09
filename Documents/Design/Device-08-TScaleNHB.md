@@ -173,48 +173,66 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     Start([ProcessRXQueue Called]) --> Extract[Call ExtractPackage]
-    Extract --> CheckNull{Package<br/>extracted?}
-    CheckNull -->|No| End([Return])
-    CheckNull -->|Yes| Split[Split by CRLF]
+    Extract --> CheckNull{Package<br/>null?}
+    CheckNull -->|Yes| End([Return])
+    CheckNull -->|No| Split[Split by CRLF separators]
 
-    Split --> Loop{For each<br/>line}
-    Loop -->|Next line| Convert[Convert bytes to ASCII]
+    Split --> UpdateValues[Call UpdateValues with byte arrays]
+    UpdateValues --> Loop{For each<br/>content}
+
+    Loop -->|Next| CheckContent{content null<br/>or empty?}
+    CheckContent -->|Yes| Loop
+    CheckContent -->|No| Convert[Convert bytes to ASCII string]
+
     Convert --> CheckEmpty{String<br/>empty?}
     CheckEmpty -->|Yes| Loop
-    CheckEmpty -->|No| SplitComma[Split by comma]
+    CheckEmpty -->|No| TryBlock[Enter Try block]
 
-    SplitComma --> CheckCommaCount{Count >= 2?}
-    CheckCommaCount -->|No| Loop
-    CheckCommaCount -->|Yes| GetStatus[status = parts[0]]
+    TryBlock --> SplitComma[Split line by comma]
+    SplitComma --> CheckParts{parts.Length<br/>>= 2?}
+    CheckParts -->|No| ReturnEarly[Return early]
+    CheckParts -->|Yes| GetStatus[status = parts 0 .Trim]
 
-    GetStatus --> GetRemainder[remainder = parts[1]]
-    GetRemainder --> SplitSpaces[Split remainder by spaces<br/>RemoveEmptyEntries]
+    GetStatus --> GetRemainder[remainder = parts 1<br/>not trimmed]
+    GetRemainder --> SplitSpaces[Split remainder by space<br/>RemoveEmptyEntries]
 
-    SplitSpaces --> CheckSpaceCount{Count >= 2?}
-    CheckSpaceCount -->|No| Loop
-    CheckSpaceCount -->|Yes| GetMode[mode = spaceParts[0]]
+    SplitSpaces --> CheckSpace{spaceParts.Length<br/>>= 2?}
+    CheckSpace -->|No| ReturnEarly
+    CheckSpace -->|Yes| GetMode[mode = spaceParts 0 .Trim]
 
-    GetMode --> GetWeightUnit[weightWithUnit = spaceParts[1]]
-    GetWeightUnit --> FindUnitStart[Find where digits end]
+    GetMode --> GetWeightUnit[weightWithUnit = spaceParts 1 .Trim]
+    GetWeightUnit --> LoopBackward[Loop i from end to start<br/>of weightWithUnit]
 
-    FindUnitStart --> ExtractWeight[Extract weight string]
-    ExtractWeight --> ExtractUnit[Extract unit string]
+    LoopBackward --> CheckDigit{char is digit<br/>or dot?}
+    CheckDigit -->|Yes| SetIdx[unitStartIdx = i + 1<br/>break loop]
+    CheckDigit -->|No| LoopBackward
 
-    ExtractUnit --> TryCatch{Try Parse<br/>Decimal}
-    TryCatch -->|Success| SetValues[Set Status, Mode, W, Unit]
-    TryCatch -->|Exception| LogError[Log Error]
+    SetIdx --> CheckIdx{unitStartIdx<br/>> 0?}
+    CheckIdx -->|Yes| Extract[weightStr = substring 0 to unitStartIdx<br/>unit = substring from unitStartIdx]
+    CheckIdx -->|No| DefaultUnit[weightStr = weightWithUnit<br/>unit = g]
+
+    Extract --> SetValues[Value.Status = status<br/>Value.Mode = mode<br/>Value.Unit = unit]
+    DefaultUnit --> SetValues
+
+    SetValues --> CheckWeight{weightStr<br/>not empty?}
+    CheckWeight -->|Yes| ParseWeight[Value.W = decimal.Parse<br/>InvariantCulture]
+    CheckWeight -->|No| Loop
+
+    ParseWeight --> Loop
+    ReturnEarly --> Loop
+
+    TryBlock -.Exception.-> CatchBlock[Catch Exception]
+    CatchBlock --> LogError[med.Err ex]
     LogError --> Loop
-
-    SetValues --> Notify[Raise PropertyChanged]
-    Notify --> Loop
 
     Loop -->|Done| End
 
     style Start fill:#e1f5ff
     style End fill:#e1f5ff
-    style TryCatch fill:#fff4e6
+    style TryBlock fill:#fff4e6
+    style CatchBlock fill:#ffebee
     style LogError fill:#ffebee
-    style Notify fill:#e8f5e9
+    style ParseWeight fill:#e8f5e9
 ```
 
 ---
