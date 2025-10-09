@@ -63,6 +63,8 @@
     <Compile Include="Serial\PHMeter.cs" />
     <Compile Include="Serial\SerialDevices.cs" />
     <Compile Include="Serial\TFO1.cs" />
+    <Compile Include="Serial\TScaleNHB.cs" />
+    <Compile Include="Serial\TScaleQHW.cs" />
     <Compile Include="Serial\WeightQA.cs" />
     <Compile Include="Serial\WeightSPUN.cs" />
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />

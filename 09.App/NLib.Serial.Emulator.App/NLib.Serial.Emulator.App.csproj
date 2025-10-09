@@ -91,6 +91,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\TScaleNHBEmulatorPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\TScaleQHWEmulatorPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Controls\WeightQAEmulatorPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -124,6 +132,12 @@
     </Compile>
     <Compile Include="Controls\TFO1EmulatorPage.xaml.cs">
       <DependentUpon>TFO1EmulatorPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TScaleNHBEmulatorPage.xaml.cs">
+      <DependentUpon>TScaleNHBEmulatorPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TScaleQHWEmulatorPage.xaml.cs">
+      <DependentUpon>TScaleQHWEmulatorPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\WeightQAEmulatorPage.xaml.cs">
       <DependentUpon>WeightQAEmulatorPage.xaml</DependentUpon>

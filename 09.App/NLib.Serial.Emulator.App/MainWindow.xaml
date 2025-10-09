@@ -47,6 +47,16 @@
                     <local:MettlerMS204TS00EmulatorPage x:Name="MettlerMS204TS00Page" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="TScale NHB">
+                <DockPanel LastChildFill="True">
+                    <local:TScaleNHBEmulatorPage x:Name="TScaleNHBPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="TScale QHW">
+                <DockPanel LastChildFill="True">
+                    <local:TScaleQHWEmulatorPage x:Name="TScaleQHWPage" />
+                </DockPanel>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

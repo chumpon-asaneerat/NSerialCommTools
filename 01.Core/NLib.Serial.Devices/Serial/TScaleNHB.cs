@@ -52,7 +52,7 @@ namespace NLib.Serial.Devices
 
             string actualW = ((double)W).ToString("F1");
             output = status + "," + mode + " ";
-            output += actualW.PadLeft(8, ' ');
+            output += actualW.PadLeft(7, ' ');
             output += unit + "  ";
             output += ascii.x0D + ascii.x0A;
             buffers.AddRange(Encoding.ASCII.GetBytes(output));

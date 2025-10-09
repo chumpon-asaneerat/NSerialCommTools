@@ -110,6 +110,37 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MS204TS00", "MS204TS00", "{
 		Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.txt = Documents\LuckyTex Devices\MS204TS00\Mettler Toledo (MS204TS00) - NPT Mettler QDMS.txt
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Design", "Design", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\Design\00-INDEX.md = Documents\Design\00-INDEX.md
+		Documents\Design\App-Emulator-Analysis.md = Documents\Design\App-Emulator-Analysis.md
+		Documents\Design\CODE_ANALYSIS_NLib.Serial.Devices.md = Documents\Design\CODE_ANALYSIS_NLib.Serial.Devices.md
+		Documents\Design\Device-01-CordDEFENDER3000.md = Documents\Design\Device-01-CordDEFENDER3000.md
+		Documents\Design\Device-02-JIK6CAB.md = Documents\Design\Device-02-JIK6CAB.md
+		Documents\Design\Device-03-MettlerMS204TS00.md = Documents\Design\Device-03-MettlerMS204TS00.md
+		Documents\Design\Device-04-PHMeter.md = Documents\Design\Device-04-PHMeter.md
+		Documents\Design\Device-05-TFO1.md = Documents\Design\Device-05-TFO1.md
+		Documents\Design\Device-06-WeightQA.md = Documents\Design\Device-06-WeightQA.md
+		Documents\Design\Device-07-WeightSPUN.md = Documents\Design\Device-07-WeightSPUN.md
+		Documents\Design\Device-08-TScaleNHB.md = Documents\Design\Device-08-TScaleNHB.md
+		Documents\Design\Device-09-TScaleQHW.md = Documents\Design\Device-09-TScaleQHW.md
+		Documents\Design\DOCUMENTATION_TRACKING.md = Documents\Design\DOCUMENTATION_TRACKING.md
+		Documents\Design\LOG_FILES_ANALYSIS.md = Documents\Design\LOG_FILES_ANALYSIS.md
+		Documents\Design\TScale-Analysis.md = Documents\Design\TScale-Analysis.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TScaleNHB", "TScaleNHB", "{49926AA3-8AD9-4140-A3D4-A92147466C58}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\TScaleNHB\NHB.txt = Documents\LuckyTex Devices\TScaleNHB\NHB.txt
+		Documents\LuckyTex Devices\TScaleNHB\NHB2.txt = Documents\LuckyTex Devices\TScaleNHB\NHB2.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TScaleQHW", "TScaleQHW", "{92A90A25-6DD4-4CB3-92BD-1255F62C1A63}"
+	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\TScaleQHW\QHW.txt = Documents\LuckyTex Devices\TScaleQHW\QHW.txt
+		Documents\LuckyTex Devices\TScaleQHW\QHW2.txt = Documents\LuckyTex Devices\TScaleQHW\QHW2.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -150,6 +181,9 @@ Global
 		{D12D966E-B886-473E-86C6-DBE76C1619E0} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 		{0D978359-41BC-4127-A95A-CF69704D115D} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 		{059A6091-694E-478A-BAD7-C5F914C2A8CE} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {50B9F879-6336-48EC-AB6D-A5C36C40605B}
+		{49926AA3-8AD9-4140-A3D4-A92147466C58} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
+		{92A90A25-6DD4-4CB3-92BD-1255F62C1A63} = {0A0F66D7-A020-4B80-B3CB-76C00FAD585F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}

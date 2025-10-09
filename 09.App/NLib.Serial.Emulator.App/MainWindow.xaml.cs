@@ -120,10 +120,14 @@ namespace NLib
             InitJIK6CAB();
             InitDEFENDER3000();
             InitMettlerMS204TS00();
+            InitTScaleNHB();
+            InitTScaleQHW();
         }
 
         private void FreeDevices()
         {
+            FreeTScaleQHW();
+            FreeTScaleNHB();
             FreeMettlerMS204TS00();
             FreeDEFENDER3000();
             FreeJIK6CAB();
@@ -142,6 +146,8 @@ namespace NLib
             SendJIK6CAB();
             SendDEFENDER3000();
             SendMettlerMS204TS00();
+            SendTScaleNHB();
+            SendTScaleQHW();
         }
 
         #endregion
@@ -275,6 +281,44 @@ namespace NLib
         private void SendMettlerMS204TS00()
         {
             MettlerMS204TS00Page.Sync();
+        }
+
+        #endregion
+
+        #region TScaleNHB
+
+        private void InitTScaleNHB()
+        {
+            TScaleNHBPage.Setup();
+        }
+
+        private void FreeTScaleNHB()
+        {
+            TScaleNHBDevice.Instance.Shutdown();
+        }
+
+        private void SendTScaleNHB()
+        {
+            TScaleNHBPage.Sync();
+        }
+
+        #endregion
+
+        #region TScaleQHW
+
+        private void InitTScaleQHW()
+        {
+            TScaleQHWPage.Setup();
+        }
+
+        private void FreeTScaleQHW()
+        {
+            TScaleQHWDevice.Instance.Shutdown();
+        }
+
+        private void SendTScaleQHW()
+        {
+            TScaleQHWPage.Sync();
         }
 
         #endregion
