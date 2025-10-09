@@ -49,6 +49,16 @@
                     <local:MettlerMS204TS00TerminalPage x:Name="MettlerMS204TS00Page" />
                 </DockPanel>
             </TabItem>
+            <TabItem Header="TScale NHB">
+                <DockPanel LastChildFill="True">
+                    <local:TScaleNHBTerminalPage x:Name="TScaleNHBPage" />
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="TScale QHW">
+                <DockPanel LastChildFill="True">
+                    <local:TScaleQHWTerminalPage x:Name="TScaleQHWPage" />
+                </DockPanel>
+            </TabItem>
             <TabItem Header="HEX View">
                 <DockPanel LastChildFill="True">
                     <DockPanel DockPanel.Dock="Top" LastChildFill="True">

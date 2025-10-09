@@ -1,5 +1,8 @@
 ﻿#region Using
 
+using NLib.Serial.Devices;
+using NLib.Serial.Terminal.App.Controls;
+using NLib.Serial.Terminals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,9 +17,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
-using NLib.Serial.Devices;
-using NLib.Serial.Terminals;
 
 #endregion
 
@@ -69,10 +69,14 @@ namespace NLib
             InitJIK6CAB();
             InitDEFENDER3000();
             InitMettlerMS204TS00();
+            InitTScaleNHB();
+            InitTScaleQHW();
         }
 
         private void FreeDevices()
         {
+            FreeTScaleQHW();
+            FreeTScaleNHB();
             FreeMettlerMS204TS00();
             FreeDEFENDER3000();
             FreeJIK6CAB();
@@ -244,6 +248,50 @@ namespace NLib
         }
 
         private void MettlerMS204TS00_OnRx(object sender, EventArgs e)
+        {
+
+        }
+
+        #endregion
+
+        #region TScaleNHB
+
+        private void InitTScaleNHB()
+        {
+            TScaleNHBTerminal.Instance.LoadConfig();
+            TScaleNHBTerminal.Instance.OnRx += TScaleNHB_OnRx;
+            TScaleNHBPage.Setup(TScaleNHBTerminal.Instance);
+        }
+
+        private void FreeTScaleNHB()
+        {
+            TScaleNHBTerminal.Instance.Disconnect();
+            TScaleNHBTerminal.Instance.OnRx -= TScaleNHB_OnRx;
+        }
+
+        private void TScaleNHB_OnRx(object sender, EventArgs e)
+        {
+
+        }
+
+        #endregion
+
+        #region TScaleQHW
+
+        private void InitTScaleQHW()
+        {
+            TScaleQHWTerminal.Instance.LoadConfig();
+            TScaleQHWTerminal.Instance.OnRx += TScaleQHW_OnRx;
+            TScaleQHWPage.Setup(TScaleQHWTerminal.Instance);
+        }
+
+        private void FreeTScaleQHW()
+        {
+            TScaleQHWTerminal.Instance.Disconnect();
+            TScaleQHWTerminal.Instance.OnRx -= TScaleQHW_OnRx;
+        }
+
+        private void TScaleQHW_OnRx(object sender, EventArgs e)
         {
 
         }

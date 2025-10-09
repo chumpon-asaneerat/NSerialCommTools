@@ -10,8 +10,11 @@ Implements #118
 Implements #117
 - 
 
+[Commit]
 Implements #116
-- 
+- Updete Emulator and Terminal projects
+  - Add supports TScaleNHB
+  - Add supports TScaleQHW
 
 [Commit]
 Implements #115

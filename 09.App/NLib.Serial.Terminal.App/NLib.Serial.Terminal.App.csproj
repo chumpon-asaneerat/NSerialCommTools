@@ -91,6 +91,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\TScaleNHBTerminalPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\TScaleQHWTerminalPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Controls\WeightQATerminalPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -124,6 +132,12 @@
     </Compile>
     <Compile Include="Controls\TFO1TerminalPage.xaml.cs">
       <DependentUpon>TFO1TerminalPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TScaleNHBTerminalPage.xaml.cs">
+      <DependentUpon>TScaleNHBTerminalPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TScaleQHWTerminalPage.xaml.cs">
+      <DependentUpon>TScaleQHWTerminalPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\WeightQATerminalPage.xaml.cs">
       <DependentUpon>WeightQATerminalPage.xaml</DependentUpon>
