@@ -158,8 +158,8 @@ stateDiagram-v2
     state Parsing {
         [*] --> CheckLineType
 
-        CheckLineType --> ParseDate: Contains - or /
-        CheckLineType --> ParseTime: Contains :
+        CheckLineType --> ParseDate: Contains dash or slash
+        CheckLineType --> ParseTime: Contains colon
         CheckLineType --> ParseWeight: Contains g or kg
         CheckLineType --> ParsePCS: Contains pcs
         CheckLineType --> CheckEnd: Contains P1

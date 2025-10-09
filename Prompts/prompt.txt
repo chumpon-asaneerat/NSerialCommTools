@@ -1,9 +1,1 @@
-Device-02-JIK6CAB.md in State Diagram - Parsing State Machine has error 
-
-Error: Lexical error on line 24. Unrecognized text.
-...ParseTime: Contains :        CheckLineT
------------------------^
-
-Also Please add section to put log hex/text dump from Documents\LuckyTex related Devices documents in device-*.md 
-
 
