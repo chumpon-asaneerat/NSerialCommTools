@@ -131,6 +131,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Design", "Design", "{02EA68
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TScaleNHB", "TScaleNHB", "{49926AA3-8AD9-4140-A3D4-A92147466C58}"
 	ProjectSection(SolutionItems) = preProject
+		Documents\LuckyTex Devices\TScaleNHB\442216_0.jpg = Documents\LuckyTex Devices\TScaleNHB\442216_0.jpg
+		Documents\LuckyTex Devices\TScaleNHB\442217_0.jpg = Documents\LuckyTex Devices\TScaleNHB\442217_0.jpg
+		Documents\LuckyTex Devices\TScaleNHB\442218.jpg = Documents\LuckyTex Devices\TScaleNHB\442218.jpg
 		Documents\LuckyTex Devices\TScaleNHB\NHB.txt = Documents\LuckyTex Devices\TScaleNHB\NHB.txt
 		Documents\LuckyTex Devices\TScaleNHB\NHB2.txt = Documents\LuckyTex Devices\TScaleNHB\NHB2.txt
 	EndProjectSection

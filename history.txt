@@ -7,8 +7,9 @@ Implements #119
 Implements #118
 - 
 
+[Commit]
 Implements #117
-- 
+- Add documents images for TScaleNHB and TScaleQHW devices
 
 [Commit]
 Implements #116
