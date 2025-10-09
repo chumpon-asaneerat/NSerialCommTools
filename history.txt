@@ -13,8 +13,11 @@ Implements #117
 Implements #116
 - 
 
+[Commit]
 Implements #115
-- 
+- Update 2 devices
+  - Add suppports TScaleNHB
+  - Add suppports TScaleQHW
 
 [Commit]
 Implements #114
