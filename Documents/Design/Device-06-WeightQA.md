@@ -432,6 +432,157 @@ terminal.OnRx += (s, e) => {
 
 ---
 
+## HEX Dump from Log Files
+
+Raw serial data captured from the WeightQA device. This data was captured using third-party serial monitoring tools and serves as reference for protocol implementation.
+
+**Source:** `Documents/LuckyTex Devices/WEIGHT QA/Serial_Log Weight QA.txt`
+
+### Sample Data Format
+
+**ASCII Text:**
+```
++007.12/3 G S
+```
+
+**HEX Dump:**
+```
+2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A
+```
+
+### Byte-by-Byte Breakdown
+
+```
+2B                "+" - sign (positive weight)
+30 30 37 2E 31 32 "007.12" - weight value (6 chars, 2 decimals)
+2F                "/" - separator
+33                "3" - stability indicator (0-8)
+20                space
+47                "G" - status/mode (Gross)
+20                space
+53                "S" - additional status
+0D 0A             CR+LF terminator
+```
+
+**Total Length:** 15 bytes per reading
+
+### Example Readings at Different Stability Levels
+
+**Unstable readings (stability > 3):**
+```
+// HEX format showing weight stabilization process
+2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A    +007.12/3 G S
+2B 30 30 38 2E 31 32 2F 32 20 47 20 53 0D 0A    +008.12/2 G S
+2B 30 30 38 2E 31 32 2F 32 20 47 20 53 0D 0A    +008.12/2 G S
+2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A    +007.12/3 G S
+```
+
+**Stabilizing readings (stability 2-3):**
+```
+2B 30 30 31 2E 32 33 2F 36 20 47 20 53 0D 0A    +001.23/6 G S
+2B 30 30 32 2E 32 33 2F 35 20 47 20 53 0D 0A    +002.23/5 G S
+2B 30 30 32 2E 32 33 2F 34 20 47 20 53 0D 0A    +002.23/4 G S
+```
+
+**Stable readings (stability 0-1):**
+```
+2B 30 30 37 2E 31 32 2F 31 20 47 20 53 0D 0A    +007.12/1 G S
+2B 30 30 37 2E 31 32 2F 31 20 47 20 53 0D 0A    +007.12/1 G S
+2B 30 30 37 2E 31 32 2F 31 20 47 20 53 0D 0A    +007.12/1 G S
+2B 30 30 30 2E 30 30 2F 30 20 47 20 53 0D 0A    +000.00/0 G S (zero, stable)
+```
+
+### Field Analysis
+
+**Sign Character (Position 0):**
+- `2B` = '+' (positive weight)
+- `2D` = '-' (negative weight)
+
+**Weight Value (Positions 1-6):**
+- Always 6 characters
+- Format: XXX.XX (3 digits, decimal, 2 decimals)
+- Includes leading zeros
+
+**Separator (Position 7):**
+- `2F` = '/' (always)
+
+**Stability Indicator (Position 8):**
+- `30` = '0' (fully stable, best)
+- `31` = '1' (very stable, acceptable)
+- `32` = '2' (stabilizing)
+- `33` = '3' (stabilizing)
+- `34`-`38` = '4'-'8' (unstable to very unstable)
+
+**Mode/Status Characters:**
+- `47` = 'G' (Gross weight)
+- `53` = 'S' (additional status)
+
+### Protocol Observations from Logs
+
+1. **Fixed Width Format:** Always exactly 15 bytes
+2. **Sign Always Present:** Even positive weights have '+' sign
+3. **Leading Zeros:** Weight formatted with leading zeros (007.12)
+4. **Stability Range:** Values 0-8, where 0 is most stable
+5. **Continuous Updates:** Device sends frequent updates during stabilization
+6. **Format Consistency:** Never deviates from format
+7. **Decimal Places:** Always 2 decimal places
+8. **Update Pattern:** Stability number typically decreases as weight settles
+
+### Stabilization Example Sequence
+
+```
+ASCII                  HEX                                           Stability
++001.22/1 G S    2B 30 30 31 2E 32 32 2F 31 20 47 20 53 0D 0A     1 (stable)
++001.21/1 G S    2B 30 30 31 2E 32 31 2F 31 20 47 20 53 0D 0A     1 (stable)
++001.21/2 G S    2B 30 30 31 2E 32 31 2F 32 20 47 20 53 0D 0A     2 (weight changed)
++001.21/3 G S    2B 30 30 31 2E 32 31 2F 33 20 47 20 53 0D 0A     3 (less stable)
++007.12/1 G S    2B 30 30 37 2E 31 32 2F 31 20 47 20 53 0D 0A     1 (new weight)
++007.12/2 G S    2B 30 30 37 2E 31 32 2F 32 20 47 20 53 0D 0A     2 (settling)
++007.12/4 G S    2B 30 30 37 2E 31 32 2F 34 20 47 20 53 0D 0A     4 (unstable)
++007.12/4 G S    2B 30 30 37 2E 31 32 2F 34 20 47 20 53 0D 0A     4 (still unstable)
+```
+
+This shows how stability changes as items are added/removed from the scale.
+
+### Parsing Strategy
+
+The fixed 15-byte format enables simple parsing:
+
+1. **Extract complete line:** Wait for CR+LF
+2. **Verify format:** Check length = 15 bytes
+3. **Parse sign:** byte[0] = '+' or '-'
+4. **Parse weight:** bytes[1-6] as decimal
+5. **Verify separator:** byte[7] = '/'
+6. **Parse stability:** byte[8] as integer (0-8)
+7. **Parse status:** bytes[10] = mode, byte[12] = status
+
+### Quality Control Logic
+
+```
+if (stability <= 1 && weight > 0)
+    // Accept weight - stable and valid
+else if (stability > 1 && stability <= 3)
+    // Wait for stabilization
+else
+    // Reject - too unstable or environmental issue
+```
+
+### Comparison with Other Weight Scales
+
+**WeightQA vs DEFENDER3000:**
+- WeightQA: Includes stability number (0-8)
+- DEFENDER3000: Uses '?' prefix for unstable
+- WeightQA: Fixed 6-char weight format
+- DEFENDER3000: Variable width with padding
+
+**WeightQA vs MettlerMS204TS00:**
+- WeightQA: 2 decimal places
+- Mettler: 4 decimal places (higher precision)
+- WeightQA: Numeric stability indicator
+- Mettler: Only sends stable readings
+
+---
+
 ## Related Files
 
 - **Data Class:** `NLib.Serial.Devices.WeightQAData`

@@ -415,6 +415,174 @@ terminal.OnRx += (s, e) => {
 
 ---
 
+## HEX Dump from Log Files
+
+Raw serial data captured from the pH Meter device. This data was captured using third-party serial monitoring tools and serves as reference for protocol implementation.
+
+**Source:** `Documents/LuckyTex Devices/PH Meter/Serial_Log PH.txt`
+
+### Complete Measurement Package
+
+**ASCII Text:**
+```
+3.01pH 25.5°C ATC
+3.01pH 25.5°C ATC
+20-Feb-2023
+11:11
+
+3.01pH
+25.5°C ATC
+Auto EP Standard
+Blank
+```
+
+**HEX Dump:**
+```
+33 2E 30 31 70 48 20 32 35 2E 35 F8 43 20 41 54    3.01pH 25.5.C AT
+43 0D 0A 33 2E 30 31 70 48 20 32 35 2E 35 F8 43    C..3.01pH 25.5.C
+20 41 54 43 0D 0A 32 30 2D 46 65 62 2D 32 30 32     ATC..20-Feb-202
+33 0D 0A 31 31 3A 31 31 0D 0A 20 0D 0A 33 2E 30    3..11:11.. ..3.0
+31 70 48 0D 0A 32 35 2E 35 F8 43 20 41 54 43 0D    1pH..25.5.C ATC.
+0A 41 75 74 6F 20 45 50 20 53 74 61 6E 64 61 72    .Auto EP Standar
+64 0D 0A 42 6C 61 6E 6B 0D 0A 0D 0A 0D 0A          d..Blank........
+```
+
+### Byte-by-Byte Breakdown
+
+**pH Reading (Line 1 & 2):**
+```
+33 2E 30 31       "3.01" - pH value
+70 48             "pH" - unit
+20                space
+32 35 2E 35       "25.5" - temperature
+F8                degree symbol (°) - special character
+43                "C" - Celsius
+20                space
+41 54 43          "ATC" - Automatic Temperature Compensation
+0D 0A             CR+LF
+```
+
+**Date (Line 3):**
+```
+32 30 2D          "20-"
+46 65 62          "Feb" - month abbreviation
+2D 32 30 32 33    "-2023"
+0D 0A             CR+LF
+```
+
+**Time (Line 4):**
+```
+31 31 3A 31 31    "11:11" - HH:mm format
+0D 0A             CR+LF
+```
+
+**Empty Line:**
+```
+20 0D 0A          space + CR+LF
+```
+
+**pH Value Only:**
+```
+33 2E 30 31 70 48 "3.01pH"
+0D 0A             CR+LF
+```
+
+**Temperature with ATC:**
+```
+32 35 2E 35       "25.5"
+F8                degree symbol (°)
+43 20 41 54 43    "C ATC"
+0D 0A             CR+LF
+```
+
+**Measurement Mode:**
+```
+41 75 74 6F 20 45 50 20 53 74 61 6E 64 61 72 64    "Auto EP Standard"
+0D 0A                                              CR+LF
+```
+
+**Sample ID:**
+```
+42 6C 61 6E 6B    "Blank"
+0D 0A 0D 0A 0D 0A CR+LF (multiple line terminators)
+```
+
+### Example pH Range Readings
+
+**Acidic Sample (pH 3.46):**
+```
+// HEX format
+34 2E 35 34 70 48 20 32 34 2E 37 F8 43 20 41 54    4.54pH 24.7.C AT
+43 0D 0A 34 2E 35 37 70 48 20 32 34 2E 37 F8 43    C..4.57pH 24.7.C
+20 41 54 43 0D 0A 34 2E 35 38 70 48 20 32 34 2E     ATC..4.58pH 24.
+37 F8 43 20 41 54 43 0D 0A                         7.C ATC..
+```
+
+**ASCII:**
+```
+4.54pH 24.7°C ATC
+4.57pH 24.7°C ATC
+4.58pH 24.7°C ATC
+```
+
+### Special Character Notes
+
+**Degree Symbol (0xF8):**
+- Non-standard ASCII character
+- Represents the degree symbol (°)
+- Must be handled specially in parsing
+- Alternative: Use Unicode \u00B0 for display
+
+### Protocol Observations from Logs
+
+1. **Multi-Line Format:** Each measurement produces multiple lines
+2. **Duplicate Lines:** pH reading appears twice at start
+3. **Special Characters:** Uses 0xF8 for degree symbol
+4. **ATC Always Present:** Temperature compensation is standard
+5. **Date Format:** DD-MMM-YYYY (3-letter month)
+6. **Time Format:** HH:mm (24-hour, no seconds in some outputs)
+7. **Metadata Lines:** Includes measurement mode and sample ID
+8. **Variable Length:** Package length varies based on sample name
+9. **Multiple Terminators:** Some lines end with multiple CR+LF pairs
+
+### Parsing Challenges
+
+1. **Variable Structure:** Not all measurements have the same number of lines
+2. **Special Characters:** 0xF8 degree symbol requires special handling
+3. **Line Identification:** Must detect line type by pattern matching
+4. **Continuous Stream:** Multiple measurements can arrive back-to-back
+5. **Empty Lines:** Must handle blank lines properly
+
+### Measurement Types Observed
+
+**Pattern 1 - Simple Reading:**
+```
+3.01pH 25.5°C ATC
+```
+
+**Pattern 2 - With Date/Time:**
+```
+3.01pH 25.5°C ATC
+20-Feb-2023
+11:11
+```
+
+**Pattern 3 - Full Package:**
+```
+3.01pH 25.5°C ATC
+20-Feb-2023
+11:11
+
+3.01pH
+25.5°C ATC
+Auto EP Standard
+Blank
+```
+
+The parser must handle all three patterns flexibly.
+
+---
+
 ## Related Files
 
 - **Data Class:** `NLib.Serial.Devices.PHMeterData`

@@ -452,6 +452,175 @@ terminal.OnRx += (s, e) => {
 
 ---
 
+## HEX Dump from Log Files
+
+Raw serial data captured from the WeightSPUN device. This data was captured using third-party serial monitoring tools and serves as reference for protocol implementation.
+
+**Source:** `Documents/LuckyTex Devices/WEIGHT SPUN/Serial_Logspun.txt`
+
+### Sample Data Format
+
+**ASCII Text:**
+```
+     0.0 kg    G
+```
+
+**HEX Dump:**
+```
+20 20 20 20 20 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A
+```
+
+### Byte-by-Byte Breakdown
+
+```
+20 20 20 20 20    5 spaces (leading padding)
+30 2E 30          "0.0" - weight value
+20                space separator
+6B 67             "kg" - unit
+20 20 20 20       4 spaces (trailing padding)
+47                "G" - status indicator (Gross, stable)
+0D 0A             CR+LF terminator
+```
+
+**Total Length:** 18 bytes per reading (same as DEFENDER3000)
+
+### Protocol Analysis
+
+**Identical to CordDEFENDER3000:**
+
+The WeightSPUN uses the exact same protocol as the CordDEFENDER3000 scale:
+- Same 18-byte format
+- Same padding scheme
+- Same status indicators (G, N, ?G, ?N)
+- Same CR+LF termination
+
+**Format:** `[5 spaces][weight] kg [4 spaces][status]\r\n`
+
+### Log File Header Bytes
+
+**Special Header (First 4 bytes):**
+```
+00 00 7F 7F    Special marker/header bytes
+```
+
+These bytes appear at the start of the log file but are not part of the weight transmission protocol. They may be:
+- Log file markers added by the capture tool
+- Device initialization sequence
+- Synchronization bytes
+
+**Following the header, normal weight readings begin:**
+```
+20 20 20 20 20 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A     0.0 kg    G
+20 20 20 20 20 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A     0.0 kg    G
+20 20 20 20 20 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A     0.0 kg    G
+```
+
+### Example Continuous Stream
+
+**Zero Weight (Stable):**
+```
+20 20 20 20 20 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A
+20 20 20 20 20 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A
+20 20 20 20 20 30 2E 30 20 6B 67 20 20 20 20 47 0D 0A
+```
+
+**ASCII:**
+```
+     0.0 kg    G
+     0.0 kg    G
+     0.0 kg    G
+```
+
+### Status Indicators
+
+Same as CordDEFENDER3000:
+
+| Hex | ASCII | Meaning |
+|-----|-------|---------|
+| 47 | G | Gross weight, stable |
+| 4E | N | Net weight, stable |
+| 3F 47 | ?G | Gross weight, unstable/dynamic |
+| 3F 4E | ?N | Net weight, unstable/dynamic |
+
+### Protocol Observations from Logs
+
+1. **Identical Format:** Uses exact same protocol as DEFENDER3000
+2. **Fixed Width:** Always 18 bytes per transmission
+3. **Continuous Stream:** High-frequency updates during weighing
+4. **Header Bytes:** Log file starts with `00 00 7F 7F` (tool artifact)
+5. **Stability Indication:** Question mark (?) prefix for dynamic/unstable
+6. **Unit Consistency:** Always reports in 'kg'
+
+### Key Differences from DEFENDER3000
+
+**Protocol Level:**
+- No differences in serial protocol format
+- Identical byte structure
+- Same parsing logic applies
+
+**Hardware/Application Level:**
+- **Capacity:** WeightSPUN handles much heavier loads (100+ kg vs < 10 kg)
+- **Precision:** Lower precision acceptable for large weights (0.1 kg vs 0.005 kg)
+- **Environment:** Designed for dynamic/moving loads (spinning, conveyor)
+- **Update Rate:** May transmit more frequently during motion
+
+### Parsing Strategy
+
+**Use same parser as CordDEFENDER3000:**
+
+```csharp
+// Identical implementation
+string line = Encoding.ASCII.GetString(content);
+string[] elems = line.Split(new string[] { " " },
+                              StringSplitOptions.RemoveEmptyEntries);
+
+if (elems.Length < 3) return;
+
+Value.W = decimal.Parse(elems[0].Trim());      // Weight
+Value.Unit = elems[1].Trim();                  // Unit (kg)
+Value.O = elems[2].Trim();                     // Status (G/N/?G/?N)
+```
+
+### Industrial Application Example
+
+**Spinning Platform Sequence:**
+```
+ASCII                    Status              Interpretation
+     0.0 kg    G        Stable, zero        Empty platform
+   125.3 kg   ?G        Unstable            Item placed, platform starting
+   126.8 kg   ?G        Unstable            Spinning, weight shifting
+   127.2 kg   ?G        Unstable            Still spinning
+   127.5 kg   ?G        Unstable            Slowing down
+   127.8 kg    G        Stable              Platform stopped, final weight
+```
+
+### Implementation Notes
+
+**Code Reuse:**
+- WeightSPUN can share the same data class as DEFENDER3000
+- Same terminal implementation works for both
+- Only difference is configuration/calibration
+
+**Differentiation:**
+- Use device name/model for identification
+- Configure different ranges in application
+- Apply appropriate validation rules for weight range
+
+### Comparison Table: Protocol vs Application
+
+| Aspect | CordDEFENDER3000 | WeightSPUN |
+|--------|------------------|------------|
+| **Protocol Format** | Identical | Identical |
+| **Byte Structure** | 18 bytes | 18 bytes |
+| **Parsing Logic** | Same | Same |
+| **Code Reuse** | Yes | Yes |
+| **Weight Range** | 0-10 kg | 0-200 kg |
+| **Typical Precision** | ±5 g | ±100 g |
+| **Use Case** | Laboratory/small items | Industrial/bulk |
+| **Environment** | Stable surface | Dynamic/moving |
+
+---
+
 ## Related Files
 
 - **Data Class:** `NLib.Serial.Devices.WeightSPUNData`

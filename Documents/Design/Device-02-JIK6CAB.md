@@ -463,6 +463,105 @@ E              # Status
 
 ---
 
+## HEX Dump from Log Files
+
+Raw serial data captured from the JIK6CAB device. This data was captured using third-party serial monitoring tools and serves as reference for protocol implementation.
+
+**Source:** `Documents/LuckyTex Devices/JIK6CAB/jik_hex_1.txt`
+
+### Complete Package HEX Dump
+
+```
+5E 4B 4A 49 4B 30 30 30 0D 0A    ^KJIK000..
+32 30 32 33 2D 31 31 2D 30 37    2023-11-07
+   0D 0A                          ..
+31 37 3A 31 39 3A 32 36 0D 0A    17:19:26..
+20 20 30 2E 30 30 20 6B 67 0D      0.00 kg.
+   0A                             .
+20 20 31 2E 39 34 20 6B 67 0D      1.94 kg.
+   0A                             .
+30 0D 0A                         0..
+30 0D 0A                         0..
+20 20 31 2E 39 34 20 6B 67 0D      1.94 kg.
+   0A                             .
+20 20 31 2E 39 34 20 6B 67 0D      1.94 kg.
+   0A                             .
+20 20 20 20 30 20 70 63 73 0D        0 pcs.
+   0A                             .
+20 0D 0A                          ..
+20 0D 0A                          ..
+45 0D 0A                         E..
+7E 50 31 0D 0A                   ~P1..
+```
+
+### Byte-by-Byte Breakdown
+
+**Start Marker (Line 1):**
+- `5E 4B 4A 49 4B 30 30 30` - "^KJIK000" (device identifier)
+- `0D 0A` - CR+LF
+
+**Date (Line 2):**
+- `32 30 32 33 2D 31 31 2D 30 37` - "2023-11-07"
+- `0D 0A` - CR+LF
+
+**Time (Line 3):**
+- `31 37 3A 31 39 3A 32 36` - "17:19:26"
+- `0D 0A` - CR+LF
+
+**Tare Weight (Line 4):**
+- `20 20 30 2E 30 30 20 6B 67` - "  0.00 kg" (2 spaces + value + unit)
+- `0D 0A` - CR+LF
+
+**Gross Weight (Line 5):**
+- `20 20 31 2E 39 34 20 6B 67` - "  1.94 kg"
+- `0D 0A` - CR+LF
+
+**Unknown Values (Lines 6-7):**
+- `30 0D 0A` - "0" + CR+LF
+- `30 0D 0A` - "0" + CR+LF
+
+**Net Weight (Line 8):**
+- `20 20 31 2E 39 34 20 6B 67` - "  1.94 kg"
+- `0D 0A` - CR+LF
+
+**Display Weight (Line 9):**
+- `20 20 31 2E 39 34 20 6B 67` - "  1.94 kg" (duplicate of net)
+- `0D 0A` - CR+LF
+
+**Piece Count (Line 10):**
+- `20 20 20 20 30 20 70 63 73` - "    0 pcs" (4 spaces + value + unit)
+- `0D 0A` - CR+LF
+
+**Empty/Status Lines (11-13):**
+- `20 0D 0A` - space + CR+LF
+- `20 0D 0A` - space + CR+LF
+- `45 0D 0A` - "E" + CR+LF (status character)
+
+**End Marker (Line 14):**
+- `7E 50 31` - "~P1"
+- `0D 0A` - CR+LF
+
+### Protocol Observations from Logs
+
+1. **Fixed Structure:** Always 14 lines with specific order
+2. **Package Markers:** Start with `^KJIK000`, end with `~P1`
+3. **Date Format:** ISO format YYYY-MM-DD
+4. **Time Format:** HH:mm:ss (24-hour)
+5. **Weight Padding:** Leading spaces for alignment
+6. **Unit Indicators:** "kg" for weight, "pcs" for count
+7. **Total Length:** Approximately 150-180 bytes per package
+8. **Termination:** Every line ends with CR+LF (0x0D 0x0A)
+
+### State Machine Verification
+
+The log data confirms the need for a state machine parser:
+- Package boundaries are clearly marked
+- Multi-line structure requires line counting
+- Each line has specific meaning based on position
+- Incomplete packages would cause data corruption without state tracking
+
+---
+
 ## Related Files
 
 - **Data Class:** `NLib.Serial.Devices.JIK6CABData`

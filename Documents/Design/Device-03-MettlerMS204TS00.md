@@ -320,6 +320,105 @@ terminal.OnRx += (s, e) => {
 
 ---
 
+## HEX Dump from Log Files
+
+Raw serial data captured from the Mettler Toledo MS204TS00 analytical balance. This data was captured using third-party serial monitoring tools and serves as reference for protocol implementation.
+
+**Source:** `Documents/LuckyTex Devices/MS204TS00/Mettler Toledo (MS204TS00) - NPT Mettler QDMS Hex.txt`
+
+### Sample Data Format
+
+**ASCII Text:**
+```
+     N          0.3746 g
+```
+
+**HEX Dump:**
+```
+20 20 20 20 20 4E 20 20 20 20 20 20 20 30 2E 33 37 34 36 20 67 20 20 20 0D 0A
+```
+
+### Byte-by-Byte Breakdown
+
+```
+20 20 20 20 20    5 spaces (padding)
+4E                "N" - status character (Net weight, stable)
+20 20 20 20 20    5 spaces (separator)
+20 20             2 spaces (value padding)
+30 2E 33 37 34 36 "0.3746" - weight value (6 characters)
+20                space
+67                "g" - unit character
+20 20 20          3 spaces (trailing)
+0D 0A             CR+LF terminator
+```
+
+**Total Length:** 26 bytes per reading
+
+### Field Analysis
+
+**Status Character (Position 6):**
+- `4E` = 'N' (Net weight, stable)
+- Other possible values: 'S' (Gross stable), 'G' (Gross unstable)
+
+**Weight Value (Positions 13-18):**
+- Always 6 characters for the numeric value
+- Format: X.XXXX (4 decimal places)
+- Right-aligned within field
+
+**Unit (Position 20):**
+- `67` = 'g' (grams)
+- Can also be 'kg' for kilograms
+
+### Example Continuous Readings
+
+```
+// HEX format showing stable weight readings
+20 20 20 20 20 4E 20 20 20 20 20 20 20 30 2E 33 37 34 39 20 67 20 20 20 0D 0A
+20 20 20 20 20 4E 20 20 20 20 20 20 20 30 2E 33 37 34 37 20 67 20 20 20 0D 0A
+20 20 20 20 20 4E 20 20 20 20 20 20 20 30 2E 33 37 34 36 20 67 20 20 20 0D 0A
+20 20 20 20 20 4E 20 20 20 20 20 20 20 30 2E 33 37 34 36 20 67 20 20 20 0D 0A
+```
+
+**ASCII Representation:**
+```
+     N          0.3749 g
+     N          0.3747 g
+     N          0.3746 g
+     N          0.3746 g
+```
+
+### Protocol Observations from Logs
+
+1. **Fixed Width Format:** Every transmission is exactly 26 bytes
+2. **High Precision:** 4 decimal places (0.1 mg resolution)
+3. **Stable Only:** Device only transmits when reading is stable
+4. **Consistent Layout:** Fixed field positions for parsing
+5. **Status First:** Mode/status character appears before weight
+6. **Padding Strategy:** Both leading and trailing spaces for alignment
+7. **Unit Flexibility:** Supports both 'g' and 'kg' units
+8. **Update Rate:** Continuous stream when stable weight detected
+
+### Parsing Strategy
+
+The fixed 26-byte format allows for reliable parsing:
+1. Extract bytes 0-25 (complete line)
+2. Convert to ASCII string
+3. Split by spaces (RemoveEmptyEntries)
+4. Element[0] = Status character
+5. Element[1] = Weight value (decimal)
+6. Element[2] = Unit string
+
+### Comparison with Other Devices
+
+Unlike simpler scales (DEFENDER3000), the Mettler balance:
+- Places status character BEFORE weight value
+- Uses higher precision (4 decimals vs 3)
+- Only transmits stable readings
+- Includes temperature compensation
+- Uses scientific/laboratory format
+
+---
+
 ## Related Files
 
 - **Data Class:** `NLib.Serial.Devices.MettlerMS204TS00Data`

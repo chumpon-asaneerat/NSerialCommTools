@@ -536,6 +536,210 @@ This bug causes:
 
 ---
 
+## HEX Dump from Log Files
+
+Raw serial data captured from the TFO1 device. This data was captured using third-party serial monitoring tools and serves as reference for protocol implementation.
+
+**Source:** `Documents/LuckyTex Devices/TFO1/TFO.Weight.Attemp.02.HEX.txt`
+
+### Sample Data Package
+
+**ASCII/Binary Mixed Format:**
+```
+// F      0.0.
+46 20 20 20 20 20 20 30 2E 30 0D
+// H      0.0.
+48 20 20 20 20 20 20 30 2E 30 0D
+// Q      0.0.
+51 20 20 20 20 20 20 30 2E 30 0D
+// X      0.0.
+58 20 20 20 20 20 20 30 2E 30 0D
+// A    366.0.
+41 20 20 20 20 33 36 36 2E 30 0D
+// 0    23.0.
+30 20 20 20 20 20 32 33 2E 30 0D
+// 4    343.5.
+34 20 20 20 20 33 34 33 2E 35 0D
+// 1      0.0.
+31 20 20 20 20 20 20 30 2E 30 0D
+// 2       0.
+32 20 20 20 20 20 20 20 30 0D
+// B..
+42 83 0D
+// C20. 02. 2023. MON 09:20AM.
+43 32 30 F4 20 30 32 F3 20 32 30 32 33 F2 20 4D 4F 4E 20 30 39 3A 32 30 41 4D 0D
+// V1..
+56 31 0D 0A
+```
+
+### Field-by-Field Breakdown
+
+**F Field (F - Fabric Weight):**
+```
+46                "F" - field identifier
+20 20 20 20 20 20 spaces (padding)
+30 2E 30          "0.0" - value
+0D                CR terminator
+```
+
+**H Field (H - Unknown):**
+```
+48                "H" - field identifier
+20 20 20 20 20 20 spaces (padding)
+30 2E 30          "0.0" - value
+0D                CR terminator
+```
+
+**Q Field (Q - Unknown):**
+```
+51                "Q" - field identifier
+20 20 20 20 20 20 spaces (padding)
+30 2E 30          "0.0" - value
+0D                CR terminator
+```
+
+**X Field (X - Unknown):**
+```
+58                "X" - field identifier
+20 20 20 20 20 20 spaces (padding)
+30 2E 30          "0.0" - value
+0D                CR terminator
+```
+
+**A Field (A - Total Weight):**
+```
+41                "A" - field identifier
+20 20 20 20       spaces (padding)
+33 36 36 2E 30    "366.0" - value
+0D                CR terminator
+```
+
+**0 Field (0 - Tare Weight):**
+```
+30                "0" - field identifier
+20 20 20 20 20    spaces (padding)
+32 33 2E 30       "23.0" - value
+0D                CR terminator
+```
+
+**4 Field (4 - Net Weight):**
+```
+34                "4" - field identifier
+20 20 20 20       spaces (padding)
+33 34 33 2E 35    "343.5" - value
+0D                CR terminator
+```
+
+**1 Field (1 - Unknown):**
+```
+31                "1" - field identifier
+20 20 20 20 20 20 spaces (padding)
+30 2E 30          "0.0" - value
+0D                CR terminator
+```
+
+**2 Field (2 - Count):**
+```
+32                "2" - field identifier
+20 20 20 20 20 20 20 spaces (padding)
+30                "0" - value (no decimal)
+0D                CR terminator
+```
+
+**B Field (B - Binary Status):**
+```
+42                "B" - field identifier
+83                binary byte (status/mode indicator)
+0D                CR terminator
+```
+
+**C Field (C - Date/Time):**
+```
+43                "C" - field identifier
+32 30             "20" - day
+F4                special separator byte (date separator 1)
+20                space
+30 32             "02" - month
+F3                special separator byte (date separator 2)
+20                space
+32 30 32 33       "2023" - year
+F2                special separator byte (date separator 3)
+20                space
+4D 4F 4E          "MON" - day of week
+20                space
+30 39 3A 32 30    "09:20" - time HH:mm
+41 4D             "AM" - AM/PM indicator
+0D                CR terminator
+```
+
+**V Field (V - Version/Binary):**
+```
+56                "V" - field identifier
+31                binary byte (version number?)
+0D 0A             CR+LF terminator
+```
+
+### Special Bytes Analysis
+
+**Date Separators:**
+- `0xF4` - Used between day and month
+- `0xF3` - Used between month and year
+- `0xF2` - Used between year and day-of-week
+
+These are non-ASCII special characters that act as field delimiters in the date string.
+
+**Binary Fields:**
+- Field `B`: Second byte (0x83) is binary status
+- Field `V`: Second byte (0x31 = ASCII '1') appears to be version
+
+### Protocol Observations from Logs
+
+1. **Variable Field Order:** Fields can arrive in any sequence
+2. **Single Character IDs:** Each field identified by one ASCII character
+3. **Mixed Termination:** Most fields use CR (0x0D), some use CR+LF (0x0D 0x0A)
+4. **Special Separators:** Date field uses non-ASCII bytes 0xF2, 0xF3, 0xF4
+5. **Variable Padding:** Field values have different padding lengths
+6. **Decimal Precision:** Some fields use decimals (366.0), others don't (0)
+7. **Binary Data:** Fields B and V contain non-ASCII binary bytes
+8. **Total Length:** Approximately 150-200 bytes per complete package
+9. **No Start/End Markers:** No explicit package boundary markers
+
+### Field Mapping
+
+| Field ID | ASCII | Meaning | Example Value | Format |
+|----------|-------|---------|---------------|--------|
+| F | 0x46 | Fabric Weight | 0.0 | Decimal |
+| H | 0x48 | Unknown | 0.0 | Decimal |
+| Q | 0x51 | Unknown | 0.0 | Decimal |
+| X | 0x58 | Unknown | 0.0 | Decimal |
+| A | 0x41 | Total Weight | 366.0 | Decimal |
+| 0 | 0x30 | Tare Weight | 23.0 | Decimal |
+| 4 | 0x34 | Net Weight | 343.5 | Decimal |
+| 1 | 0x31 | Unknown | 0.0 | Decimal |
+| 2 | 0x32 | Count | 0 | Integer |
+| B | 0x42 | Status (Binary) | 0x83 | Binary |
+| C | 0x43 | Date/Time | 20·02·2023·MON 09:20AM | Special |
+| V | 0x56 | Version (Binary) | 0x31 | Binary |
+
+### Parsing Strategy
+
+1. **Line-by-Line Processing:** Split on CR/LF
+2. **Field Identification:** First byte determines field type
+3. **Value Extraction:** Remaining bytes (after padding) are the value
+4. **Special Handling:** Date field requires separator byte processing
+5. **State Accumulation:** Collect all fields until package complete
+6. **Validation:** Verify critical fields (A, 0, 4, C) are present
+
+### Parsing Challenges
+
+1. **No Package Boundaries:** Must detect completion by field presence
+2. **Variable Order:** Cannot rely on sequence
+3. **Binary in ASCII Stream:** Must handle binary bytes in B and V fields
+4. **Special Date Format:** Non-standard separators require byte-level parsing
+5. **AM/PM Bug:** Implementation has inverted AM/PM logic (see Known Issues)
+
+---
+
 ## Related Files
 
 - **Data Class:** `NLib.Serial.Devices.TFO1Data`

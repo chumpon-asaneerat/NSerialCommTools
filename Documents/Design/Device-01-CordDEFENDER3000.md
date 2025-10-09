@@ -336,6 +336,54 @@ terminal.OnRx += (s, e) => {
 
 ---
 
+## HEX Dump from Log Files
+
+Raw serial data captured from the DEFENDER3000 device. This data was captured using third-party serial monitoring tools and serves as reference for protocol implementation.
+
+**Source:** `Documents/LuckyTex Devices/DEFENDER3000/DEFENDER3000_hex.txt`
+
+### Sample Data Format
+
+**ASCII Text:**
+```
+   0.360 kg    G
+```
+
+**HEX Dump:**
+```
+20 20 20 30 2E 33 36 30 20 6B 67 20 20 20 20 47 0D 0A
+```
+
+**Byte Breakdown:**
+- `20 20 20` - 3 spaces (padding)
+- `30 2E 33 36 30` - "0.360" (weight value)
+- `20` - space separator
+- `6B 67` - "kg" (unit)
+- `20 20 20 20` - 4 spaces (padding)
+- `47` - "G" (status indicator)
+- `0D 0A` - CR+LF terminator
+
+### Example Continuous Stream
+
+```
+// Multiple continuous readings (HEX format)
+20 20 20 30 2E 33 36 30 20 6B 67 20 20 20 20 47 0D 0A
+20 20 20 30 2E 33 36 30 20 6B 67 20 20 20 20 47 0D 0A
+20 20 20 30 2E 33 36 30 20 6B 67 20 20 20 20 47 0D 0A
+```
+
+Each line represents one complete weight reading transmission. The device sends these readings continuously without requiring any request commands.
+
+### Protocol Observations from Logs
+
+1. **Fixed Width Format:** Every transmission is exactly 18 bytes
+2. **Consistent Padding:** Leading spaces ensure right-alignment of weight
+3. **Stable Pattern:** Status field consistently shows "G" for stable gross weight
+4. **Continuous Output:** Device streams data at high frequency
+5. **No Handshaking:** No command-response pattern observed
+
+---
+
 ## Related Files
 
 - **Data Class:** `NLib.Serial.Devices.CordDEFENDER3000Data`
