@@ -150,6 +150,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TFOTest", "99.Tests\TFOTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestModbus", "99.Tests\TestModbus\TestModbus.csproj", "{EAE36A7E-54E5-49C5-9A6B-F65341732159}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestModbusServer", "99.Tests\TestModbusServer\TestModbusServer.csproj", "{B5A8C38B-9766-43DB-83FD-50A374060649}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -184,6 +186,10 @@ Global
 		{EAE36A7E-54E5-49C5-9A6B-F65341732159}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAE36A7E-54E5-49C5-9A6B-F65341732159}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAE36A7E-54E5-49C5-9A6B-F65341732159}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5A8C38B-9766-43DB-83FD-50A374060649}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5A8C38B-9766-43DB-83FD-50A374060649}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5A8C38B-9766-43DB-83FD-50A374060649}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5A8C38B-9766-43DB-83FD-50A374060649}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -208,6 +214,7 @@ Global
 		{4173085E-7B01-4274-8971-B4243A8491D1} = {CCDA077A-CBFE-448E-8842-DB5FF063FA05}
 		{16260089-D159-4831-A569-5EE684C5B9D0} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
 		{EAE36A7E-54E5-49C5-9A6B-F65341732159} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
+		{B5A8C38B-9766-43DB-83FD-50A374060649} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}

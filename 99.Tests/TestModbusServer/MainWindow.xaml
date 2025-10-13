@@ -1,0 +1,80 @@
+﻿<Window x:Class="TestModbusServer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TestModbusServer"
+        mc:Ignorable="d"
+        Title="Modbus Server"
+        Height="450"
+        Width="800"
+        Closing="Window_Closing">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Modbus TCP Demo"
+                   FontSize="16"
+                   FontWeight="Bold"
+                   Margin="0,0,0,10" />
+
+        <Button Grid.Row="1"
+                x:Name="ToggleMasterButton"
+                Content="Connect Master"
+                Click="ToggleMasterButton_Click"
+                Margin="0,0,0,10"
+                Width="120"
+                HorizontalAlignment="Left" />
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,10">
+            <Button x:Name="ReadCoilsButton"
+                    Content="Read Coils"
+                    Click="ReadCoilsButton_Click"
+                    Width="120"
+                    Margin="0,0,10,0" />
+            <TextBlock x:Name="CoilsTextBlock"
+                       Text="Coils: "
+                       VerticalAlignment="Center" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,10">
+            <CheckBox x:Name="CoilValueCheckBox"
+                      Content="Coil Value"
+                      VerticalAlignment="Center"
+                      Margin="0,0,10,0" />
+            <Button x:Name="WriteCoilButton"
+                    Content="Write Coil"
+                    Click="WriteCoilButton_Click"
+                    Width="120" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,10">
+            <Button x:Name="ReadDiscreteInputsButton"
+                    Content="Read Discrete Inputs"
+                    Click="ReadDiscreteInputsButton_Click"
+                    Width="120"
+                    Margin="0,0,10,0" />
+            <TextBlock x:Name="DiscreteInputsTextBlock"
+                       Text="Discrete Inputs: "
+                       VerticalAlignment="Center" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="5"
+                   x:Name="StatusTextBlock"
+                   Text="Status: "
+                   Margin="0,0,0,10" />
+    </Grid>
+</Window>
