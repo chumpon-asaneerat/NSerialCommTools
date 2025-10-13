@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Modbus.Device;
+using System;
+using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Modbus.Device;
+using TestModbusServer;
 
 namespace TestModbusServer
 {
@@ -16,22 +18,71 @@ namespace TestModbusServer
         private TcpClient masterClient;
         private Task updateInputsTask;
         private bool isMasterConnected;
+        private bool isSlaveRunning;
+        public ObservableCollection<ModbusItem> Coils { get; } = new ObservableCollection<ModbusItem>();
+        public ObservableCollection<ModbusItem> DiscreteInputs { get; } = new ObservableCollection<ModbusItem>();
+        public bool InputBit0 { get; set; }
+        public bool InputBit1 { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
-            StartSlaveAsync(); // Fire and forget
+            DataContext = this;
+            // Initialize UI with default IP, port, and slave ID
+            SlaveIpTextBox.Text = "127.0.0.1";
+            SlavePortTextBox.Text = "502";
+            SlaveIdTextBox.Text = "1";
+            MasterIpTextBox.Text = "127.0.0.1";
+            MasterPortTextBox.Text = "502";
+            MasterSlaveIdTextBox.Text = "1";
+            // Initialize coils and discrete inputs
+            for (int i = 0; i < 8; i++)
+            {
+                Coils.Add(new ModbusItem { Address = i, Name = $"Coil {i}", Value = i < 2 || i == 4 || i == 6 });
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                DiscreteInputs.Add(new ModbusItem { Address = i, Name = $"Input {i}", Value = i == 0 });
+            }
         }
 
-        private void StartSlaveAsync()
+        private void StartSlaveButton_Click(object sender, RoutedEventArgs e)
         {
+            if (isSlaveRunning)
+            {
+                StatusTextBlock.Text = "Slave is already running";
+                return;
+            }
+
+            // Read UI inputs on the UI thread
+            string slaveIp = SlaveIpTextBox.Text;
+            string slavePort = SlavePortTextBox.Text;
+            string slaveIdText = SlaveIdTextBox.Text;
+
             Task.Run(() =>
             {
                 try
                 {
-                    slaveListener = new TcpListener(IPAddress.Any, 502);
+                    // Validate inputs
+                    if (!IPAddress.TryParse(slaveIp, out IPAddress ipAddress))
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid slave IP address");
+                        return;
+                    }
+                    if (!int.TryParse(slavePort, out int port) || port < 1 || port > 65535)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid slave port");
+                        return;
+                    }
+                    if (!byte.TryParse(slaveIdText, out byte slaveId) || slaveId < 1 || slaveId > 247)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid slave ID (must be 1-247)");
+                        return;
+                    }
+
+                    slaveListener = new TcpListener(ipAddress, port);
                     slaveListener.Start();
-                    slave = ModbusTcpSlave.CreateTcp(1, slaveListener);
+                    slave = ModbusTcpSlave.CreateTcp(slaveId, slaveListener);
                     var dataStore = Modbus.Data.DataStoreFactory.CreateDefaultDataStore();
 
                     // Initialize 8 coil values (CoilDiscretes, addresses 0-7)
@@ -48,6 +99,9 @@ namespace TestModbusServer
                     dataStore.InputDiscretes[1] = true;  // Discrete input address 0
                     dataStore.InputDiscretes[2] = false; // Discrete input address 1
 
+                    // Initialize holding register for input simulation (address 0)
+                    dataStore.HoldingRegisters[1] = 0; // Register address 0, bits for inputs
+
                     slave.DataStore = dataStore;
 
                     // Run listener in a background thread
@@ -56,25 +110,80 @@ namespace TestModbusServer
                     // Start a task to simulate updating InputDiscretes
                     updateInputsTask = Task.Factory.StartNew(() => UpdateInputDiscretes(dataStore), TaskCreationOptions.LongRunning);
 
-                    Dispatcher.Invoke(() => StatusTextBlock.Text = "Slave running on port 502");
+                    isSlaveRunning = true;
+                    Dispatcher.Invoke(() =>
+                    {
+                        StatusTextBlock.Text = $"Slave running on {ipAddress}:{port} with ID {slaveId}";
+                        StartSlaveButton.IsEnabled = false;
+                        StopSlaveButton.IsEnabled = true;
+                    });
                 }
                 catch (Exception ex)
                 {
-                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Slave error: {ex.Message}");
+                    Dispatcher.Invoke(() =>
+                    {
+                        StatusTextBlock.Text = $"Slave start error: {ex.Message}";
+                        StartSlaveButton.IsEnabled = true;
+                        StopSlaveButton.IsEnabled = false;
+                    });
+                    if (slaveListener != null)
+                    {
+                        slaveListener.Stop();
+                        slaveListener = null;
+                    }
+                }
+            });
+        }
+
+        private void StopSlaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!isSlaveRunning)
+            {
+                StatusTextBlock.Text = "Slave is not running";
+                return;
+            }
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    slave?.Dispose();
+                    slaveListener?.Stop();
+                    slave = null;
+                    slaveListener = null;
+                    isSlaveRunning = false;
+                    Dispatcher.Invoke(() =>
+                    {
+                        StatusTextBlock.Text = "Slave stopped";
+                        StartSlaveButton.IsEnabled = true;
+                        StopSlaveButton.IsEnabled = false;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Slave stop error: {ex.Message}");
                 }
             });
         }
 
         private void UpdateInputDiscretes(Modbus.Data.DataStore dataStore)
         {
-            // Simulate changing discrete inputs periodically
-            while (slaveListener.Server.IsBound) // Stop if listener is closed
+            // Update discrete inputs based on holding register
+            while (slaveListener?.Server.IsBound == true)
             {
                 try
                 {
-                    // Toggle discrete input 0 every 5 seconds
-                    dataStore.InputDiscretes[1] = !dataStore.InputDiscretes[1];
-                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Updated discrete input 0 to {dataStore.InputDiscretes[1]}");
+                    // Read holding register 0 to update discrete inputs
+                    ushort registerValue = dataStore.HoldingRegisters[1];
+                    dataStore.InputDiscretes[1] = (registerValue & 1) == 1; // Bit 0 for input 0
+                    dataStore.InputDiscretes[2] = (registerValue & 2) == 2; // Bit 1 for input 1
+
+                    Dispatcher.Invoke(() =>
+                    {
+                        DiscreteInputs[0].Value = dataStore.InputDiscretes[1];
+                        DiscreteInputs[1].Value = dataStore.InputDiscretes[2];
+                        StatusTextBlock.Text = $"Updated discrete inputs: {dataStore.InputDiscretes[1]}, {dataStore.InputDiscretes[2]}";
+                    });
                     Thread.Sleep(5000); // Wait 5 seconds
                 }
                 catch
@@ -87,45 +196,72 @@ namespace TestModbusServer
 
         private void ToggleMasterButton_Click(object sender, RoutedEventArgs e)
         {
+            // Read UI inputs on the UI thread
+            string masterIp = MasterIpTextBox.Text;
+            string masterPort = MasterPortTextBox.Text;
+            string masterSlaveId = MasterSlaveIdTextBox.Text;
+
             if (!isMasterConnected)
             {
                 // Connect to master
-                try
+                Task.Run(() =>
                 {
-                    masterClient = new TcpClient("localhost", 502);
-                    master = ModbusIpMaster.CreateIp(masterClient);
-                    isMasterConnected = true;
-                    Dispatcher.Invoke(() =>
+                    try
                     {
-                        ToggleMasterButton.Content = "Disconnect Master";
-                        StatusTextBlock.Text = "Master connected to slave";
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Master connection error: {ex.Message}");
-                }
+                        if (!IPAddress.TryParse(masterIp, out IPAddress ipAddress))
+                        {
+                            Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid master IP address");
+                            return;
+                        }
+                        if (!int.TryParse(masterPort, out int port) || port < 1 || port > 65535)
+                        {
+                            Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid master port");
+                            return;
+                        }
+                        if (!byte.TryParse(masterSlaveId, out byte slaveId) || slaveId < 1 || slaveId > 247)
+                        {
+                            Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid master slave ID (must be 1-247)");
+                            return;
+                        }
+
+                        masterClient = new TcpClient(ipAddress.ToString(), port);
+                        master = ModbusIpMaster.CreateIp(masterClient);
+                        isMasterConnected = true;
+                        Dispatcher.Invoke(() =>
+                        {
+                            ToggleMasterButton.Content = "Disconnect Master";
+                            StatusTextBlock.Text = $"Master connected to {ipAddress}:{port} targeting slave ID {slaveId}";
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = $"Master connection error: {ex.Message}");
+                    }
+                });
             }
             else
             {
                 // Disconnect master
-                try
+                Task.Run(() =>
                 {
-                    master?.Dispose();
-                    masterClient?.Close();
-                    master = null;
-                    masterClient = null;
-                    isMasterConnected = false;
-                    Dispatcher.Invoke(() =>
+                    try
                     {
-                        ToggleMasterButton.Content = "Connect Master";
-                        StatusTextBlock.Text = "Master disconnected";
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Master disconnection error: {ex.Message}");
-                }
+                        master?.Dispose();
+                        masterClient?.Close();
+                        master = null;
+                        masterClient = null;
+                        isMasterConnected = false;
+                        Dispatcher.Invoke(() =>
+                        {
+                            ToggleMasterButton.Content = "Connect Master";
+                            StatusTextBlock.Text = "Master disconnected";
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = $"Master disconnection error: {ex.Message}");
+                    }
+                });
             }
         }
 
@@ -137,14 +273,26 @@ namespace TestModbusServer
                 return;
             }
 
+            // Read UI input on the UI thread
+            string masterSlaveId = MasterSlaveIdTextBox.Text;
+
             Task.Run(() =>
             {
                 try
                 {
-                    bool[] coils = master.ReadCoils(1, 0, 8); // Read coils 0-7
+                    if (!byte.TryParse(masterSlaveId, out byte slaveId) || slaveId < 1 || slaveId > 247)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid master slave ID (must be 1-247)");
+                        return;
+                    }
+
+                    bool[] coils = master.ReadCoils(slaveId, 0, 8); // Read coils 0-7
                     Dispatcher.Invoke(() =>
                     {
-                        CoilsTextBlock.Text = string.Join(", ", coils);
+                        for (int i = 0; i < 8; i++)
+                        {
+                            Coils[i].Value = coils[i];
+                        }
                         StatusTextBlock.Text = "Read coils successful";
                     });
                 }
@@ -155,7 +303,7 @@ namespace TestModbusServer
             });
         }
 
-        private void WriteCoilButton_Click(object sender, RoutedEventArgs e)
+        private void CoilCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             if (!isMasterConnected || master == null)
             {
@@ -163,13 +311,25 @@ namespace TestModbusServer
                 return;
             }
 
-            bool value = CoilValueCheckBox.IsChecked ?? false;
+            // Read UI inputs on the UI thread
+            string masterSlaveId = MasterSlaveIdTextBox.Text;
+            var checkBox = sender as System.Windows.Controls.CheckBox;
+            var item = checkBox?.DataContext as ModbusItem;
+
+            if (item == null) return;
+
             Task.Run(() =>
             {
                 try
                 {
-                    master.WriteSingleCoil(1, 0, value); // Write to coil 0
-                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Wrote coil value {value} to coil 0");
+                    if (!byte.TryParse(masterSlaveId, out byte slaveId) || slaveId < 1 || slaveId > 247)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid master slave ID (must be 1-247)");
+                        return;
+                    }
+
+                    master.WriteSingleCoil(slaveId, (ushort)item.Address, item.Value);
+                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Wrote coil value {item.Value} to coil {item.Address}");
                 }
                 catch (Exception ex)
                 {
@@ -186,14 +346,26 @@ namespace TestModbusServer
                 return;
             }
 
+            // Read UI input on the UI thread
+            string masterSlaveId = MasterSlaveIdTextBox.Text;
+
             Task.Run(() =>
             {
                 try
                 {
-                    bool[] inputs = master.ReadInputs(1, 0, 2); // Read discrete inputs 0-1
+                    if (!byte.TryParse(masterSlaveId, out byte slaveId) || slaveId < 1 || slaveId > 247)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid master slave ID (must be 1-247)");
+                        return;
+                    }
+
+                    bool[] inputs = master.ReadInputs(slaveId, 0, 2); // Read discrete inputs 0-1
                     Dispatcher.Invoke(() =>
                     {
-                        DiscreteInputsTextBlock.Text = string.Join(", ", inputs);
+                        for (int i = 0; i < 2; i++)
+                        {
+                            DiscreteInputs[i].Value = inputs[i];
+                        }
                         StatusTextBlock.Text = "Read discrete inputs successful";
                     });
                 }
@@ -204,18 +376,51 @@ namespace TestModbusServer
             });
         }
 
+        private void WriteInputRegisterButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!isMasterConnected || master == null)
+            {
+                StatusTextBlock.Text = "Master not connected";
+                return;
+            }
+
+            // Read UI inputs on the UI thread
+            string masterSlaveId = MasterSlaveIdTextBox.Text;
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    if (!byte.TryParse(masterSlaveId, out byte slaveId) || slaveId < 1 || slaveId > 247)
+                    {
+                        Dispatcher.Invoke(() => StatusTextBlock.Text = "Invalid master slave ID (must be 1-247)");
+                        return;
+                    }
+
+                    // Calculate register value from bit checkboxes
+                    ushort registerValue = (ushort)((InputBit0 ? 1 : 0) | (InputBit1 ? 2 : 0));
+                    master.WriteSingleRegister(slaveId, 0, registerValue);
+                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Wrote input register value {registerValue} to register 0");
+                }
+                catch (Exception ex)
+                {
+                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Write input register error: {ex.Message}");
+                }
+            });
+        }
+
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             try
             {
-                slave?.Dispose(); // Stops the listener
+                slave?.Dispose();
                 master?.Dispose();
                 masterClient?.Close();
                 slaveListener?.Stop();
             }
             catch (Exception ex)
             {
-                StatusTextBlock.Text = $"Shutdown error: {ex.Message}";
+                Dispatcher.Invoke(() => StatusTextBlock.Text = $"Shutdown error: {ex.Message}");
             }
         }
     }

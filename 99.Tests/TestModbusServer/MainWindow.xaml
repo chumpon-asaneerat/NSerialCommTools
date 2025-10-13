@@ -12,10 +12,6 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -25,56 +21,186 @@
                    FontWeight="Bold"
                    Margin="0,0,0,10" />
 
-        <Button Grid.Row="1"
-                x:Name="ToggleMasterButton"
-                Content="Connect Master"
-                Click="ToggleMasterButton_Click"
-                Margin="0,0,0,10"
-                Width="120"
-                HorizontalAlignment="Left" />
+        <TabControl Grid.Row="1">
+            <TabItem Header="Slave">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    Margin="0,0,0,10">
-            <Button x:Name="ReadCoilsButton"
-                    Content="Read Coils"
-                    Click="ReadCoilsButton_Click"
-                    Width="120"
-                    Margin="0,0,10,0" />
-            <TextBlock x:Name="CoilsTextBlock"
-                       Text="Coils: "
-                       VerticalAlignment="Center" />
-        </StackPanel>
+                        <StackPanel Grid.Row="0"
+                                    Orientation="Horizontal"
+                                    Margin="0,0,0,10">
+                            <TextBlock Text="IP:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0" />
+                            <TextBox x:Name="SlaveIpTextBox"
+                                     Width="120"
+                                     Text="127.0.0.1"
+                                     Margin="0,0,10,0" />
+                            <TextBlock Text="Port:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0" />
+                            <TextBox x:Name="SlavePortTextBox"
+                                     Width="60"
+                                     Text="502"
+                                     Margin="0,0,10,0" />
+                            <TextBlock Text="Slave ID:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0" />
+                            <TextBox x:Name="SlaveIdTextBox"
+                                     Width="60"
+                                     Text="1" />
+                        </StackPanel>
 
-        <StackPanel Grid.Row="3"
-                    Orientation="Horizontal"
-                    Margin="0,0,0,10">
-            <CheckBox x:Name="CoilValueCheckBox"
-                      Content="Coil Value"
-                      VerticalAlignment="Center"
-                      Margin="0,0,10,0" />
-            <Button x:Name="WriteCoilButton"
-                    Content="Write Coil"
-                    Click="WriteCoilButton_Click"
-                    Width="120" />
-        </StackPanel>
+                        <StackPanel Grid.Row="1"
+                                    Orientation="Horizontal"
+                                    Margin="0,0,0,10">
+                            <Button x:Name="StartSlaveButton"
+                                    Content="Start Slave"
+                                    Click="StartSlaveButton_Click"
+                                    Width="120"
+                                    Margin="0,0,10,0" />
+                            <Button x:Name="StopSlaveButton"
+                                    Content="Stop Slave"
+                                    Click="StopSlaveButton_Click"
+                                    Width="120"
+                                    IsEnabled="False" />
+                        </StackPanel>
 
-        <StackPanel Grid.Row="4"
-                    Orientation="Horizontal"
-                    Margin="0,0,0,10">
-            <Button x:Name="ReadDiscreteInputsButton"
-                    Content="Read Discrete Inputs"
-                    Click="ReadDiscreteInputsButton_Click"
-                    Width="120"
-                    Margin="0,0,10,0" />
-            <TextBlock x:Name="DiscreteInputsTextBlock"
-                       Text="Discrete Inputs: "
-                       VerticalAlignment="Center" />
-        </StackPanel>
+                        <TextBlock Grid.Row="2"
+                                   x:Name="StatusTextBlock"
+                                   Text="Status: "
+                                   Margin="0,0,0,10" />
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
 
-        <TextBlock Grid.Row="5"
-                   x:Name="StatusTextBlock"
-                   Text="Status: "
-                   Margin="0,0,0,10" />
+            <TabItem Header="Master">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0"
+                                    Orientation="Horizontal"
+                                    Margin="0,0,0,10">
+                            <TextBlock Text="IP:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0" />
+                            <TextBox x:Name="MasterIpTextBox"
+                                     Width="120"
+                                     Text="127.0.0.1"
+                                     Margin="0,0,10,0" />
+                            <TextBlock Text="Port:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0" />
+                            <TextBox x:Name="MasterPortTextBox"
+                                     Width="60"
+                                     Text="502"
+                                     Margin="0,0,10,0" />
+                            <TextBlock Text="Slave ID:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0" />
+                            <TextBox x:Name="MasterSlaveIdTextBox"
+                                     Width="60"
+                                     Text="1" />
+                        </StackPanel>
+
+                        <Button Grid.Row="1"
+                                x:Name="ToggleMasterButton"
+                                Content="Connect Master"
+                                Click="ToggleMasterButton_Click"
+                                Width="120"
+                                Margin="0,0,0,10"
+                                HorizontalAlignment="Left" />
+
+                        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+                            <TextBlock Text="Coils"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,5" />
+                            <ItemsControl ItemsSource="{Binding Coils}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Width="80"
+                                                       VerticalAlignment="Center" />
+                                            <CheckBox IsChecked="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                      Checked="CoilCheckBox_Checked"
+                                                      Unchecked="CoilCheckBox_Checked"
+                                                      VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button x:Name="ReadCoilsButton"
+                                    Content="Read Coils"
+                                    Click="ReadCoilsButton_Click"
+                                    Width="120"
+                                    Margin="0,5,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Margin="0,0,0,10">
+                            <TextBlock Text="Discrete Inputs"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,5" />
+                            <ItemsControl ItemsSource="{Binding DiscreteInputs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Width="80"
+                                                       VerticalAlignment="Center" />
+                                            <CheckBox IsChecked="{Binding Value}"
+                                                      IsEnabled="False"
+                                                      VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button x:Name="ReadDiscreteInputsButton"
+                                    Content="Read Discrete Inputs"
+                                    Click="ReadDiscreteInputsButton_Click"
+                                    Width="120"
+                                    Margin="0,5,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Margin="0,0,0,10">
+                            <TextBlock Text="Input Register (Bits)"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,5" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <TextBlock Text="Bit 0 (Input 0):"
+                                           Width="80"
+                                           VerticalAlignment="Center" />
+                                <CheckBox IsChecked="{Binding InputBit0, RelativeSource={RelativeSource AncestorType=Window}}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <TextBlock Text="Bit 1 (Input 1):"
+                                           Width="80"
+                                           VerticalAlignment="Center" />
+                                <CheckBox IsChecked="{Binding InputBit1, RelativeSource={RelativeSource AncestorType=Window}}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Button x:Name="WriteInputRegisterButton"
+                                    Content="Write Input Register"
+                                    Click="WriteInputRegisterButton_Click"
+                                    Width="120"
+                                    Margin="0,5,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>
