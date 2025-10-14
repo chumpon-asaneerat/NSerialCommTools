@@ -92,8 +92,8 @@ namespace TestModbusServer
                     dataStore.CoilDiscretes[4] = false; // Coil address 3
                     dataStore.CoilDiscretes[5] = true;  // Coil address 4
                     dataStore.CoilDiscretes[6] = false; // Coil address 5
-                    //dataStore.CoilDiscretes[7] = true;  // Coil address 6
-                    //dataStore.CoilDiscretes[8] = false; // Coil address 7
+                    dataStore.CoilDiscretes[7] = true;  // Coil address 6
+                    dataStore.CoilDiscretes[8] = false; // Coil address 7
 
                     // Initialize 2 discrete input values (InputDiscretes, addresses 0-1)
                     dataStore.InputDiscretes[1] = true;  // Discrete input address 0
