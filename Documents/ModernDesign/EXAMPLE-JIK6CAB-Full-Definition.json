@@ -1,0 +1,588 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0",
+  "lastUpdated": "2025-10-18",
+
+  "deviceInfo": {
+    "name": "JIK6CAB",
+    "manufacturer": "LuckyTex",
+    "category": "scale",
+    "model": "JIK-6C-AB",
+    "description": "Complex multi-line weight scale with package markers and state machine parser",
+    "complexity": "very-complex",
+    "documentation": "Device-02-JIK6CAB.md"
+  },
+
+  "communication": {
+    "baudRate": 9600,
+    "dataBits": 8,
+    "parity": "None",
+    "stopBits": "One",
+    "handshake": "None",
+    "encoding": "ASCII",
+    "readTimeout": 5000,
+    "writeTimeout": 5000
+  },
+
+  "protocol": {
+    "type": "command-response",
+    "format": "multi-line-package",
+    "encoding": "ASCII",
+    "terminator": "\\r\\n",
+    "packageSize": 14,
+    "updateRate": "on-demand",
+
+    "markers": {
+      "start": {
+        "pattern": "^KJIK000",
+        "description": "Package start marker with device ID",
+        "action": "reset-state"
+      },
+      "end": {
+        "pattern": "~P1",
+        "description": "Package end marker",
+        "action": "complete-package"
+      }
+    },
+
+    "structure": {
+      "lines": [
+        {
+          "lineNumber": 1,
+          "name": "StartMarker",
+          "type": "marker",
+          "pattern": "^KJIK000",
+          "required": true,
+          "description": "Start marker with device ID"
+        },
+        {
+          "lineNumber": 2,
+          "name": "Date",
+          "type": "datetime",
+          "format": "yyyy-MM-dd",
+          "pattern": "\\d{4}-\\d{2}-\\d{2}",
+          "required": true,
+          "description": "Measurement date"
+        },
+        {
+          "lineNumber": 3,
+          "name": "Time",
+          "type": "datetime",
+          "format": "HH:mm:ss",
+          "pattern": "\\d{2}:\\d{2}:\\d{2}",
+          "required": true,
+          "description": "Measurement time"
+        },
+        {
+          "lineNumber": 4,
+          "name": "TareWeight",
+          "type": "decimal",
+          "pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "unit": "kg",
+          "unitAttached": true,
+          "format": "F2",
+          "min": 0,
+          "max": 999.99,
+          "required": true,
+          "description": "Tare Weight (TW)"
+        },
+        {
+          "lineNumber": 5,
+          "name": "GrossWeight",
+          "type": "decimal",
+          "pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "unit": "kg",
+          "unitAttached": true,
+          "format": "F2",
+          "min": 0,
+          "max": 999.99,
+          "required": true,
+          "description": "Gross Weight (GW)"
+        },
+        {
+          "lineNumber": 6,
+          "name": "Reserved1",
+          "type": "string",
+          "pattern": "\\d+",
+          "required": false,
+          "description": "Reserved field (typically 0)"
+        },
+        {
+          "lineNumber": 7,
+          "name": "Reserved2",
+          "type": "string",
+          "pattern": "\\d+",
+          "required": false,
+          "description": "Reserved field (typically 0)"
+        },
+        {
+          "lineNumber": 8,
+          "name": "NetWeight",
+          "type": "decimal",
+          "pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "unit": "kg",
+          "unitAttached": true,
+          "format": "F2",
+          "min": 0,
+          "max": 999.99,
+          "required": true,
+          "description": "Net Weight (NW) = GW - TW"
+        },
+        {
+          "lineNumber": 9,
+          "name": "DisplayWeight",
+          "type": "decimal",
+          "pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "unit": "kg",
+          "unitAttached": true,
+          "format": "F2",
+          "required": false,
+          "description": "Display weight (duplicate of NW)"
+        },
+        {
+          "lineNumber": 10,
+          "name": "PieceCount",
+          "type": "integer",
+          "pattern": "\\s*(\\d+)\\s*pcs",
+          "unit": "pcs",
+          "unitAttached": true,
+          "min": 0,
+          "max": 99999,
+          "required": false,
+          "description": "Piece count"
+        },
+        {
+          "lineNumber": 11,
+          "name": "Empty1",
+          "type": "string",
+          "pattern": "\\s*",
+          "required": false,
+          "description": "Empty line or whitespace"
+        },
+        {
+          "lineNumber": 12,
+          "name": "Empty2",
+          "type": "string",
+          "pattern": "\\s*",
+          "required": false,
+          "description": "Empty line or whitespace"
+        },
+        {
+          "lineNumber": 13,
+          "name": "StatusIndicator",
+          "type": "string",
+          "pattern": "[A-Z]",
+          "values": ["E", "S", "N"],
+          "required": false,
+          "description": "Status indicator (E=Empty, S=Stable, N=Normal)"
+        },
+        {
+          "lineNumber": 14,
+          "name": "EndMarker",
+          "type": "marker",
+          "pattern": "~P1",
+          "required": true,
+          "description": "Package end marker"
+        }
+      ]
+    }
+  },
+
+  "parsing": {
+    "strategy": "state-machine",
+    "description": "Line-by-line state machine parser for multi-line package",
+
+    "states": [
+      {
+        "id": 0,
+        "name": "Idle",
+        "description": "Waiting for package start",
+        "action": "wait",
+        "transition": {
+          "condition": "detect-start-marker",
+          "nextState": 1
+        }
+      },
+      {
+        "id": 1,
+        "name": "PackageStarted",
+        "description": "Start marker detected, clear variables",
+        "action": "reset-data",
+        "variables": {
+          "bCompleted": false,
+          "date": null,
+          "time": null,
+          "tw": null,
+          "gw": null,
+          "nw": null,
+          "pcs": null,
+          "lineCount": 0
+        },
+        "transition": {
+          "condition": "always",
+          "nextState": 2
+        }
+      },
+      {
+        "id": 2,
+        "name": "ReadDate",
+        "description": "Parse date line (line 2)",
+        "field": "Date",
+        "type": "datetime",
+        "format": "yyyy-MM-dd",
+        "pattern": "^(\\d{4}-\\d{2}-\\d{2})",
+        "action": "extract-date",
+        "transition": {
+          "condition": "success",
+          "nextState": 3
+        }
+      },
+      {
+        "id": 3,
+        "name": "ReadTime",
+        "description": "Parse time line (line 3)",
+        "field": "Time",
+        "type": "datetime",
+        "format": "HH:mm:ss",
+        "pattern": "^(\\d{2}:\\d{2}:\\d{2})",
+        "action": "extract-time-and-combine",
+        "transition": {
+          "condition": "success",
+          "nextState": 4
+        }
+      },
+      {
+        "id": 4,
+        "name": "ReadTareWeight",
+        "description": "Parse tare weight (line 4)",
+        "field": "TW",
+        "type": "decimal",
+        "pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+        "unit": "kg",
+        "action": "extract-weight",
+        "transition": {
+          "condition": "success",
+          "nextState": 5
+        }
+      },
+      {
+        "id": 5,
+        "name": "ReadGrossWeight",
+        "description": "Parse gross weight (line 5)",
+        "field": "GW",
+        "type": "decimal",
+        "pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+        "unit": "kg",
+        "action": "extract-weight",
+        "transition": {
+          "condition": "success",
+          "nextState": 6
+        }
+      },
+      {
+        "id": 6,
+        "name": "SkipReserved1",
+        "description": "Skip reserved field 1 (line 6)",
+        "action": "skip-line",
+        "transition": {
+          "condition": "always",
+          "nextState": 7
+        }
+      },
+      {
+        "id": 7,
+        "name": "SkipReserved2",
+        "description": "Skip reserved field 2 (line 7)",
+        "action": "skip-line",
+        "transition": {
+          "condition": "always",
+          "nextState": 8
+        }
+      },
+      {
+        "id": 8,
+        "name": "ReadNetWeight",
+        "description": "Parse net weight (line 8)",
+        "field": "NW",
+        "type": "decimal",
+        "pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+        "unit": "kg",
+        "action": "extract-weight",
+        "transition": {
+          "condition": "success",
+          "nextState": 9
+        }
+      },
+      {
+        "id": 9,
+        "name": "SkipDisplayWeight",
+        "description": "Skip display weight (line 9)",
+        "action": "skip-line",
+        "transition": {
+          "condition": "always",
+          "nextState": 10
+        }
+      },
+      {
+        "id": 10,
+        "name": "ReadPieceCount",
+        "description": "Parse piece count (line 10)",
+        "field": "PCS",
+        "type": "integer",
+        "pattern": "\\s*(\\d+)\\s*pcs",
+        "action": "extract-integer",
+        "transition": {
+          "condition": "success",
+          "nextState": 11
+        }
+      },
+      {
+        "id": 11,
+        "name": "SkipEmpty1",
+        "description": "Skip empty line 1 (line 11)",
+        "action": "skip-line",
+        "transition": {
+          "condition": "always",
+          "nextState": 12
+        }
+      },
+      {
+        "id": 12,
+        "name": "SkipEmpty2",
+        "description": "Skip empty line 2 (line 12)",
+        "action": "skip-line",
+        "transition": {
+          "condition": "always",
+          "nextState": 13
+        }
+      },
+      {
+        "id": 13,
+        "name": "SkipStatus",
+        "description": "Skip status indicator (line 13)",
+        "action": "skip-line",
+        "transition": {
+          "condition": "always",
+          "nextState": 14
+        }
+      },
+      {
+        "id": 14,
+        "name": "WaitForEndMarker",
+        "description": "Verify end marker (line 14)",
+        "pattern": "~P1",
+        "action": "validate-end-marker",
+        "transition": {
+          "condition": "end-marker-detected",
+          "nextState": 15,
+          "onError": 0
+        }
+      },
+      {
+        "id": 15,
+        "name": "PackageComplete",
+        "description": "Package successfully parsed",
+        "action": "fire-event",
+        "variables": {
+          "bCompleted": true
+        },
+        "transition": {
+          "condition": "always",
+          "nextState": 0
+        }
+      }
+    ],
+
+    "errorHandling": {
+      "onTimeout": "reset-to-idle",
+      "onInvalidMarker": "reset-to-idle",
+      "onParseError": "continue-next-state",
+      "maxRetries": 3,
+      "timeoutMs": 5000
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "name": "DateTimeValid",
+        "type": "datetime-range",
+        "field": "Date",
+        "minDate": "2020-01-01",
+        "maxDate": "2099-12-31",
+        "severity": "error",
+        "message": "Date must be between 2020 and 2099"
+      },
+      {
+        "name": "WeightCalculation",
+        "type": "formula",
+        "formula": "GW - TW = NW",
+        "tolerance": 0.01,
+        "severity": "warning",
+        "message": "Net weight calculation mismatch: GW - TW should equal NW"
+      },
+      {
+        "name": "TarePositive",
+        "type": "range",
+        "field": "TW",
+        "min": 0,
+        "max": 999.99,
+        "severity": "error",
+        "message": "Tare weight must be between 0 and 999.99 kg"
+      },
+      {
+        "name": "GrossPositive",
+        "type": "range",
+        "field": "GW",
+        "min": 0,
+        "max": 999.99,
+        "severity": "error",
+        "message": "Gross weight must be between 0 and 999.99 kg"
+      },
+      {
+        "name": "NetPositive",
+        "type": "range",
+        "field": "NW",
+        "min": 0,
+        "max": 999.99,
+        "severity": "error",
+        "message": "Net weight must be between 0 and 999.99 kg"
+      },
+      {
+        "name": "LogicalWeights",
+        "type": "custom",
+        "condition": "GW >= TW",
+        "severity": "error",
+        "message": "Gross weight must be greater than or equal to tare weight"
+      }
+    ]
+  },
+
+  "output": {
+    "dataClass": "JIK6CABData",
+    "properties": [
+      {
+        "name": "Date",
+        "type": "DateTime",
+        "mapping": "Date + Time combined"
+      },
+      {
+        "name": "TW",
+        "type": "decimal",
+        "mapping": "TareWeight"
+      },
+      {
+        "name": "GW",
+        "type": "decimal",
+        "mapping": "GrossWeight"
+      },
+      {
+        "name": "NW",
+        "type": "decimal",
+        "mapping": "NetWeight"
+      },
+      {
+        "name": "PCS",
+        "type": "decimal",
+        "mapping": "PieceCount"
+      },
+      {
+        "name": "TUnit",
+        "type": "string",
+        "mapping": "TareWeight.unit",
+        "default": "kg"
+      },
+      {
+        "name": "GUnit",
+        "type": "string",
+        "mapping": "GrossWeight.unit",
+        "default": "kg"
+      },
+      {
+        "name": "NUnit",
+        "type": "string",
+        "mapping": "NetWeight.unit",
+        "default": "kg"
+      }
+    ],
+    "eventTrigger": "PackageComplete",
+    "eventName": "DataReceived"
+  },
+
+  "testing": {
+    "testCases": [
+      {
+        "name": "ValidPackage1",
+        "description": "Normal weight measurement package",
+        "input": "^KJIK000\\r\\n2023-11-07\\r\\n17:19:38\\r\\n  0.00 kg\\r\\n  1.94 kg\\r\\n0\\r\\n0\\r\\n  1.94 kg\\r\\n  1.94 kg\\r\\n    0 pcs\\r\\n \\r\\n \\r\\nE\\r\\n~P1\\r\\n",
+        "expectedOutput": {
+          "Date": "2023-11-07T17:19:38",
+          "TW": 0.00,
+          "GW": 1.94,
+          "NW": 1.94,
+          "PCS": 0,
+          "TUnit": "kg",
+          "GUnit": "kg",
+          "NUnit": "kg"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidPackageWithTare",
+        "description": "Weight measurement with tare",
+        "input": "^KJIK000\\r\\n2023-11-08\\r\\n10:30:15\\r\\n  0.50 kg\\r\\n  5.75 kg\\r\\n0\\r\\n0\\r\\n  5.25 kg\\r\\n  5.25 kg\\r\\n   12 pcs\\r\\n \\r\\n \\r\\nS\\r\\n~P1\\r\\n",
+        "expectedOutput": {
+          "Date": "2023-11-08T10:30:15",
+          "TW": 0.50,
+          "GW": 5.75,
+          "NW": 5.25,
+          "PCS": 12,
+          "TUnit": "kg",
+          "GUnit": "kg",
+          "NUnit": "kg"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "InvalidEndMarker",
+        "description": "Package with wrong end marker",
+        "input": "^KJIK000\\r\\n2023-11-07\\r\\n17:19:38\\r\\n  0.00 kg\\r\\n  1.94 kg\\r\\n0\\r\\n0\\r\\n  1.94 kg\\r\\n  1.94 kg\\r\\n    0 pcs\\r\\n \\r\\n \\r\\nE\\r\\n~P2\\r\\n",
+        "expectedOutput": null,
+        "shouldSucceed": false,
+        "expectedError": "Invalid end marker"
+      }
+    ],
+    "coverage": {
+      "fields": "100%",
+      "states": "100%",
+      "errorPaths": "80%"
+    }
+  },
+
+  "documentation": {
+    "references": [
+      "Device-02-JIK6CAB.md",
+      "CODE_ANALYSIS_NLib.Serial.Devices.md",
+      "LOG_FILES_ANALYSIS.md"
+    ],
+    "logFiles": [
+      "Documents/LuckyTex Devices/JIK6CAB/jik_txt_1.txt",
+      "Documents/LuckyTex Devices/JIK6CAB/jik_hex_1.txt"
+    ],
+    "notes": [
+      "This is a complex multi-line protocol requiring state machine parsing",
+      "Package must be received complete (all 14 lines) before parsing",
+      "Date and time are combined into single DateTime property",
+      "Reserved fields (lines 6-7) are typically 0 and can be skipped",
+      "Display weight (line 9) is duplicate of net weight",
+      "Status indicator (line 13) is usually 'E' but not critical for data extraction"
+    ]
+  },
+
+  "migration": {
+    "existingClass": "JIK6CAB.cs",
+    "namespace": "NLib.Serial.Devices",
+    "compatibility": "backward-compatible",
+    "notes": "This definition matches existing C# implementation 1:1"
+  }
+}
