@@ -3,9 +3,8 @@ We add 2 new devices TScaleNHB and TScaleQHW please check @Documents folder and
 update related files to make documents up to date.
 
 
-- In @Documents\LuckyTex Devices\ folder we have hex log files that gets from capture device data 
+- Check claude.md for Technology Architecture. In @Documents\LuckyTex Devices\ folder we have hex log files that gets from capture device data 
 I want some kind of analysis C# code that i can extract infomration from log files and make it 
 in some type of definition scripts/flows and when new device added we work with this definition to 
-work on actual devices/terminals what do you think is that posible?
-
+work on actual devices/terminals what do you think is that posible?  
 
