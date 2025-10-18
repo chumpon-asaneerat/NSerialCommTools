@@ -152,6 +152,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestModbus", "99.Tests\Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestModbusServer", "99.Tests\TestModbusServer\TestModbusServer.csproj", "{B5A8C38B-9766-43DB-83FD-50A374060649}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLib.Serial.Protocol.Analyzer", "09.App\NLib.Serial.Protocol.Analyzer\NLib.Serial.Protocol.Analyzer.csproj", "{7B7AF4D2-84DB-44A4-8136-3AA5E4D8C96C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -190,6 +192,10 @@ Global
 		{B5A8C38B-9766-43DB-83FD-50A374060649}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5A8C38B-9766-43DB-83FD-50A374060649}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5A8C38B-9766-43DB-83FD-50A374060649}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B7AF4D2-84DB-44A4-8136-3AA5E4D8C96C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B7AF4D2-84DB-44A4-8136-3AA5E4D8C96C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B7AF4D2-84DB-44A4-8136-3AA5E4D8C96C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B7AF4D2-84DB-44A4-8136-3AA5E4D8C96C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -215,6 +221,7 @@ Global
 		{16260089-D159-4831-A569-5EE684C5B9D0} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
 		{EAE36A7E-54E5-49C5-9A6B-F65341732159} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
 		{B5A8C38B-9766-43DB-83FD-50A374060649} = {9FBDFBFF-5CA4-4E3E-A395-6EBD90355727}
+		{7B7AF4D2-84DB-44A4-8136-3AA5E4D8C96C} = {4855DCBB-7284-4DF7-8613-212D1B89C851}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67BF2D4F-392C-4F79-880A-76F500348A09}
