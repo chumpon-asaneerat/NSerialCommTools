@@ -34,15 +34,28 @@ The **Protocol Analyzer Tool** automatically analyzes hex dump log files capture
 
 ### Input/Output
 
-**Input:**
-- Hex dump files (e.g., `TScaleNHB/NHB.txt`)
-- Text format: `53 54 2C 47 53 20 20 20 20 32 30 2E 37 67 20 20 0D 0A`
-- Binary files with hex encoding
+**Input (Three Supported Formats):**
+
+1. **Hex + ASCII Format** (Most Common)
+   - Example: `TFO1/Serial_Log.txt`
+   - Format: `46 20 20 20 20 20 20 30 2E 30 0D    F      0.0.`
+   - Left: Hex bytes, Right: ASCII representation
+
+2. **Pure Hex Format**
+   - Example: `JIK6CAB/jik_hex_1.txt`
+   - Format: `5E 4B 4A 49 4B 30 30 30 0D 0A 32 30 32 33`
+   - Only hex bytes (no ASCII column)
+
+3. **Pure Text Format**
+   - Example: `TScaleNHB/NHB.txt`
+   - Format: `ST,GS    20.7g  `
+   - Direct ASCII text (already decoded)
 
 **Output:**
 - Protocol definition JSON file
-- Analysis report (statistics, patterns found)
+- Analysis report (statistics, patterns found, confidence scores)
 - Test cases for validation
+- Human-readable summary
 
 ---
 
@@ -57,30 +70,43 @@ graph TD
     A --> D[Definition Generator]
     A --> E[Validator]
 
-    B --> F[File Parser]
-    F --> G[Hex Decoder]
-    G --> H[In-Memory Log Data]
+    B --> F[Format Detector]
+    F --> G{Format Type}
 
-    C --> I[Terminator Detector]
-    C --> J[Delimiter Detector]
-    C --> K[Field Analyzer]
-    C --> L[Type Inferencer]
-    C --> M[Pattern Recognizer]
+    G -->|Hex+ASCII| H1[Hex+ASCII Parser]
+    G -->|Pure Hex| H2[Pure Hex Parser]
+    G -->|Pure Text| H3[Pure Text Parser]
 
-    D --> N[JSON Builder]
-    D --> O[YAML Builder]
+    H1 --> I[Byte Array]
+    H2 --> I
+    H3 --> I
 
-    E --> P[Definition Tester]
-    P --> Q[Parse Test Cases]
+    I --> J[Message Extractor]
+    J --> K[In-Memory Log Data]
 
-    H --> C
+    C --> L[Terminator Detector]
+    C --> M[Delimiter Detector]
+    C --> N[Field Analyzer]
+    C --> O[Type Inferencer]
+    C --> P[Pattern Recognizer]
+
+    D --> Q[JSON Builder]
+    D --> R[YAML Builder]
+
+    E --> S[Definition Tester]
+    S --> T[Parse Test Cases]
+
+    K --> C
     C --> D
-    D --> R[Protocol Definition File]
+    D --> U[Protocol Definition File]
 
     style A fill:#e1f5ff
-    style C fill:#fff4e6
-    style D fill:#e8f5e9
-    style R fill:#c8e6c9
+    style F fill:#ffe6e6
+    style I fill:#fff4e6
+    style K fill:#fffacd
+    style C fill:#e8f5e9
+    style D fill:#e0f7fa
+    style U fill:#c8e6c9
 ```
 
 ### Class Structure
@@ -144,6 +170,401 @@ namespace NLib.Serial.ProtocolAnalyzer
     }
 }
 ```
+
+---
+
+## Hex Log Preprocessor
+
+### Overview
+
+Before pattern analysis can begin, raw hex log files must be preprocessed to extract the actual byte data. Serial terminal tools can capture data in three different formats, and the Preprocessor must handle all of them.
+
+### Supported Log Formats
+
+#### Format 1: Hex + ASCII (Most Common)
+```
+46 20 20 20 20 20 20 30 2E 30 0D 48 20 20 20 20    F      0.0.H
+20 20 30 2E 30 0D 51 20 20 20 20 20 20 30 2E 30      0.0.Q      0.0
+0D 58 20 20 20 20 20 20 30 2E 30 0D 41 20 20 20    .X      0.0.A
+```
+**Characteristics:**
+- Left side: Hex bytes (space-separated)
+- Right side: ASCII representation
+- Separator: Multiple spaces (typically 4-8)
+- Non-printable bytes shown as dots or special chars
+- Example: `Documents\LuckyTex Devices\TFO1\Serial_Log.txt`
+
+#### Format 2: Pure Hex Only
+```
+5E 4B 4A 49 4B 30 30 30 0D 0A 32 30 32 33 2D 31
+31 2D 30 37 0D 0A 31 37 3A 31 39 3A 32 36 0D 0A
+20 20 30 2E 30 30 20 6B 67 0D 0A 20 20 31 2E 39
+```
+**Characteristics:**
+- Only hex bytes (space-separated)
+- No ASCII column
+- 16 bytes per line typically
+- Example: `Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.txt`
+
+#### Format 3: Pure Text/ASCII Only
+```
+ST,GS    20.7g
+US,GS    20.9g
+ST,GS    85.5g
+```
+**Characteristics:**
+- Direct ASCII text
+- No hex encoding
+- Already decoded
+- Example: `Documents\LuckyTex Devices\TScaleNHB\NHB.txt`
+
+---
+
+### Format Detection Algorithm
+
+```csharp
+public enum LogFileFormat
+{
+    Unknown,
+    HexAndAscii,    // Format 1
+    PureHex,        // Format 2
+    PureText        // Format 3
+}
+
+public class LogFormatDetector
+{
+    public LogFileFormat DetectFormat(string filePath)
+    {
+        string[] lines = File.ReadAllLines(filePath).Take(10).ToArray();
+
+        foreach (string line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            // Check for Format 1: Hex + ASCII
+            // Pattern: "XX XX XX ... (4+ spaces) ASCII text"
+            var hexAsciiMatch = Regex.Match(line,
+                @"^([0-9A-Fa-f]{2}\s+){8,}\s{4,}.+$");
+            if (hexAsciiMatch.Success)
+                return LogFileFormat.HexAndAscii;
+
+            // Check for Format 2: Pure Hex
+            // Pattern: "XX XX XX XX" (only hex bytes)
+            var pureHexMatch = Regex.Match(line,
+                @"^([0-9A-Fa-f]{2}\s*)+$");
+            if (pureHexMatch.Success && line.Length > 16)
+                return LogFileFormat.PureHex;
+
+            // Check for Format 3: Pure Text
+            // Pattern: Contains non-hex characters
+            if (!Regex.IsMatch(line, @"^[0-9A-Fa-f\s]+$"))
+                return LogFileFormat.PureText;
+        }
+
+        return LogFileFormat.Unknown;
+    }
+}
+```
+
+---
+
+### Hex Log Parser Implementation
+
+```csharp
+public class HexLogParser
+{
+    private LogFormatDetector _detector = new LogFormatDetector();
+
+    public byte[] ParseLogFile(string filePath)
+    {
+        LogFileFormat format = _detector.DetectFormat(filePath);
+        string content = File.ReadAllText(filePath);
+
+        switch (format)
+        {
+            case LogFileFormat.HexAndAscii:
+                return ParseHexAndAscii(content);
+
+            case LogFileFormat.PureHex:
+                return ParsePureHex(content);
+
+            case LogFileFormat.PureText:
+                return ParsePureText(content);
+
+            default:
+                throw new InvalidOperationException(
+                    "Unable to detect log file format");
+        }
+    }
+
+    // Format 1: Hex + ASCII Parser
+    private byte[] ParseHexAndAscii(string content)
+    {
+        List<byte> bytes = new List<byte>();
+        string[] lines = content.Split(new[] { '\r', '\n' },
+            StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (string line in lines)
+        {
+            // Split by multiple spaces (4+) to separate hex from ASCII
+            string[] parts = Regex.Split(line, @"\s{4,}");
+
+            if (parts.Length < 1)
+                continue;
+
+            // Extract hex part (left side)
+            string hexPart = parts[0].Trim();
+
+            // Parse hex bytes
+            string[] hexBytes = hexPart.Split(new[] { ' ', '\t' },
+                StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string hex in hexBytes)
+            {
+                if (hex.Length == 2 &&
+                    byte.TryParse(hex, NumberStyles.HexNumber,
+                        CultureInfo.InvariantCulture, out byte b))
+                {
+                    bytes.Add(b);
+                }
+            }
+        }
+
+        return bytes.ToArray();
+    }
+
+    // Format 2: Pure Hex Parser
+    private byte[] ParsePureHex(string content)
+    {
+        List<byte> bytes = new List<byte>();
+
+        // Extract all hex patterns (XX format)
+        MatchCollection matches = Regex.Matches(content, @"[0-9A-Fa-f]{2}");
+
+        foreach (Match match in matches)
+        {
+            if (byte.TryParse(match.Value, NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture, out byte b))
+            {
+                bytes.Add(b);
+            }
+        }
+
+        return bytes.ToArray();
+    }
+
+    // Format 3: Pure Text Parser
+    private byte[] ParsePureText(string content)
+    {
+        // Already in text format, just convert to bytes
+        return Encoding.ASCII.GetBytes(content);
+    }
+}
+```
+
+---
+
+### Message Extraction
+
+After parsing hex to bytes, we need to split into individual messages:
+
+```csharp
+public class MessageExtractor
+{
+    public List<byte[]> ExtractMessages(byte[] rawBytes,
+        byte[] terminator = null)
+    {
+        // If terminator not specified, try to detect
+        if (terminator == null)
+            terminator = DetectTerminator(rawBytes);
+
+        List<byte[]> messages = new List<byte[]>();
+        List<byte> currentMessage = new List<byte>();
+
+        for (int i = 0; i < rawBytes.Length; i++)
+        {
+            currentMessage.Add(rawBytes[i]);
+
+            // Check if we have a terminator match
+            if (EndsWithTerminator(currentMessage, terminator))
+            {
+                messages.Add(currentMessage.ToArray());
+                currentMessage.Clear();
+            }
+        }
+
+        // Add remaining bytes if any
+        if (currentMessage.Count > 0)
+            messages.Add(currentMessage.ToArray());
+
+        return messages;
+    }
+
+    private byte[] DetectTerminator(byte[] bytes)
+    {
+        // Try common terminators
+        byte[] crLf = new byte[] { 0x0D, 0x0A };
+        byte[] lf = new byte[] { 0x0A };
+        byte[] cr = new byte[] { 0x0D };
+
+        int crLfCount = CountOccurrences(bytes, crLf);
+        int lfCount = CountOccurrences(bytes, lf);
+        int crCount = CountOccurrences(bytes, cr);
+
+        if (crLfCount > 0 && crLfCount >= lfCount / 2)
+            return crLf;
+        else if (lfCount > crCount)
+            return lf;
+        else if (crCount > 0)
+            return cr;
+
+        return crLf; // Default
+    }
+
+    private int CountOccurrences(byte[] data, byte[] pattern)
+    {
+        int count = 0;
+        for (int i = 0; i <= data.Length - pattern.Length; i++)
+        {
+            bool match = true;
+            for (int j = 0; j < pattern.Length; j++)
+            {
+                if (data[i + j] != pattern[j])
+                {
+                    match = false;
+                    break;
+                }
+            }
+            if (match)
+            {
+                count++;
+                i += pattern.Length - 1;
+            }
+        }
+        return count;
+    }
+
+    private bool EndsWithTerminator(List<byte> message, byte[] terminator)
+    {
+        if (message.Count < terminator.Length)
+            return false;
+
+        for (int i = 0; i < terminator.Length; i++)
+        {
+            if (message[message.Count - terminator.Length + i] != terminator[i])
+                return false;
+        }
+
+        return true;
+    }
+}
+```
+
+---
+
+### Complete Preprocessing Pipeline
+
+```mermaid
+graph TD
+    A[Raw Log File] --> B{Format Detection}
+
+    B -->|Format 1| C[Hex+ASCII Parser]
+    B -->|Format 2| D[Pure Hex Parser]
+    B -->|Format 3| E[Pure Text Parser]
+
+    C --> F[Byte Array]
+    D --> F
+    E --> F
+
+    F --> G[Terminator Detection]
+    G --> H[Message Extraction]
+    H --> I[List of Message Byte Arrays]
+
+    I --> J[Pattern Analyzer]
+
+    style A fill:#e1f5ff
+    style F fill:#fff4e6
+    style I fill:#e8f5e9
+    style J fill:#c8e6c9
+```
+
+---
+
+### Updated LogFileLoader Class
+
+```csharp
+public class LogFileLoader
+{
+    private HexLogParser _parser = new HexLogParser();
+    private MessageExtractor _extractor = new MessageExtractor();
+
+    public LogData LoadFile(string path)
+    {
+        // Step 1: Parse hex log to byte array
+        byte[] rawBytes = _parser.ParseLogFile(path);
+
+        // Step 2: Extract individual messages
+        List<byte[]> messages = _extractor.ExtractMessages(rawBytes);
+
+        // Step 3: Build LogData object
+        LogData data = new LogData
+        {
+            Messages = messages,
+            TotalBytes = rawBytes.Length,
+            MessageCount = messages.Count,
+            AverageMessageLength = messages.Count > 0
+                ? rawBytes.Length / messages.Count
+                : 0
+        };
+
+        return data;
+    }
+}
+
+public class LogData
+{
+    public List<byte[]> Messages { get; set; }
+    public int TotalBytes { get; set; }
+    public int MessageCount { get; set; }
+    public int AverageMessageLength { get; set; }
+    public Dictionary<string, int> Statistics { get; set; }
+}
+```
+
+---
+
+### Example Processing
+
+**Input File:** `TFO1\Serial_Log.txt` (Format 1: Hex+ASCII)
+```
+46 20 20 20 20 20 20 30 2E 30 0D 48 20 20 20 20    F      0.0.H
+20 20 30 2E 30 0D 51 20 20 20 20 20 20 30 2E 30      0.0.Q      0.0
+```
+
+**Processing Steps:**
+
+1. **Format Detection:** → `HexAndAscii`
+
+2. **Hex Parsing:**
+   ```
+   46 20 20 20 20 20 20 30 2E 30 0D 48 20 20 20 20 20 20 30 2E 30 0D ...
+   → [0x46, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x30, 0x2E, 0x30, 0x0D, ...]
+   ```
+
+3. **ASCII Conversion:**
+   ```
+   [0x46, 0x20, ..., 0x0D] → "F      0.0\r"
+   ```
+
+4. **Message Extraction (by 0x0D terminator):**
+   ```
+   Message 1: "F      0.0\r"
+   Message 2: "H      0.0\r"
+   Message 3: "Q      0.0\r"
+   ```
+
+5. **Output:** `LogData` with 3 messages ready for pattern analysis
 
 ---
 
