@@ -143,22 +143,54 @@ Each device has dedicated documentation with detailed Mermaid diagrams:
 
 ---
 
+### Device 8: TScaleNHB ⭐ Simple
+**[Device-08-TScaleNHB.md](Device-08-TScaleNHB.md)**
+- Weight scale with CSV-like protocol
+- Single comma separator: `ST,GS `
+- Continuous streaming
+- Stability indicators (ST/US)
+- Unit attached to weight: `20.7g`
+
+**Diagrams:**
+- ✅ Class diagram
+- ✅ Sequence diagram (data reception)
+- ✅ Flowchart (parsing logic)
+- ✅ State diagram (device status)
+
+---
+
+### Device 9: TScaleQHW ⭐ Simple
+**[Device-09-TScaleQHW.md](Device-09-TScaleQHW.md)**
+- Weight scale with CSV-like protocol
+- Double comma separator: `ST,GS,`
+- Continuous streaming
+- Stability indicators (ST/US)
+- Space-separated unit: `245.6 g`
+
+**Diagrams:**
+- ✅ Class diagram
+- ✅ Sequence diagram (data reception)
+- ✅ Flowchart (parsing logic)
+- ✅ State diagram (device status)
+
+---
+
 ## Documentation Statistics
 
-### Total Documents: 10 files
+### Total Documents: 12 files
 
-### Total Diagrams: 54 Mermaid diagrams
-- **Class Diagrams:** 7
-- **Sequence Diagrams:** 7
-- **Flowcharts:** 7
-- **State Diagrams:** 7
+### Total Diagrams: 62 Mermaid diagrams
+- **Class Diagrams:** 9
+- **Sequence Diagrams:** 9
+- **Flowcharts:** 9
+- **State Diagrams:** 9
 - **Architecture Diagrams:** 2
 - **Comparison Diagrams:** 2
 
 ### Device Complexity Distribution
 | Complexity | Count | Devices |
 |------------|-------|---------|
-| ⭐ Simple | 2 | DEFENDER3000, WeightSPUN |
+| ⭐ Simple | 4 | DEFENDER3000, WeightSPUN, TScaleNHB, TScaleQHW |
 | ⭐⭐ Medium | 2 | MettlerMS204TS00, WeightQA |
 | ⭐⭐⭐ Medium-Complex | 1 | PHMeter |
 | ⭐⭐⭐⭐ Complex | 1 | JIK6CAB |
@@ -175,6 +207,8 @@ Each device has dedicated documentation with detailed Mermaid diagrams:
 - [WeightSPUN](Device-07-WeightSPUN.md) - High capacity weight
 - [MettlerMS204TS00](Device-03-MettlerMS204TS00.md) - Precision balance
 - [WeightQA](Device-06-WeightQA.md) - Weight with stability index
+- [TScaleNHB](Device-08-TScaleNHB.md) - CSV-like protocol, single comma
+- [TScaleQHW](Device-09-TScaleQHW.md) - CSV-like protocol, double comma
 
 **Multi-Line Protocols:**
 - [JIK6CAB](Device-02-JIK6CAB.md) - 14-line structured package
@@ -187,6 +221,8 @@ Each device has dedicated documentation with detailed Mermaid diagrams:
 - [CordDEFENDER3000](Device-01-CordDEFENDER3000.md) - Prefix symbols (?, G, N)
 - [WeightQA](Device-06-WeightQA.md) - Numeric index (0-8)
 - [WeightSPUN](Device-07-WeightSPUN.md) - Prefix symbols (?, G)
+- [TScaleNHB](Device-08-TScaleNHB.md) - Status prefix (ST, US)
+- [TScaleQHW](Device-09-TScaleQHW.md) - Status prefix (ST, US)
 
 **High Precision:**
 - [MettlerMS204TS00](Device-03-MettlerMS204TS00.md) - 0.0001g resolution
@@ -267,6 +303,7 @@ All diagrams follow these standards (defined in [claude.md](../../claude.md)):
 | 2025-10-08 | 1.0 | Initial documentation created |
 | 2025-10-08 | 1.1 | Split device diagrams into separate files |
 | 2025-10-08 | 1.2 | Fixed all Mermaid syntax errors |
+| 2025-10-18 | 1.3 | Added TScaleNHB and TScaleQHW device documentation |
 
 ---
 
