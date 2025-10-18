@@ -24,7 +24,7 @@ The NLib.Serial.Devices library implements a **three-layer architecture** with c
 
 ```mermaid
 graph TD
-    A[Device-Specific Implementations<br/>7 devices<br/>- Data classes inherit SerialDeviceData<br/>- Emulator classes inherit SerialDeviceEmulator<br/>- Terminal classes inherit SerialDeviceTerminal]
+    A[Device-Specific Implementations<br/>9 devices<br/>- Data classes inherit SerialDeviceData<br/>- Emulator classes inherit SerialDeviceEmulator<br/>- Terminal classes inherit SerialDeviceTerminal]
     B[Generic Base Classes<br/>SerialDevices.cs<br/>- SerialDeviceEmulator&lt;T&gt;<br/>- SerialDeviceTerminal&lt;T&gt;]
     C[Core Engine<br/>SerialDevice<br/>- Serial port management<br/>- Background threading<br/>- Queue management<br/>- Configuration persistence]
 
@@ -536,6 +536,105 @@ output += ascii.x0D + ascii.x0A;
 - Split by spaces
 - Extract weight, unit, status
 - Same error handling
+
+---
+
+### Device 8: TScaleNHB (T&T Scale - NHB Model)
+**File:** TScaleNHB.cs
+
+#### Protocol
+- **Format:** `STATUS,MODE[spaces][weight]unit[spaces]\r\n`
+- **Example:** `ST,GS    20.7g  \r\n`
+- **Key Feature:** Single comma separator (CSV-like protocol)
+
+#### Data Class: TScaleNHBData
+**Properties:**
+- `decimal W` - Weight value
+- `string Unit` - Unit (default: "g")
+- `string Status` - Stability status (ST=Stable, US=Unstable)
+- `string Mode` - Mode indicator (GS=Gross/Stable)
+
+**ToByteArray() Implementation:**
+```csharp
+// Format: "ST,GS    20.7g  \r\n"
+string status = string.IsNullOrWhiteSpace(Status) ? "ST" : Status.Trim().ToUpper();
+string mode = string.IsNullOrWhiteSpace(Mode) ? "GS" : Mode.Trim().ToUpper();
+string actualW = ((double)W).ToString("F1");
+output = status + "," + mode + " ";
+output += actualW.PadLeft(8, ' ');
+output += unit + "  ";
+output += ascii.x0D + ascii.x0A;
+```
+
+**Key Protocol Features:**
+- CSV-like format with single comma: `ST,GS `
+- Unit directly attached to weight: `20.7g` (no space)
+- Precision: 1 decimal place (0.1 g)
+
+#### Terminal Class: TScaleNHBTerminal
+**Parsing Logic:**
+1. Extract package ending with `\r\n`
+2. Split by comma: `["ST", "GS    20.7g  "]`
+3. Parse status from first part
+4. Parse mode and weight+unit from second part
+5. Scan backward to find where digits end to separate unit
+6. Parse weight as decimal
+
+**Key Parsing Challenge:**
+- Unit is attached to weight (`20.7g`) requiring backward scan to separate
+
+---
+
+### Device 9: TScaleQHW (T&T Scale - QHW Model)
+**File:** TScaleQHW.cs
+
+#### Protocol
+- **Format:** `STATUS,MODE,[spaces][weight] unit\r\n`
+- **Example:** `ST,GS,   245.6 g\r\n`
+- **Key Feature:** Double comma separator (CSV-like protocol)
+
+#### Data Class: TScaleQHWData
+**Properties:**
+- `decimal W` - Weight value
+- `string Unit` - Unit (default: "g")
+- `string Status` - Stability status (ST=Stable, US=Unstable)
+- `string Mode` - Mode indicator (GS=Gross/Stable)
+
+**ToByteArray() Implementation:**
+```csharp
+// Format: "ST,GS,   245.6 g\r\n"
+string status = string.IsNullOrWhiteSpace(Status) ? "ST" : Status.Trim().ToUpper();
+string mode = string.IsNullOrWhiteSpace(Mode) ? "GS" : Mode.Trim().ToUpper();
+string actualW = ((double)W).ToString("F1");
+output = status + "," + mode + ",";
+output += actualW.PadLeft(8, ' ');
+output += " " + unit;
+output += ascii.x0D + ascii.x0A;
+```
+
+**Key Protocol Features:**
+- CSV-like format with double comma: `ST,GS,`
+- Unit space-separated from weight: `245.6 g`
+- Precision: 1 decimal place (0.1 g)
+
+#### Terminal Class: TScaleQHWTerminal
+**Parsing Logic:**
+1. Extract package ending with `\r\n`
+2. Split by comma: `["ST", "GS", "   245.6 g"]`
+3. Parse status, mode, and weight+unit from three parts
+4. Split weight part by space to separate value and unit
+5. Parse weight as decimal
+
+**Parsing Advantage:**
+- Simpler than NHB due to space-separated unit
+- True CSV format with 3 fields
+
+**Protocol Comparison (NHB vs QHW):**
+| Feature | TScaleNHB | TScaleQHW |
+|---------|-----------|-----------|
+| Comma count | 1 (`ST,GS `) | 2 (`ST,GS,`) |
+| Unit separator | Attached (`20.7g`) | Space (`245.6 g`) |
+| Parsing complexity | Medium | Simple |
 
 ---
 

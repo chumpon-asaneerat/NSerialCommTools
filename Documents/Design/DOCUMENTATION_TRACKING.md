@@ -66,6 +66,8 @@
   - [ ] TFO1EmulatorPage.xaml.cs
   - [ ] WeightQAEmulatorPage.xaml.cs
   - [ ] WeightSPUNEmulatorPage.xaml.cs
+  - [ ] TScaleNHBEmulatorPage.xaml.cs
+  - [ ] TScaleQHWEmulatorPage.xaml.cs
 - [ ] Document application architecture (WPF structure)
 
 ### 1.3 Terminal Application Analysis (NLib.Serial.Terminal.App)
@@ -79,20 +81,24 @@
   - [ ] TFO1TerminalPage.xaml.cs
   - [ ] WeightQATerminalPage.xaml.cs
   - [ ] WeightSPUNTerminalPage.xaml.cs
+  - [ ] TScaleNHBTerminalPage.xaml.cs
+  - [ ] TScaleQHWTerminalPage.xaml.cs
 - [ ] Document application architecture (WPF structure)
 
 ### 1.4 Reference Materials Review
-- [ ] Review log files in Documents/LuckyTex Devices/:
-  - [ ] DEFENDER3000/
-  - [ ] JIK6CAB/
-  - [ ] MS204TS00/
-  - [ ] PH Meter/
-  - [ ] TFO1/
+- [x] Review log files in Documents/LuckyTex Devices/:
+  - [x] DEFENDER3000/
+  - [x] JIK6CAB/
+  - [x] MS204TS00/
+  - [x] PH Meter/
+  - [x] TFO1/
   - [ ] TFO3/
-  - [ ] WEIGHT QA/
-  - [ ] WEIGHT SPUN/
-- [ ] Extract protocol specifications from logs
-- [ ] Document communication patterns
+  - [x] WEIGHT QA/
+  - [x] WEIGHT SPUN/
+  - [x] TScaleNHB/
+  - [x] TScaleQHW/
+- [x] Extract protocol specifications from logs
+- [x] Document communication patterns
 
 ---
 
@@ -125,7 +131,7 @@
 ### 3.1 Device Implementation Documents
 For each device, create: `Device-[DeviceName].md`
 
-- [ ] **Device-DEFENDER3000.md**
+- [x] **Device-01-DEFENDER3000.md**
   - Device description and purpose
   - Communication protocol
   - Command set
@@ -133,7 +139,7 @@ For each device, create: `Device-[DeviceName].md`
   - Implementation details
   - Usage examples
 
-- [ ] **Device-JIK6CAB.md**
+- [x] **Device-02-JIK6CAB.md**
   - Device description and purpose
   - Communication protocol
   - Command set
@@ -141,7 +147,7 @@ For each device, create: `Device-[DeviceName].md`
   - Implementation details
   - Usage examples
 
-- [ ] **Device-MettlerMS204TS00.md**
+- [x] **Device-03-MettlerMS204TS00.md**
   - Device description and purpose
   - Communication protocol
   - Command set
@@ -149,7 +155,7 @@ For each device, create: `Device-[DeviceName].md`
   - Implementation details
   - Usage examples
 
-- [ ] **Device-PHMeter.md**
+- [x] **Device-04-PHMeter.md**
   - Device description and purpose
   - Communication protocol
   - Command set
@@ -157,7 +163,7 @@ For each device, create: `Device-[DeviceName].md`
   - Implementation details
   - Usage examples
 
-- [ ] **Device-TFO1.md**
+- [x] **Device-05-TFO1.md**
   - Device description and purpose
   - Communication protocol
   - Command set
@@ -165,7 +171,7 @@ For each device, create: `Device-[DeviceName].md`
   - Implementation details
   - Usage examples
 
-- [ ] **Device-WeightQA.md**
+- [x] **Device-06-WeightQA.md**
   - Device description and purpose
   - Communication protocol
   - Command set
@@ -173,7 +179,23 @@ For each device, create: `Device-[DeviceName].md`
   - Implementation details
   - Usage examples
 
-- [ ] **Device-WeightSPUN.md**
+- [x] **Device-07-WeightSPUN.md**
+  - Device description and purpose
+  - Communication protocol
+  - Command set
+  - Response formats
+  - Implementation details
+  - Usage examples
+
+- [x] **Device-08-TScaleNHB.md**
+  - Device description and purpose
+  - Communication protocol
+  - Command set
+  - Response formats
+  - Implementation details
+  - Usage examples
+
+- [x] **Device-09-TScaleQHW.md**
   - Device description and purpose
   - Communication protocol
   - Command set
@@ -403,3 +425,7 @@ For each device, create sequence and state diagrams:
 
 ## Update Log
 - 2025-10-08: Initial tracking file created with full task breakdown
+- 2025-10-18: Added TScaleNHB and TScaleQHW devices to tracking
+  - Device documentation completed for both devices
+  - Updated all cross-reference documents
+  - Added to index, log analysis, and code analysis documents
