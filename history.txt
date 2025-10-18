@@ -10,8 +10,10 @@ Implements #128
 Implements #127
 - 
 
+[Commit]
 Implements #126
-- 
+- Update Protocol Analysis Project #1.
+  - Fixed prblem with System.ValueTuple need to edit project file directly and update App.config.
 
 [Commit]
 Implements #125
