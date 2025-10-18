@@ -187,6 +187,8 @@ sequenceDiagram
 | **TFO1** | Very Complex | F, H, Q, X, A, W0-W4, W1-W2, B, C, V | Binary + ASCII mixed |
 | **WeightQA** | Medium | W, Unit, Mode | Stability index (/0-8) |
 | **WeightSPUN** | Simple | W, Unit, O | Similar to DEFENDER3000 |
+| **TScaleNHB** | Simple | W, Unit, Status, Mode | CSV-like, single comma |
+| **TScaleQHW** | Simple | W, Unit, Status, Mode | CSV-like, double comma |
 
 ---
 

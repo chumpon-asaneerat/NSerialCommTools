@@ -264,6 +264,92 @@ E
 
 ---
 
+### 8. TScaleNHB (T&T Weight Scale - NHB Model)
+**Log Files:**
+- `TScaleNHB/NHB.txt` - Hex dump format
+- `TScaleNHB/NHB2.txt` - Hex dump format
+- Images: `442216_0.jpg`, `442217_0.jpg`, `442218.jpg`
+
+**Protocol Characteristics:**
+- **Output Format:** `STATUS,MODE[spaces][weight]unit[spaces]\r\n`
+- **Examples:**
+  - `ST,GS    20.7g  ` (Stable, 20.7 grams)
+  - `US,GS    20.9g  ` (Unstable, 20.9 grams)
+
+**Field Breakdown:**
+- **Status:** 2 characters
+  - `ST` = Stable
+  - `US` = Unstable
+- **Mode:** 2 characters (after first comma)
+  - `GS` = Gross/Stable mode
+- **Weight:** Variable width, right-aligned with leading spaces (1 decimal place)
+- **Unit:** 1-2 characters, directly attached to weight (typically "g")
+- **Terminator:** `\r\n` (0x0D 0x0A)
+
+**Hex Format:**
+```
+53 54 2C 47 53 20 20 20 20 32 30 2E 37 67 20 20 0D 0A
+"ST,GS    20.7g  \r\n"
+```
+
+**Key Protocol Feature:** Single comma separator `ST,GS ` (note: one comma only)
+
+**Weight Range Observed:**
+- NHB.log: Consistently 20.7g
+- NHB2.log: 85.5g to 106.2g
+
+**Key Observations:**
+- CSV-like format with single comma
+- Unit directly attached to weight (no space): `20.7g`
+- Continuous streaming protocol
+- Stability transitions: ST ↔ US during weight changes
+- Right-aligned weight values with variable padding
+
+---
+
+### 9. TScaleQHW (T&T Weight Scale - QHW Model)
+**Log Files:**
+- `TScaleQHW/QHW.txt` - Hex dump format
+- `TScaleQHW/QHW2.txt` - Hex dump format
+
+**Protocol Characteristics:**
+- **Output Format:** `STATUS,MODE,[spaces][weight] unit\r\n`
+- **Examples:**
+  - `ST,GS,   245.6 g` (Stable, 245.6 grams)
+  - `US,GS,    92.6 g` (Unstable, 92.6 grams)
+
+**Field Breakdown:**
+- **Status:** 2 characters
+  - `ST` = Stable
+  - `US` = Unstable
+- **Mode:** 2 characters (after first comma)
+  - `GS` = Gross/Stable mode
+- **Weight:** Variable width, right-aligned with leading spaces (1 decimal place)
+- **Unit:** 1-2 characters, space-separated from weight (typically "g")
+- **Terminator:** `\r\n` (0x0D 0x0A)
+
+**Hex Format:**
+```
+53 54 2C 47 53 2C 20 20 20 32 34 35 2E 36 20 67 0D 0A
+"ST,GS,   245.6 g\r\n"
+```
+
+**Key Protocol Feature:** Double comma separator `ST,GS,` (note: two commas)
+
+**Weight Range Observed:**
+- QHW.log: Consistently 245.5-245.6g
+- QHW2.log: 7.9g to 106.2g
+
+**Key Observations:**
+- CSV-like format with double comma (key difference from NHB)
+- Unit space-separated from weight: `245.6 g`
+- Continuous streaming protocol
+- Stability transitions: ST ↔ US during weight changes
+- Right-aligned weight values with variable padding
+- Simpler parsing due to space-separated unit
+
+---
+
 ## Common Protocol Patterns
 
 ### 1. **Line Terminators**
@@ -338,6 +424,8 @@ Multiple methods used:
 | TFO1 | Binary+ASCII | Variable | Continuous | Very High | Status byte |
 | Weight QA | Text+Index | 0.01 g | Continuous | Medium | `/0-8` index |
 | Weight SPUN | Simple Text | 0.1 kg | Continuous | Low | `?` prefix |
+| TScaleNHB | CSV-like | 0.1 g | Continuous | Low | `ST/US` prefix |
+| TScaleQHW | CSV-like | 0.1 g | Continuous | Low | `ST/US` prefix |
 
 ---
 
