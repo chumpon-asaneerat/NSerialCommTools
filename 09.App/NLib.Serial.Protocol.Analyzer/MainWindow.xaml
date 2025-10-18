@@ -4,8 +4,130 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Protocol Analyzer"
-        Height="450"
-        Width="800">
-    <Grid />
+        Title="Serial Protocol Analyzer"
+        Height="700"
+        Width="1200"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Section: File Selection -->
+        <GroupBox Header="1. Load Log File" Grid.Row="0" Padding="10" Margin="0,0,0,10">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Log File:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBox Grid.Column="1" x:Name="txtLogFilePath" IsReadOnly="True" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" x:Name="btnBrowse" Content="Browse..." Width="100" Margin="10,0,0,0" Click="btnBrowse_Click"/>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <TextBlock Text="Detected Format:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="txtDetectedFormat" Text="None" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="Messages:" VerticalAlignment="Center" Margin="30,0,10,0"/>
+                    <TextBlock x:Name="txtMessageCount" Text="0" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Middle Section: Results -->
+        <TabControl Grid.Row="1">
+            <!-- Analysis Tab -->
+            <TabItem Header="Analysis Results">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <GroupBox Header="Terminator" Margin="0,0,0,10">
+                            <Grid Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Type:"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="txtTerminatorType" FontWeight="Bold"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Hex Bytes:" Margin="0,5,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="txtTerminatorHex" FontWeight="Bold" Margin="0,5,0,0"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Confidence:" Margin="0,5,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="txtTerminatorConfidence" FontWeight="Bold" Margin="0,5,0,0"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="Delimiters" Margin="0,0,0,10">
+                            <DataGrid x:Name="gridDelimiters" AutoGenerateColumns="False" IsReadOnly="True" Height="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Character" Binding="{Binding CharacterName}" Width="100"/>
+                                    <DataGridTextColumn Header="Symbol" Binding="{Binding Delimiter}" Width="80"/>
+                                    <DataGridTextColumn Header="Frequency" Binding="{Binding Frequency, StringFormat={}{0:F1}%}" Width="100"/>
+                                    <DataGridTextColumn Header="Avg Count" Binding="{Binding AverageCount, StringFormat={}{0:F1}}" Width="100"/>
+                                    <DataGridTextColumn Header="Structural" Binding="{Binding IsStructural}" Width="100"/>
+                                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence, StringFormat={}{0:F1}%}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+
+                        <GroupBox Header="Fields">
+                            <DataGrid x:Name="gridFields" AutoGenerateColumns="False" IsReadOnly="True" Height="200">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Position" Binding="{Binding Position}" Width="80"/>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding SuggestedName}" Width="120"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="100"/>
+                                    <DataGridTextColumn Header="Unit" Binding="{Binding Unit}" Width="80"/>
+                                    <DataGridTextColumn Header="Min Length" Binding="{Binding MinLength}" Width="90"/>
+                                    <DataGridTextColumn Header="Max Length" Binding="{Binding MaxLength}" Width="90"/>
+                                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence, StringFormat={}{0:F1}%}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Protocol Definition Tab -->
+            <TabItem Header="Protocol Definition (JSON)">
+                <Grid>
+                    <TextBox x:Name="txtJsonOutput"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             IsReadOnly="True"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto"
+                             Margin="10"/>
+                </Grid>
+            </TabItem>
+
+            <!-- Raw Messages Tab -->
+            <TabItem Header="Raw Messages (Preview)">
+                <Grid>
+                    <ListBox x:Name="lstRawMessages"
+                             FontFamily="Consolas"
+                             FontSize="11"
+                             Margin="10"
+                             HorizontalContentAlignment="Stretch"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Bottom Section: Actions -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button x:Name="btnAnalyze" Content="Analyze" Width="100" Height="30" Margin="0,0,10,0" Click="btnAnalyze_Click" IsEnabled="False"/>
+            <Button x:Name="btnExportJson" Content="Export JSON" Width="100" Height="30" Margin="0,0,10,0" Click="btnExportJson_Click" IsEnabled="False"/>
+            <Button x:Name="btnClear" Content="Clear" Width="100" Height="30" Click="btnClear_Click"/>
+        </StackPanel>
+    </Grid>
 </Window>

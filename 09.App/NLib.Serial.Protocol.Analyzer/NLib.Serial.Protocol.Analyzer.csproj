@@ -103,17 +103,34 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="Analyzers\DelimiterDetector.cs" />
+    <Compile Include="Analyzers\FieldAnalyzer.cs" />
+    <Compile Include="Analyzers\PackageDetector.cs" />
+    <Compile Include="Analyzers\PatternAnalyzer.cs" />
+    <Compile Include="Analyzers\TerminatorDetector.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Extensions\NJson.cs" />
+    <Compile Include="Generators\DefinitionGenerator.cs" />
+    <Compile Include="Generators\ProtocolDefinition.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\AnalysisResult.cs" />
+    <Compile Include="Models\DelimiterInfo.cs" />
+    <Compile Include="Models\FieldInfo.cs" />
+    <Compile Include="Models\LogData.cs" />
+    <Compile Include="Models\LogFileFormat.cs" />
+    <Compile Include="Models\TerminatorInfo.cs" />
+    <Compile Include="Parsers\HexLogParser.cs" />
+    <Compile Include="Parsers\LogFileLoader.cs" />
+    <Compile Include="Parsers\LogFormatDetector.cs" />
+    <Compile Include="Parsers\MessageExtractor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
