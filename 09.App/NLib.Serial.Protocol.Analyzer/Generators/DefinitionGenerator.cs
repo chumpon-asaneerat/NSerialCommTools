@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLib.Serial.Protocol.Analyzer.Analyzers;
 using NLib.Serial.Protocol.Analyzer.Models;
 
 #endregion
@@ -15,20 +16,48 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
     /// </summary>
     public class DefinitionGenerator
     {
+        #region Private Fields
+
+        private PackageLineAnalyzer _lineAnalyzer = new PackageLineAnalyzer();
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
         /// Generates a protocol definition from analysis results
         /// </summary>
-        public ProtocolDefinition Generate(AnalysisResult analysis, string deviceName, string sourceFile)
+        public ProtocolDefinition Generate(AnalysisResult analysis, string deviceName, string sourceFile, LogData logData, PackageInfo packageInfo)
         {
+            if (analysis == null)
+                throw new ArgumentNullException(nameof(analysis));
+
             var definition = new ProtocolDefinition
             {
+                Schema = "http://json-schema.org/draft-07/schema#",
+                Version = "1.0",
+                LastUpdated = DateTime.Now.ToString("yyyy-MM-dd"),
+
                 DeviceInfo = new DeviceInfo
                 {
                     Name = deviceName,
-                    Category = "unknown",
-                    Description = $"Auto-generated from {Path.GetFileName(sourceFile)}"
+                    Manufacturer = "Unknown",
+                    Category = "scale",
+                    Model = deviceName,
+                    Description = $"Auto-generated from {Path.GetFileName(sourceFile)}",
+                    Complexity = analysis.ProtocolType == "multi-line-package" ? "very-complex" : "simple"
+                },
+
+                Communication = new CommunicationInfo
+                {
+                    BaudRate = 9600,
+                    DataBits = 8,
+                    Parity = "None",
+                    StopBits = "One",
+                    Handshake = "None",
+                    Encoding = "ASCII",
+                    ReadTimeout = 5000,
+                    WriteTimeout = 5000
                 },
 
                 Protocol = new ProtocolInfo
@@ -37,7 +66,7 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
                     Format = analysis.ProtocolType == "multi-line-package" ? "multi-line-package" : "csv",
                     Encoding = "ASCII",
                     Terminator = GetTerminatorString(analysis.Terminator),
-                    Fields = GenerateFields(analysis.Fields)
+                    UpdateRate = "on-demand"
                 },
 
                 Parsing = new ParsingInfo
@@ -49,12 +78,15 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
                 }
             };
 
-            // Add package information if detected
-            if (analysis.ProtocolType == "multi-line-package")
+            // Generate package-based or simple protocol structure
+            if (analysis.ProtocolType == "multi-line-package" && packageInfo != null)
             {
-                definition.Protocol.PackageSize = analysis.PackageSize;
-                definition.Protocol.StartMarker = analysis.StartMarker;
-                definition.Protocol.EndMarker = analysis.EndMarker;
+                GeneratePackageStructure(definition, analysis, logData, packageInfo);
+            }
+            else
+            {
+                // Simple CSV protocol
+                definition.Protocol.Fields = GenerateFields(analysis.Fields);
             }
 
             return definition;
@@ -79,6 +111,55 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// Generates package structure with detailed line analysis
+        /// </summary>
+        private void GeneratePackageStructure(ProtocolDefinition definition, AnalysisResult analysis,
+            LogData logData, PackageInfo packageInfo)
+        {
+            definition.Protocol.PackageSize = analysis.PackageSize;
+
+            // Generate markers
+            definition.Protocol.Markers = new MarkerInfo
+            {
+                Start = new MarkerDetail
+                {
+                    Pattern = analysis.StartMarker,
+                    Description = "Package start marker with device ID",
+                    Action = "reset-state"
+                },
+                End = new MarkerDetail
+                {
+                    Pattern = analysis.EndMarker,
+                    Description = "Package end marker",
+                    Action = "complete-package"
+                }
+            };
+
+            // Analyze each line in the package
+            var lineStructures = _lineAnalyzer.AnalyzePackageLines(logData, packageInfo);
+
+            // Convert to LineDefinition
+            definition.Protocol.Structure = new StructureInfo
+            {
+                Lines = lineStructures.Select(ls => new LineDefinition
+                {
+                    LineNumber = ls.LineNumber,
+                    Name = ls.Name,
+                    Type = ls.Type,
+                    Pattern = ls.Pattern,
+                    Format = ls.Format,
+                    Unit = ls.Unit,
+                    UnitAttached = ls.UnitAttached,
+                    Min = ls.Min,
+                    Max = ls.Max,
+                    Required = ls.Required,
+                    Description = ls.Description,
+                    Values = ls.Values?.Count > 0 ? ls.Values : null
+                }).ToList()
+            };
+        }
 
         /// <summary>
         /// Gets terminator string representation

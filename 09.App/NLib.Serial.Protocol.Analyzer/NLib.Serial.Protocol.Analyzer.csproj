@@ -106,6 +106,7 @@
     <Compile Include="Analyzers\DelimiterDetector.cs" />
     <Compile Include="Analyzers\FieldAnalyzer.cs" />
     <Compile Include="Analyzers\PackageDetector.cs" />
+    <Compile Include="Analyzers\PackageLineAnalyzer.cs" />
     <Compile Include="Analyzers\PatternAnalyzer.cs" />
     <Compile Include="Analyzers\TerminatorDetector.cs" />
     <Compile Include="App.xaml.cs">
@@ -124,8 +125,10 @@
     <Compile Include="Models\AnalysisResult.cs" />
     <Compile Include="Models\DelimiterInfo.cs" />
     <Compile Include="Models\FieldInfo.cs" />
+    <Compile Include="Models\LineStructure.cs" />
     <Compile Include="Models\LogData.cs" />
     <Compile Include="Models\LogFileFormat.cs" />
+    <Compile Include="Models\PackageInfo.cs" />
     <Compile Include="Models\TerminatorInfo.cs" />
     <Compile Include="Parsers\HexLogParser.cs" />
     <Compile Include="Parsers\LogFileLoader.cs" />

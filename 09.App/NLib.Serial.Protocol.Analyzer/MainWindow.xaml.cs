@@ -133,7 +133,8 @@ namespace NLib
 
                 // Generate protocol definition
                 string deviceName = Path.GetFileNameWithoutExtension(_currentLogData.SourceFilePath);
-                _currentDefinition = _generator.Generate(_currentAnalysis, deviceName, _currentLogData.SourceFilePath);
+                _currentDefinition = _generator.Generate(_currentAnalysis, deviceName, _currentLogData.SourceFilePath,
+                    _currentLogData, _currentAnalysis.PackageInfo);
 
                 // Show JSON
                 txtJsonOutput.Text = _generator.ToJson(_currentDefinition);
@@ -149,8 +150,14 @@ namespace NLib
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error during analysis: {ex.Message}",
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                string errorDetails = $"Error during analysis:\n\n{ex.Message}\n\n";
+                if (ex.InnerException != null)
+                {
+                    errorDetails += $"Inner Exception: {ex.InnerException.Message}\n\n";
+                }
+                errorDetails += $"Stack Trace:\n{ex.StackTrace}";
+
+                MessageBox.Show(errorDetails, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

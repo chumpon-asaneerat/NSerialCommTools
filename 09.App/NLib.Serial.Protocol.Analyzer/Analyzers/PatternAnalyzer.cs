@@ -45,6 +45,7 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                 result.StartMarker = packageInfo.StartMarker;
                 result.EndMarker = packageInfo.EndMarker;
                 result.Confidence = packageInfo.Confidence;
+                result.PackageInfo = packageInfo; // Store for later use
 
                 // Set basic terminator info
                 result.Terminator = _terminatorDetector.DetectTerminator(data);

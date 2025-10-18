@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using NLib.Serial.Protocol.Analyzer.Analyzers;
 
 #endregion
 
@@ -81,6 +82,11 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         /// Gets or sets the end marker (for package-based protocols)
         /// </summary>
         public string EndMarker { get; set; }
+
+        /// <summary>
+        /// Gets or sets the package information (for package-based protocols)
+        /// </summary>
+        public PackageInfo PackageInfo { get; set; }
 
         #endregion
     }
