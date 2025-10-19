@@ -1,3 +1,33 @@
+Implements #150
+- 
+
+Implements #149
+- 
+
+Implements #148
+- 
+
+Implements #147
+- 
+
+Implements #146
+- 
+
+Implements #145
+- 
+
+Implements #144
+- 
+
+Implements #143
+- 
+
+Implements #142
+- 
+
+Implements #141
+- 
+
 Implements #140
 - 
 
@@ -10,8 +40,9 @@ Implements #138
 Implements #137
 - 
 
+[Commit]
 Implements #136
-- 
+- Prepare history.txt
 
 [Commit]
 Implements #135
