@@ -2,7 +2,3 @@
 check the @Documents\ModernDesign folder about we talk in last session also 
 check you code in 09.App\NLib.Serial.Protocol.Analyzer project please check project first
 then let create tracker file to fully complete project. I want that the analyzer can analyze all protocol log file and generate definition files that can use to extract information into target class also convert target class back to proper protocol.
-
-
-- in @Documents\ModernDesign we have eample file EXAMPLE-JIK6CAB-Full-Definition.json for JIK6CAB device 
-let create all Definition for all devices.
