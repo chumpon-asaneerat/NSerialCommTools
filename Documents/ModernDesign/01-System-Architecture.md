@@ -58,12 +58,15 @@ graph TD
 **Output**: Raw file content + detected format type
 
 **Detection Logic**:
-- **HEX/Text**: Lines contain hex bytes followed by ASCII representation
+- **HEX/Text**: File lines contain hex bytes followed by ASCII representation
   - Example: `46 20 20 20 20 20 20 30 2E 30 0D           F      0.0.`
-- **HEX Only**: Lines contain only hex bytes (with optional comments)
+  - Note: The `0D` is part of the protocol data, not the file line terminator
+- **HEX Only**: File lines contain only hex bytes (with optional comments)
   - Example: `46 20 20 20 20 20 20 30 2E 30 0D  // F      0.0.`
-- **Text Only**: Plain ASCII text output
+  - Comments after `//` are for reference only
+- **Text Only**: Plain ASCII text output (already decoded by logging tool)
   - Example: `SET P1(W)       0.0`
+  - May or may not show protocol terminators explicitly
 
 ---
 
@@ -78,10 +81,12 @@ Output:
 ```
 
 **Parsing Strategy**:
-1. Split line by whitespace delimiter (varies by format)
-2. Left side: Parse hex bytes (2 chars = 1 byte)
-3. Right side: Extract ASCII text representation
-4. Validate: Convert bytes to ASCII should match text
+1. Read each file line (separated by OS newlines - these are NOT protocol terminators)
+2. Find the separator between hex and text sections (typically multiple spaces)
+3. Left side: Parse hex bytes (2 hex chars = 1 byte, e.g., "46" = 0x46)
+4. Right side: Extract ASCII text representation for reference
+5. Validate: Converting bytes to ASCII should match text
+6. Store raw bytes - protocol message boundaries determined by analyzer later
 
 #### HEX Only Parser
 ```
@@ -92,10 +97,12 @@ Output:
 ```
 
 **Parsing Strategy**:
-1. Find comment delimiter (`//` or similar)
-2. Parse hex bytes before comment
-3. Extract comment as reference text
-4. Generate ASCII text from bytes
+1. Read each file line (separated by OS newlines)
+2. Find comment delimiter (`//`, `#`, or similar)
+3. Parse hex bytes before comment (2 hex chars = 1 byte)
+4. Extract comment as reference text (optional, for validation)
+5. Generate ASCII text from bytes for display
+6. Store raw bytes - protocol message boundaries determined by analyzer later
 
 #### Text Only Parser
 ```
@@ -106,10 +113,10 @@ Output:
 ```
 
 **Parsing Strategy**:
-1. Read text line as-is
-2. Convert to bytes using ASCII encoding (default)
-3. Detect line terminator (CR/LF/CRLF)
-4. Store original text + byte representation
+1. Read each file line as-is (file lines are separated by OS-specific newlines)
+2. Convert text to bytes using ASCII encoding (default)
+3. Store original text + byte representation
+4. Note: Protocol message terminators will be detected later by the analyzer
 
 ---
 
@@ -119,19 +126,23 @@ All parsers output to a common structure:
 
 ```
 LogEntry
-├── Bytes: byte[]           // Raw bytes from serial device
+├── Bytes: byte[]           // Raw bytes extracted from log file
 ├── Text: string            // Human-readable representation
 ├── Timestamp: DateTime?    // If available in log
 ├── Direction: enum         // TX/RX (if indicated)
-├── LineNumber: int         // Original line in file
+├── FileLineNumber: int     // Original line number in the log file
 └── Metadata
     ├── Format: LogFileFormat enum
-    ├── Encoding: Encoding
-    ├── HasTerminator: bool
-    └── TerminatorBytes: byte[]
+    └── Encoding: Encoding
 ```
 
 **Key Principle**: Once normalized, analyzer doesn't need to know original format.
+
+**Important Distinction**:
+- **File Lines** - How the log tool saved the data (with OS-specific newlines)
+- **Protocol Messages** - How the serial device actually sends data (with protocol-specific terminators)
+- Parsers extract raw bytes from file lines
+- Analyzer later determines actual protocol message boundaries
 
 ---
 
@@ -139,31 +150,41 @@ LogEntry
 
 The analyzer examines the normalized data to detect protocol characteristics:
 
-#### a) Message Terminators
+#### a) Protocol Message Terminators
+
+**Purpose**: Identify the bytes that mark the end of a protocol message (NOT file line breaks)
 
 **Detection Strategy**:
-- Analyze last bytes of each message
-- Count frequency of terminator patterns
-- Common patterns: `0x0D`, `0x0A`, `0x0D 0x0A`, custom sequences
+- Analyze ending byte patterns across all entries
+- Count frequency of terminator candidates
+- Common patterns: `0x0D` (CR), `0x0A` (LF), `0x0D 0x0A` (CRLF), custom byte sequences
+- Validate consistency across the dataset
 
 **Example from TFO1**:
 ```
-Pattern: 0x0D (CR)           - Frequency: 90%
-Pattern: 0x83 0x0D           - Frequency: 10% (special marker)
+Pattern: 0x0D (CR)           - Frequency: 90%  (standard message terminator)
+Pattern: 0x83 0x0D           - Frequency: 10%  (special footer marker)
 ```
 
-#### b) Message Delimiters
+**Note**: These are protocol-level terminators, independent of how the log file was formatted.
+
+#### b) Field Delimiters
+
+**Purpose**: Identify bytes/characters that separate fields within a protocol message
 
 **Detection Strategy**:
-- Analyze byte patterns within messages
+- Analyze byte patterns within individual messages
 - Detect consistent field separators
-- Types: Fixed-width, space-delimited, tab-delimited, custom
+- Types: Fixed-width, space-delimited, tab-delimited, comma-separated, custom bytes
 
 **Example from TFO1**:
 ```
 Format: Fixed-width fields
-Field separator: Multiple spaces
-Example: "F      0.0" (identifier + padding + value)
+Field separator: Multiple spaces (0x20)
+Example: "F      0.0"
+  - Field 1: "F" (identifier, position 0)
+  - Padding: "      " (6 spaces)
+  - Field 2: "0.0" (value, right-aligned)
 ```
 
 #### c) Data Patterns
@@ -175,7 +196,7 @@ Example: "F      0.0" (identifier + padding + value)
 
 **Example from TFO3**:
 ```
-Repeating structure (10 lines):
+Repeating structure (10-entry block):
   SET P1(W)       0.0
   SET P2          0.0
   SET P3          0.0
@@ -189,11 +210,12 @@ Repeating structure (10 lines):
 ```
 
 **Detected Pattern**:
-- Key-value pairs
-- Keys: Fixed text labels
-- Values: Variable (numeric or datetime)
-- Delimiter: Multiple spaces
-- Message: 10-line block
+- Key-value pairs structure
+- Keys: Fixed text labels (left side)
+- Values: Variable (numeric or datetime, right side)
+- Field delimiter: Multiple spaces
+- Message structure: Multi-entry message block
+- Each entry likely has protocol terminator (to be detected)
 
 #### d) Message Structure
 
@@ -205,11 +227,15 @@ Repeating structure (10 lines):
 
 **Example from TFO1**:
 ```
-Header:  "V1\r\n"
-Body:    Multiple data lines (F, H, Q, X, A, 0, 4, 1, 2)
-Footer:  "B\x83\r"
-         "C20. 02. 2023. MON 09:17AM\r"
+Message Frame Structure:
+Header:  "V1" + 0x0D 0x0A (protocol header with CRLF terminator)
+Body:    Multiple data entries (F, H, Q, X, A, 0, 4, 1, 2)
+         Each entry: identifier + value + 0x0D (CR terminator)
+Footer:  "B" + 0x83 0x0D (special footer marker)
+         "C20. 02. 2023. MON 09:17AM" + 0x0D (timestamp)
 ```
+
+**Note**: These are protocol-level message boundaries and terminators, not file formatting.
 
 ---
 
