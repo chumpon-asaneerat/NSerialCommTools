@@ -1,0 +1,269 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0",
+  "lastUpdated": "2025-10-19",
+
+  "deviceInfo": {
+    "name": "MettlerMS204TS00",
+    "manufacturer": "Mettler Toledo",
+    "category": "precision-balance",
+    "model": "MS204TS00",
+    "description": "Precision analytical balance with mode indicator (Net/Gross/Tare)",
+    "complexity": "simple",
+    "documentation": "Device-02-MettlerMS204TS00.md"
+  },
+
+  "communication": {
+    "baudRate": 9600,
+    "dataBits": 8,
+    "parity": "None",
+    "stopBits": "One",
+    "handshake": "None",
+    "encoding": "ASCII",
+    "readTimeout": 5000,
+    "writeTimeout": 5000
+  },
+
+  "protocol": {
+    "type": "continuous-stream",
+    "format": "single-line",
+    "encoding": "ASCII",
+    "terminator": "\\r\\n",
+    "packageSize": 1,
+    "updateRate": "continuous",
+
+    "structure": {
+      "lines": [
+        {
+          "lineNumber": 1,
+          "name": "WeightData",
+          "type": "composite",
+          "pattern": "\\s*([NGT]?)\\s*([-+]?\\d+\\.\\d+)\\s*(g|kg)",
+          "required": true,
+          "description": "Mode, weight value with unit",
+          "fields": [
+            {
+              "name": "Mode",
+              "type": "string",
+              "pattern": "[NGT]?",
+              "values": ["N", "G", "T", ""],
+              "description": "Mode indicator: N=Net, G=Gross, T=Tare, blank=no mode"
+            },
+            {
+              "name": "Weight",
+              "type": "decimal",
+              "pattern": "[-+]?\\d+\\.\\d+",
+              "format": "0.0000",
+              "min": -999.9999,
+              "max": 999.9999,
+              "description": "Weight value (4 decimal places)"
+            },
+            {
+              "name": "Unit",
+              "type": "string",
+              "pattern": "g|kg",
+              "values": ["g", "kg"],
+              "description": "Weight unit (g or kg)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "parsing": {
+    "strategy": "single-line-simple",
+    "description": "Parse single line with optional mode character, weight, and unit",
+
+    "states": [
+      {
+        "id": 0,
+        "name": "Idle",
+        "description": "Waiting for data package",
+        "action": "wait",
+        "transition": {
+          "condition": "detect-line-end",
+          "nextState": 1
+        }
+      },
+      {
+        "id": 1,
+        "name": "ParseLine",
+        "description": "Parse complete line for weight data",
+        "action": "extract-fields",
+        "steps": [
+          {
+            "step": 1,
+            "action": "check-first-char",
+            "description": "Check if first non-space character is N, G, T (mode) or digit",
+            "details": "If mode character exists, extract it and remove from line"
+          },
+          {
+            "step": 2,
+            "action": "parse-weight-unit",
+            "description": "Parse remaining line for weight value and unit",
+            "pattern": "\\s*([-+]?\\d+\\.\\d+)\\s*(g|kg)"
+          }
+        ],
+        "transition": {
+          "condition": "success",
+          "nextState": 2,
+          "onError": 0
+        }
+      },
+      {
+        "id": 2,
+        "name": "Complete",
+        "description": "Data successfully parsed",
+        "action": "fire-event",
+        "transition": {
+          "condition": "always",
+          "nextState": 0
+        }
+      }
+    ],
+
+    "errorHandling": {
+      "onTimeout": "reset-to-idle",
+      "onParseError": "reset-to-idle",
+      "maxRetries": 3,
+      "timeoutMs": 5000
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "name": "WeightRange",
+        "type": "range",
+        "field": "W",
+        "min": -999.9999,
+        "max": 999.9999,
+        "severity": "error",
+        "message": "Weight must be between -999.9999 and 999.9999"
+      },
+      {
+        "name": "UnitValid",
+        "type": "enum",
+        "field": "Unit",
+        "values": ["g", "kg"],
+        "severity": "error",
+        "message": "Unit must be 'g' or 'kg'"
+      },
+      {
+        "name": "ModeValid",
+        "type": "enum",
+        "field": "Mode",
+        "values": ["N", "G", "T", ""],
+        "severity": "warning",
+        "message": "Mode should be N (Net), G (Gross), T (Tare), or empty"
+      }
+    ]
+  },
+
+  "output": {
+    "dataClass": "MettlerMS204TS00Data",
+    "properties": [
+      {
+        "name": "Mode",
+        "type": "string",
+        "mapping": "Mode",
+        "default": "N"
+      },
+      {
+        "name": "W",
+        "type": "decimal",
+        "mapping": "Weight"
+      },
+      {
+        "name": "Unit",
+        "type": "string",
+        "mapping": "Unit",
+        "default": "g"
+      }
+    ],
+    "eventTrigger": "LineComplete",
+    "eventName": "DataReceived"
+  },
+
+  "testing": {
+    "testCases": [
+      {
+        "name": "ValidWeightNetMode",
+        "description": "Weight in Net mode with grams",
+        "input": "     N       0.3746 g    \\r\\n",
+        "expectedOutput": {
+          "Mode": "N",
+          "W": 0.3746,
+          "Unit": "g"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeightGrossMode",
+        "description": "Weight in Gross mode with kg",
+        "input": "     G       1.2500 kg   \\r\\n",
+        "expectedOutput": {
+          "Mode": "G",
+          "W": 1.2500,
+          "Unit": "kg"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeightNoMode",
+        "description": "Weight without mode indicator",
+        "input": "            0.5000 g    \\r\\n",
+        "expectedOutput": {
+          "Mode": "",
+          "W": 0.5000,
+          "Unit": "g"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "NegativeWeight",
+        "description": "Negative weight (tare)",
+        "input": "     T      -0.1000 g    \\r\\n",
+        "expectedOutput": {
+          "Mode": "T",
+          "W": -0.1000,
+          "Unit": "g"
+        },
+        "shouldSucceed": true
+      }
+    ],
+    "coverage": {
+      "fields": "100%",
+      "states": "100%",
+      "errorPaths": "60%"
+    }
+  },
+
+  "documentation": {
+    "references": [
+      "Device-02-MettlerMS204TS00.md",
+      "CODE_ANALYSIS_NLib.Serial.Devices.md"
+    ],
+    "logFiles": [
+      "Documents/LuckyTex Devices/MS204TS00/"
+    ],
+    "notes": [
+      "This is a simple single-line protocol from Mettler Toledo precision balance",
+      "Data format: [MODE] WEIGHT UNIT",
+      "Mode character (optional): N=Net, G=Gross, T=Tare",
+      "Weight has 4 decimal places precision (0.0000)",
+      "Weight is padded to 12 characters (left-aligned with spaces)",
+      "Unit is padded to 4 characters (right-aligned)",
+      "Example: '     N       0.3746 g    '",
+      "Mode character may not be present in some configurations"
+    ]
+  },
+
+  "migration": {
+    "existingClass": "MettlerMS204TS00.cs",
+    "namespace": "NLib.Serial.Devices",
+    "compatibility": "backward-compatible",
+    "notes": "This definition matches existing C# implementation 1:1"
+  }
+}
