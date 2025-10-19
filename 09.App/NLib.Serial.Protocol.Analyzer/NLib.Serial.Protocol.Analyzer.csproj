@@ -107,11 +107,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="Analyzers\DataDrivenLineAnalyzer.cs" />
     <Compile Include="Analyzers\DelimiterDetector.cs" />
     <Compile Include="Analyzers\FieldAnalyzer.cs" />
     <Compile Include="Analyzers\PackageDetector.cs" />
-    <Compile Include="Analyzers\PackageLineAnalyzer.cs" />
     <Compile Include="Analyzers\PatternAnalyzer.cs" />
+    <Compile Include="Analyzers\RelationshipDetector.cs" />
     <Compile Include="Analyzers\TerminatorDetector.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>

@@ -18,7 +18,8 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
     {
         #region Private Fields
 
-        private PackageLineAnalyzer _lineAnalyzer = new PackageLineAnalyzer();
+        private DataDrivenLineAnalyzer _lineAnalyzer = new DataDrivenLineAnalyzer();
+        private RelationshipDetector _relationshipDetector = new RelationshipDetector();
 
         #endregion
 
@@ -113,7 +114,7 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
         #region Private Methods
 
         /// <summary>
-        /// Generates package structure with detailed line analysis
+        /// Generates package structure with detailed line analysis (data-driven)
         /// </summary>
         private void GeneratePackageStructure(ProtocolDefinition definition, AnalysisResult analysis,
             LogData logData, PackageInfo packageInfo)
@@ -126,7 +127,7 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
                 Start = new MarkerDetail
                 {
                     Pattern = analysis.StartMarker,
-                    Description = "Package start marker with device ID",
+                    Description = "Package start marker",
                     Action = "reset-state"
                 },
                 End = new MarkerDetail
@@ -137,10 +138,10 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
                 }
             };
 
-            // Analyze each line in the package
-            var lineStructures = _lineAnalyzer.AnalyzePackageLines(logData, packageInfo);
+            // Analyze each line in the package using data-driven approach
+            var lineStructures = AnalyzePackageLinesDataDriven(logData, packageInfo, analysis);
 
-            // Convert to LineDefinition
+            // Convert to LineDefinition (only essential properties)
             definition.Protocol.Structure = new StructureInfo
             {
                 Lines = lineStructures.Select(ls => new LineDefinition
@@ -151,14 +152,114 @@ namespace NLib.Serial.Protocol.Analyzer.Generators
                     Pattern = ls.Pattern,
                     Format = ls.Format,
                     Unit = ls.Unit,
-                    UnitAttached = ls.UnitAttached,
-                    Min = ls.Min,
-                    Max = ls.Max,
-                    Required = ls.Required,
-                    Description = ls.Description,
+                    // Only include Min/Max if they're different (multiple samples observed)
+                    Min = (ls.Min.HasValue && ls.Max.HasValue && ls.Min != ls.Max) ? ls.Min : null,
+                    Max = (ls.Min.HasValue && ls.Max.HasValue && ls.Min != ls.Max) ? ls.Max : null,
                     Values = ls.Values?.Count > 0 ? ls.Values : null
                 }).ToList()
             };
+        }
+
+        /// <summary>
+        /// Analyzes package lines using data-driven approach
+        /// </summary>
+        private List<LineStructure> AnalyzePackageLinesDataDriven(LogData logData, PackageInfo packageInfo, AnalysisResult analysis)
+        {
+            List<LineStructure> lineStructures = new List<LineStructure>();
+
+            if (packageInfo == null || !packageInfo.IsPackageBased)
+                return lineStructures;
+
+            // Get all messages and group them by line position within packages
+            List<List<byte[]>> lineGroups = GroupMessagesByLinePosition(logData.Messages, packageInfo.PackageSize);
+
+            char delimiter = analysis.Delimiters.Count > 0
+                ? analysis.Delimiters.First().Delimiter
+                : ',';
+
+            // Analyze each line position
+            for (int lineNumber = 0; lineNumber < lineGroups.Count; lineNumber++)
+            {
+                var lineGroup = lineGroups[lineNumber];
+
+                // Use data-driven analyzer on this line group's messages
+                var tempLogData = new LogData { Messages = lineGroup };
+                var fields = _lineAnalyzer.AnalyzeFields(tempLogData, delimiter);
+
+                // Convert FieldInfo to LineStructure
+                LineStructure lineStructure = ConvertFieldInfoToLineStructure(fields, lineNumber + 1, lineGroup);
+                lineStructures.Add(lineStructure);
+            }
+
+            return lineStructures;
+        }
+
+        /// <summary>
+        /// Groups messages by their position within packages
+        /// </summary>
+        private List<List<byte[]>> GroupMessagesByLinePosition(List<byte[]> messages, int packageSize)
+        {
+            List<List<byte[]>> lineGroups = new List<List<byte[]>>();
+
+            // Initialize groups for each line position
+            for (int i = 0; i < packageSize; i++)
+            {
+                lineGroups.Add(new List<byte[]>());
+            }
+
+            // Distribute messages into line groups
+            for (int i = 0; i < messages.Count; i++)
+            {
+                int linePosition = i % packageSize;
+                lineGroups[linePosition].Add(messages[i]);
+            }
+
+            return lineGroups;
+        }
+
+        /// <summary>
+        /// Converts FieldInfo collection to a single LineStructure (purely data-driven)
+        /// </summary>
+        private LineStructure ConvertFieldInfoToLineStructure(List<FieldInfo> fields, int lineNumber, List<byte[]> samples)
+        {
+            LineStructure structure = new LineStructure
+            {
+                LineNumber = lineNumber,
+                Name = $"Line{lineNumber}",
+                RawSample = samples.Count > 0 ? System.Text.Encoding.ASCII.GetString(samples[0]).Trim() : ""
+            };
+
+            // If single field, use it directly
+            if (fields.Count == 1)
+            {
+                var field = fields[0];
+                structure.Type = field.Type;
+                structure.Unit = field.Unit;
+                structure.Min = field.MinValue;
+                structure.Max = field.MaxValue;
+                structure.Values = field.UniqueValues.Count > 0 ? field.UniqueValues : null;
+            }
+            else if (fields.Count > 1)
+            {
+                // Multiple fields - describe what we observed
+                structure.Type = "multi-field";
+
+                // Collect all unique values from all fields
+                var allValues = new List<string>();
+                foreach (var field in fields)
+                {
+                    if (field.UniqueValues != null)
+                        allValues.AddRange(field.UniqueValues);
+                }
+                structure.Values = allValues.Distinct().ToList();
+            }
+            else
+            {
+                // No fields detected
+                structure.Type = "string";
+            }
+
+            return structure;
         }
 
         /// <summary>
