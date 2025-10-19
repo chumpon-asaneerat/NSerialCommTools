@@ -1,0 +1,443 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0",
+  "lastUpdated": "2025-10-19",
+
+  "deviceInfo": {
+    "name": "TFO1",
+    "manufacturer": "LuckyTex",
+    "category": "textile-measurement",
+    "model": "TFO1",
+    "description": "Textile fiber measurement device with 11-line fixed format protocol",
+    "complexity": "very-complex",
+    "documentation": "Device-04-TFO1.md"
+  },
+
+  "communication": {
+    "baudRate": 9600,
+    "dataBits": 8,
+    "parity": "None",
+    "stopBits": "One",
+    "handshake": "None",
+    "encoding": "ASCII",
+    "readTimeout": 5000,
+    "writeTimeout": 5000
+  },
+
+  "protocol": {
+    "type": "multi-line-fixed",
+    "format": "multi-line-package",
+    "encoding": "ASCII",
+    "terminator": "\\r (or \\r\\n for last line)",
+    "packageSize": 11,
+    "updateRate": "on-demand",
+
+    "structure": {
+      "lines": [
+        {
+          "lineNumber": 1,
+          "name": "F_Value",
+          "type": "decimal",
+          "pattern": "^F\\s*(\\d+\\.\\d+)",
+          "header": "F",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "F parameter value"
+        },
+        {
+          "lineNumber": 2,
+          "name": "H_Value",
+          "type": "decimal",
+          "pattern": "^H\\s*(\\d+\\.\\d+)",
+          "header": "H",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "H parameter value"
+        },
+        {
+          "lineNumber": 3,
+          "name": "Q_Value",
+          "type": "decimal",
+          "pattern": "^Q\\s*(\\d+\\.\\d+)",
+          "header": "Q",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "Q parameter value"
+        },
+        {
+          "lineNumber": 4,
+          "name": "X_Value",
+          "type": "decimal",
+          "pattern": "^X\\s*(\\d+\\.\\d+)",
+          "header": "X",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "X parameter value"
+        },
+        {
+          "lineNumber": 5,
+          "name": "A_Value",
+          "type": "decimal",
+          "pattern": "^A\\s*(\\d+\\.\\d+)",
+          "header": "A",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "A parameter value (often around 360)"
+        },
+        {
+          "lineNumber": 6,
+          "name": "W0_Value",
+          "type": "decimal",
+          "pattern": "^0\\s*(\\d+\\.\\d+)",
+          "header": "0",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "Weight parameter 0"
+        },
+        {
+          "lineNumber": 7,
+          "name": "W4_Value",
+          "type": "decimal",
+          "pattern": "^4\\s*(\\d+\\.\\d+)",
+          "header": "4",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "Weight parameter 4"
+        },
+        {
+          "lineNumber": 8,
+          "name": "W1_Value",
+          "type": "decimal",
+          "pattern": "^1\\s*(\\d+\\.\\d+)",
+          "header": "1",
+          "format": "F1",
+          "fieldWidth": 9,
+          "padding": "left",
+          "required": true,
+          "description": "Weight parameter 1"
+        },
+        {
+          "lineNumber": 9,
+          "name": "W2_Value",
+          "type": "integer",
+          "pattern": "^2\\s*(\\d+)",
+          "header": "2",
+          "format": "D0",
+          "fieldWidth": 8,
+          "padding": "left",
+          "required": true,
+          "description": "Weight parameter 2 (integer)"
+        },
+        {
+          "lineNumber": 10,
+          "name": "B_Value",
+          "type": "byte",
+          "pattern": "^B(.)",
+          "header": "B",
+          "fieldWidth": 1,
+          "required": true,
+          "description": "Binary status byte (typically 0x83)"
+        },
+        {
+          "lineNumber": 11,
+          "name": "DateTime",
+          "type": "composite-datetime",
+          "pattern": "^C(\\d{2})[\\xF4] (\\d{2})[\\xF3] (\\d{4})[\\xF2] ([A-Z]{3}) (\\d{2}):(\\d{2})([AP]M)",
+          "header": "C",
+          "required": true,
+          "description": "Date and time with special separators",
+          "fields": [
+            {
+              "name": "Day",
+              "type": "integer",
+              "position": 1,
+              "description": "Day of month (01-31)"
+            },
+            {
+              "name": "Month",
+              "type": "integer",
+              "position": 2,
+              "description": "Month (01-12)"
+            },
+            {
+              "name": "Year",
+              "type": "integer",
+              "position": 3,
+              "description": "Year (4 digits)"
+            },
+            {
+              "name": "DayOfWeek",
+              "type": "string",
+              "position": 4,
+              "description": "Day of week abbreviation (MON, TUE, etc.)"
+            },
+            {
+              "name": "Hour",
+              "type": "integer",
+              "position": 5,
+              "description": "Hour (00-23)"
+            },
+            {
+              "name": "Minute",
+              "type": "integer",
+              "position": 6,
+              "description": "Minute (00-59)"
+            },
+            {
+              "name": "AMPM",
+              "type": "string",
+              "position": 7,
+              "description": "AM/PM indicator"
+            }
+          ],
+          "specialChars": {
+            "separator1": "0xF4",
+            "separator2": "0xF3",
+            "separator3": "0xF2",
+            "description": "Special non-ASCII separators between date components"
+          }
+        },
+        {
+          "lineNumber": 12,
+          "name": "V_Value",
+          "type": "byte",
+          "pattern": "^V(.)",
+          "header": "V",
+          "fieldWidth": 1,
+          "terminator": "\\r\\n",
+          "required": true,
+          "description": "Version byte (typically 0x31 = '1')"
+        }
+      ]
+    }
+  },
+
+  "parsing": {
+    "strategy": "line-by-line-header-match",
+    "description": "Parse each line based on its header character (F, H, Q, X, A, 0, 4, 1, 2, B, C, V)",
+
+    "states": [
+      {
+        "id": 0,
+        "name": "Idle",
+        "description": "Waiting for line",
+        "action": "wait",
+        "transition": {
+          "condition": "detect-line-end",
+          "nextState": 1
+        }
+      },
+      {
+        "id": 1,
+        "name": "ParseLine",
+        "description": "Parse line based on header character",
+        "action": "switch-on-header",
+        "headerMapping": {
+          "F": "parse-decimal-1dp",
+          "H": "parse-decimal-1dp",
+          "Q": "parse-decimal-1dp",
+          "X": "parse-decimal-1dp",
+          "A": "parse-decimal-1dp",
+          "0": "parse-decimal-1dp",
+          "4": "parse-decimal-1dp",
+          "1": "parse-decimal-1dp",
+          "2": "parse-integer",
+          "B": "parse-byte",
+          "C": "parse-datetime",
+          "V": "parse-byte"
+        },
+        "transition": {
+          "condition": "success",
+          "nextState": 2
+        }
+      },
+      {
+        "id": 2,
+        "name": "UpdateData",
+        "description": "Update corresponding data field",
+        "action": "fire-event",
+        "transition": {
+          "condition": "always",
+          "nextState": 0
+        }
+      }
+    ],
+
+    "errorHandling": {
+      "onTimeout": "reset-to-idle",
+      "onParseError": "continue-next-line",
+      "maxRetries": 3,
+      "timeoutMs": 5000
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "name": "ValuesPositive",
+        "type": "range",
+        "fields": ["F", "H", "Q", "X", "A", "W0", "W4", "W1", "W2"],
+        "min": 0,
+        "max": 9999.9,
+        "severity": "warning",
+        "message": "Measurement values should be positive and reasonable"
+      },
+      {
+        "name": "DateTimeValid",
+        "type": "datetime-range",
+        "field": "C",
+        "minDate": "2000-01-01",
+        "maxDate": "2099-12-31",
+        "severity": "error",
+        "message": "Date must be between 2000 and 2099"
+      }
+    ]
+  },
+
+  "output": {
+    "dataClass": "TFO1Data",
+    "properties": [
+      {
+        "name": "F",
+        "type": "decimal",
+        "mapping": "F_Value"
+      },
+      {
+        "name": "H",
+        "type": "decimal",
+        "mapping": "H_Value"
+      },
+      {
+        "name": "Q",
+        "type": "decimal",
+        "mapping": "Q_Value"
+      },
+      {
+        "name": "X",
+        "type": "decimal",
+        "mapping": "X_Value"
+      },
+      {
+        "name": "A",
+        "type": "decimal",
+        "mapping": "A_Value"
+      },
+      {
+        "name": "W0",
+        "type": "decimal",
+        "mapping": "W0_Value"
+      },
+      {
+        "name": "W4",
+        "type": "decimal",
+        "mapping": "W4_Value"
+      },
+      {
+        "name": "W1",
+        "type": "decimal",
+        "mapping": "W1_Value"
+      },
+      {
+        "name": "W2",
+        "type": "int",
+        "mapping": "W2_Value"
+      },
+      {
+        "name": "B",
+        "type": "byte",
+        "mapping": "B_Value",
+        "default": "0x83"
+      },
+      {
+        "name": "C",
+        "type": "DateTime",
+        "mapping": "DateTime"
+      },
+      {
+        "name": "V",
+        "type": "byte",
+        "mapping": "V_Value",
+        "default": "0x31"
+      }
+    ],
+    "eventTrigger": "LineProcessed",
+    "eventName": "DataReceived"
+  },
+
+  "testing": {
+    "testCases": [
+      {
+        "name": "ValidPackageFull",
+        "description": "Complete 12-line package",
+        "input": "F      0.0\\rH      0.0\\rQ      0.0\\rX      0.0\\rA    366.0\\r0     23.0\\r4    343.5\\r1      0.0\\r2       0\\rB\\x83\\rC20\\xF4 02\\xF3 2023\\xF2 MON 09:20AM\\rV1\\r\\n",
+        "expectedOutput": {
+          "F": 0.0,
+          "H": 0.0,
+          "Q": 0.0,
+          "X": 0.0,
+          "A": 366.0,
+          "W0": 23.0,
+          "W4": 343.5,
+          "W1": 0.0,
+          "W2": 0,
+          "B": 0x83,
+          "C": "2023-02-20T09:20:00",
+          "V": 0x31
+        },
+        "shouldSucceed": true
+      }
+    ],
+    "coverage": {
+      "fields": "100%",
+      "states": "100%",
+      "errorPaths": "70%"
+    }
+  },
+
+  "documentation": {
+    "references": [
+      "Device-04-TFO1.md",
+      "CODE_ANALYSIS_NLib.Serial.Devices.md"
+    ],
+    "logFiles": [
+      "Documents/LuckyTex Devices/TFO1/"
+    ],
+    "notes": [
+      "This is a very complex 12-line fixed-format protocol",
+      "Each line starts with a header character (F, H, Q, X, A, 0, 4, 1, 2, B, C, V)",
+      "Lines 1-9: Measurement values with single character header",
+      "Line 10: Binary status byte B (typically 0x83)",
+      "Line 11: Complex datetime with special separators (0xF4, 0xF3, 0xF2)",
+      "Line 12: Version byte V (typically 0x31 = ASCII '1')",
+      "Most lines end with \\r (carriage return only)",
+      "Last line (V) ends with \\r\\n",
+      "Date format: DD°MM°YYYY°DDD HH:MMAM/PM (where ° represents special bytes)",
+      "Parser must handle each line independently based on header character",
+      "Time parsing bug note: Code checks 'AM' and adds 12 to minutes (should check for PM)",
+      "A value is typically around 366",
+      "W0, W4, W1 appear to be weight-related measurements",
+      "W2 is an integer counter"
+    ]
+  },
+
+  "migration": {
+    "existingClass": "TFO1.cs",
+    "namespace": "NLib.Serial.Devices",
+    "compatibility": "backward-compatible",
+    "notes": "This definition matches existing C# implementation (including the AM/PM bug at line 663)"
+  }
+}
