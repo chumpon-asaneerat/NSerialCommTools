@@ -179,5 +179,11 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Analyzers\" />
+    <Folder Include="Generators\" />
+    <Folder Include="Models\" />
+    <Folder Include="Parsers\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
