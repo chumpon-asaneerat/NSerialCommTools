@@ -37,6 +37,9 @@ bld/
 [Ee]xecutables/
 [Ee]xecutables/*
 [Ee]xecutables/**/
+[Ee]xecutables/Production
+[Ee]xecutables/Production/*
+[Ee]xecutables/Production/**/
 
 #NLib
 !00.NLib/NLib/Core/[Ll]ogs/
