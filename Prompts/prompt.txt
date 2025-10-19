@@ -1,1 +1,265 @@
+Ok let me tell you what happen the currrent code 
+i load @Documents\LuckyTex Devices\JIK6CAB\jik_hex_1.txt and press analyze 
 
+the result json shown
+
+--- 
+
+{
+  "Schema": "http://json-schema.org/draft-07/schema#",
+  "Version": "1.0",
+  "LastUpdated": "2025-10-19",
+  "DeviceInfo": {
+    "Name": "jik_hex_1",
+    "Manufacturer": "Unknown",
+    "Category": "scale",
+    "Model": "jik_hex_1",
+    "Description": "Auto-generated from jik_hex_1.txt",
+    "Complexity": "very-complex"
+  },
+  "Communication": {
+    "BaudRate": 9600,
+    "DataBits": 8,
+    "Parity": "None",
+    "StopBits": "One",
+    "Handshake": "None",
+    "Encoding": "ASCII",
+    "ReadTimeout": 5000,
+    "WriteTimeout": 5000
+  },
+  "Protocol": {
+    "Type": "multi-line-package",
+    "Format": "multi-line-package",
+    "Encoding": "ASCII",
+    "Terminator": "\\r\\n",
+    "PackageSize": 14,
+    "UpdateRate": "on-demand",
+    "Fields": null,
+    "Markers": {
+      "Start": {
+        "Pattern": "^KJIK000",
+        "Description": "Package start marker with device ID",
+        "Action": "reset-state"
+      },
+      "End": {
+        "Pattern": "~P1",
+        "Description": "Package end marker",
+        "Action": "complete-package"
+      }
+    },
+    "Structure": {
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Name": "StartMarker",
+          "Type": "marker",
+          "Pattern": "\\^KJIK000",
+          "Format": null,
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": true,
+          "Description": "Package start marker with device ID",
+          "Values": null
+        },
+        {
+          "LineNumber": 2,
+          "Name": "Date",
+          "Type": "datetime",
+          "Pattern": "\\d{4}-\\d{2}-\\d{2}",
+          "Format": "yyyy-MM-dd",
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": true,
+          "Description": "Measurement date",
+          "Values": null
+        },
+        {
+          "LineNumber": 3,
+          "Name": "Time",
+          "Type": "datetime",
+          "Pattern": "\\d{2}:\\d{2}:\\d{2}",
+          "Format": "HH:mm:ss",
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": true,
+          "Description": "Measurement time",
+          "Values": null
+        },
+        {
+          "LineNumber": 4,
+          "Name": "TareWeight",
+          "Type": "decimal",
+          "Pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "Format": "F2",
+          "Unit": "kg",
+          "UnitAttached": true,
+          "Min": 0,
+          "Max": 999.99,
+          "Required": true,
+          "Description": "Tare Weight (TW)",
+          "Values": null
+        },
+        {
+          "LineNumber": 5,
+          "Name": "GrossWeight",
+          "Type": "decimal",
+          "Pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "Format": "F2",
+          "Unit": "kg",
+          "UnitAttached": true,
+          "Min": 0,
+          "Max": 999.99,
+          "Required": true,
+          "Description": "Gross Weight (GW)",
+          "Values": null
+        },
+        {
+          "LineNumber": 6,
+          "Name": "Reserved6",
+          "Type": "string",
+          "Pattern": "\\d+",
+          "Format": null,
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": false,
+          "Description": "Reserved field",
+          "Values": null
+        },
+        {
+          "LineNumber": 7,
+          "Name": "Reserved7",
+          "Type": "string",
+          "Pattern": "\\d+",
+          "Format": null,
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": false,
+          "Description": "Reserved field",
+          "Values": null
+        },
+        {
+          "LineNumber": 8,
+          "Name": "NetWeight",
+          "Type": "decimal",
+          "Pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "Format": "F2",
+          "Unit": "kg",
+          "UnitAttached": true,
+          "Min": 0,
+          "Max": 999.99,
+          "Required": true,
+          "Description": "Net Weight (NW) = GW - TW",
+          "Values": null
+        },
+        {
+          "LineNumber": 9,
+          "Name": "DisplayWeight",
+          "Type": "decimal",
+          "Pattern": "\\s*(\\d+\\.\\d+)\\s*kg",
+          "Format": "F2",
+          "Unit": "kg",
+          "UnitAttached": true,
+          "Min": 0,
+          "Max": 999.99,
+          "Required": true,
+          "Description": "Display weight (duplicate of NW)",
+          "Values": null
+        },
+        {
+          "LineNumber": 10,
+          "Name": "PieceCount",
+          "Type": "integer",
+          "Pattern": "\\s*(\\d+)\\s*pcs",
+          "Format": null,
+          "Unit": "pcs",
+          "UnitAttached": true,
+          "Min": 0,
+          "Max": 99999,
+          "Required": false,
+          "Description": "Piece count",
+          "Values": null
+        },
+        {
+          "LineNumber": 11,
+          "Name": "Empty11",
+          "Type": "string",
+          "Pattern": "\\s*",
+          "Format": null,
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": false,
+          "Description": "Empty line or whitespace",
+          "Values": null
+        },
+        {
+          "LineNumber": 12,
+          "Name": "Empty12",
+          "Type": "string",
+          "Pattern": "\\s*",
+          "Format": null,
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": false,
+          "Description": "Empty line or whitespace",
+          "Values": null
+        },
+        {
+          "LineNumber": 13,
+          "Name": "StatusIndicator",
+          "Type": "string",
+          "Pattern": "[A-Z]",
+          "Format": null,
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": false,
+          "Description": "Status indicator",
+          "Values": [
+            "E",
+            "S",
+            "N"
+          ]
+        },
+        {
+          "LineNumber": 14,
+          "Name": "EndMarker",
+          "Type": "marker",
+          "Pattern": "~P1",
+          "Format": null,
+          "Unit": null,
+          "UnitAttached": null,
+          "Min": null,
+          "Max": null,
+          "Required": true,
+          "Description": "Package end marker",
+          "Values": null
+        }
+      ]
+    }
+  },
+  "Parsing": {
+    "Strategy": "state-machine",
+    "Delimiter": ","
+  }
+}
+
+--- 
+
+What i want to ask is 
+- How you know the "Name", "Description" in each line (the log data does not contains it )
+- Theh property "UnitAttached", "Min", "Max", "Required" where it come from?
