@@ -32,12 +32,16 @@ bld/
 [Ll]og/
 [Ll]ogs/
 [Ee]xecutable/
+[Ee]xecutable/*
+[Ee]xecutable/**/
 [Ee]xecutables/
+[Ee]xecutables/*
+[Ee]xecutables/**/
 
 #NLib
-!00.NLib/Nlib/Core/[Ll]ogs/
-!00.NLib/Nlib/Core/[Ll]ogs/*
-!00.NLib/Nlib/Core/[Ll]ogs/**/
+!00.NLib/NLib/Core/[Ll]ogs/
+!00.NLib/NLib/Core/[Ll]ogs/*
+!00.NLib/NLib/Core/[Ll]ogs/**/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -190,19 +194,48 @@ publish/
 # in these scripts will be unencrypted
 PublishScripts/
 
+
+# NuGet
+
 # NuGet Packages
-*.nupkg
+!*.nupkg
+
+# except local solution packages should allow to store in git.
+![Rr]eferences/[Pp]ackages/
+![Rr]eferences/[Pp]ackages/*
+![Rr]eferences/[Pp]ackages/*.nupkg
+![Rr]eferences/[Pp]ackages/*.snupkg
+![Rr]eferences/[Pp]ackages/*.nuget.props
+![Rr]eferences/[Pp]ackages/*.nuget.targets
+![Rr]eferences/[Pp]ackages/**/
+
+![Rr]eferences/[Ee]ach.[Pp]ackages.Parts/
+![Rr]eferences/[Ee]ach.[Pp]ackages.Parts/*
+![Rr]eferences/[Ee]ach.[Pp]ackages.Parts/*.nupkg
+![Rr]eferences/[Ee]ach.[Pp]ackages.Parts/*.snupkg
+![Rr]eferences/[Pp]ackages/*.nuget.props
+![Rr]eferences/[Pp]ackages/*.nuget.targets
+![Rr]eferences/[Ee]ach.[Pp]ackages.Parts/**/
+
+# NuGet Packages
+# *.nupkg
+
 # NuGet Symbol Packages
-*.snupkg
+# *.snupkg
+
 # The packages folder can be ignored because of Package Restore
-**/[Pp]ackages/*
+# **/[Pp]ackages/*
+
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
+
 # Uncomment if necessary however generally it will be regenerated when needed
 #!**/[Pp]ackages/repositories.config
+
 # NuGet v3's project.json files produces more ignorable files
-*.nuget.props
-*.nuget.targets
+# *.nuget.props
+# *.nuget.targets
+
 
 # Microsoft Azure Build Output
 csx/
