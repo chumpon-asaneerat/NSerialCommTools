@@ -1,0 +1,271 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0",
+  "lastUpdated": "2025-10-19",
+
+  "deviceInfo": {
+    "name": "WeightSPUN",
+    "manufacturer": "LuckyTex",
+    "category": "scale",
+    "model": "WeightSPUN",
+    "description": "SPUN weight scale with operation mode indicator (similar to DEFENDER3000)",
+    "complexity": "simple",
+    "documentation": "Device-06-WeightSPUN.md"
+  },
+
+  "communication": {
+    "baudRate": 9600,
+    "dataBits": 8,
+    "parity": "None",
+    "stopBits": "One",
+    "handshake": "None",
+    "encoding": "ASCII",
+    "readTimeout": 5000,
+    "writeTimeout": 5000
+  },
+
+  "protocol": {
+    "type": "continuous-stream",
+    "format": "single-line",
+    "encoding": "ASCII",
+    "terminator": "\\r\\n",
+    "packageSize": 1,
+    "updateRate": "continuous",
+
+    "structure": {
+      "lines": [
+        {
+          "lineNumber": 1,
+          "name": "WeightData",
+          "type": "composite",
+          "pattern": "\\s*(\\d+\\.\\d+)\\s+(\\w+)\\s+(\\w+)",
+          "required": true,
+          "description": "Weight value with unit and operation mode",
+          "fields": [
+            {
+              "name": "Weight",
+              "type": "decimal",
+              "pattern": "\\s*(\\d+\\.\\d+)",
+              "format": "F1",
+              "min": 0,
+              "max": 9999.9,
+              "description": "Weight value (1 decimal place)"
+            },
+            {
+              "name": "Unit",
+              "type": "string",
+              "pattern": "\\w+",
+              "values": ["kg", "g"],
+              "description": "Weight unit (kg or g)"
+            },
+            {
+              "name": "Operation",
+              "type": "string",
+              "pattern": "\\w+",
+              "values": ["G"],
+              "description": "Operation mode indicator"
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "parsing": {
+    "strategy": "single-line-simple",
+    "description": "Parse single line with space-delimited weight, unit, and operation mode",
+
+    "states": [
+      {
+        "id": 0,
+        "name": "Idle",
+        "description": "Waiting for data package",
+        "action": "wait",
+        "transition": {
+          "condition": "detect-line-end",
+          "nextState": 1
+        }
+      },
+      {
+        "id": 1,
+        "name": "ParseLine",
+        "description": "Parse complete line for weight data",
+        "action": "split-by-space",
+        "expectedFields": 3,
+        "transition": {
+          "condition": "success",
+          "nextState": 2,
+          "onError": 0
+        }
+      },
+      {
+        "id": 2,
+        "name": "ExtractFields",
+        "description": "Extract weight, unit, and operation mode",
+        "fields": [
+          {
+            "index": 0,
+            "name": "W",
+            "type": "decimal"
+          },
+          {
+            "index": 1,
+            "name": "Unit",
+            "type": "string"
+          },
+          {
+            "index": 2,
+            "name": "O",
+            "type": "string"
+          }
+        ],
+        "transition": {
+          "condition": "success",
+          "nextState": 3
+        }
+      },
+      {
+        "id": 3,
+        "name": "Complete",
+        "description": "Data successfully parsed",
+        "action": "fire-event",
+        "transition": {
+          "condition": "always",
+          "nextState": 0
+        }
+      }
+    ],
+
+    "errorHandling": {
+      "onTimeout": "reset-to-idle",
+      "onParseError": "reset-to-idle",
+      "maxRetries": 3,
+      "timeoutMs": 5000
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "name": "WeightPositive",
+        "type": "range",
+        "field": "W",
+        "min": 0,
+        "max": 9999.9,
+        "severity": "error",
+        "message": "Weight must be between 0 and 9999.9"
+      },
+      {
+        "name": "UnitValid",
+        "type": "enum",
+        "field": "Unit",
+        "values": ["kg", "g"],
+        "severity": "error",
+        "message": "Unit must be 'kg' or 'g'"
+      },
+      {
+        "name": "OperationValid",
+        "type": "enum",
+        "field": "O",
+        "values": ["G"],
+        "severity": "warning",
+        "message": "Operation mode should be 'G' (Gross)"
+      }
+    ]
+  },
+
+  "output": {
+    "dataClass": "WeightSPUNData",
+    "properties": [
+      {
+        "name": "W",
+        "type": "decimal",
+        "mapping": "Weight"
+      },
+      {
+        "name": "Unit",
+        "type": "string",
+        "mapping": "Unit",
+        "default": "kg"
+      },
+      {
+        "name": "O",
+        "type": "string",
+        "mapping": "Operation",
+        "default": "G"
+      }
+    ],
+    "eventTrigger": "LineComplete",
+    "eventName": "DataReceived"
+  },
+
+  "testing": {
+    "testCases": [
+      {
+        "name": "ValidWeight1",
+        "description": "Normal weight measurement in kg",
+        "input": "    20.0 kg    G\\r\\n",
+        "expectedOutput": {
+          "W": 20.0,
+          "Unit": "kg",
+          "O": "G"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeight2",
+        "description": "Weight measurement in grams",
+        "input": "  500.5 g     G\\r\\n",
+        "expectedOutput": {
+          "W": 500.5,
+          "Unit": "g",
+          "O": "G"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeightZero",
+        "description": "Zero weight",
+        "input": "     0.0 kg    G\\r\\n",
+        "expectedOutput": {
+          "W": 0.0,
+          "Unit": "kg",
+          "O": "G"
+        },
+        "shouldSucceed": true
+      }
+    ],
+    "coverage": {
+      "fields": "100%",
+      "states": "100%",
+      "errorPaths": "60%"
+    }
+  },
+
+  "documentation": {
+    "references": [
+      "Device-06-WeightSPUN.md",
+      "CODE_ANALYSIS_NLib.Serial.Devices.md"
+    ],
+    "logFiles": [
+      "Documents/LuckyTex Devices/WEIGHT SPUN/"
+    ],
+    "notes": [
+      "This is a simple single-line protocol (very similar to DEFENDER3000)",
+      "Data format: WEIGHT UNIT OPERATION",
+      "Example: '    20.0 kg    G'",
+      "Weight is padded to 8 characters (left-aligned with spaces)",
+      "Unit is 2 characters (kg or g)",
+      "Operation mode is typically 'G' (Gross)",
+      "Weight has 1 decimal place (F1 format)",
+      "Difference from DEFENDER3000: Weight format is F1 vs F3"
+    ]
+  },
+
+  "migration": {
+    "existingClass": "WeightSPUN.cs",
+    "namespace": "NLib.Serial.Devices",
+    "compatibility": "backward-compatible",
+    "notes": "This definition matches existing C# implementation 1:1"
+  }
+}
