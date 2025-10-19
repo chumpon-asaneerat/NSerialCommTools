@@ -1,0 +1,342 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0",
+  "lastUpdated": "2025-10-19",
+
+  "deviceInfo": {
+    "name": "PHMeter",
+    "manufacturer": "Generic",
+    "category": "ph-meter",
+    "model": "Generic PH Meter",
+    "description": "Multi-line pH meter with temperature (ATC), date, and time reporting",
+    "complexity": "complex",
+    "documentation": "Device-03-PHMeter.md"
+  },
+
+  "communication": {
+    "baudRate": 9600,
+    "dataBits": 8,
+    "parity": "None",
+    "stopBits": "One",
+    "handshake": "None",
+    "encoding": "ASCII",
+    "readTimeout": 5000,
+    "writeTimeout": 5000
+  },
+
+  "protocol": {
+    "type": "multi-line-report",
+    "format": "multi-line-variable",
+    "encoding": "ASCII",
+    "terminator": "\\r\\n",
+    "packageSize": "variable",
+    "updateRate": "on-demand",
+
+    "structure": {
+      "lines": [
+        {
+          "lineNumber": 1,
+          "name": "PHWithTemp",
+          "type": "composite",
+          "pattern": "(\\d+\\.\\d+)pH\\s+(\\d+\\.\\d+)[\\xF8]C\\s+ATC",
+          "required": false,
+          "repeatable": true,
+          "description": "pH value with temperature (ATC) - may repeat 1-3 times",
+          "fields": [
+            {
+              "name": "pH",
+              "type": "decimal",
+              "pattern": "\\d+\\.\\d+",
+              "format": "F2",
+              "min": 0,
+              "max": 14,
+              "description": "pH value (0-14)"
+            },
+            {
+              "name": "Temperature",
+              "type": "decimal",
+              "pattern": "\\d+\\.\\d+",
+              "format": "F1",
+              "min": -50,
+              "max": 150,
+              "description": "Temperature in Celsius"
+            }
+          ]
+        },
+        {
+          "lineNumber": "n",
+          "name": "Date",
+          "type": "datetime",
+          "pattern": "\\d{2}-[A-Z][a-z]{2}-\\d{4}",
+          "format": "dd-MMM-yyyy",
+          "required": false,
+          "description": "Measurement date (e.g., 20-Feb-2023)"
+        },
+        {
+          "lineNumber": "n+1",
+          "name": "Time",
+          "type": "datetime",
+          "pattern": "\\d{2}:\\d{2}",
+          "format": "HH:mm",
+          "required": false,
+          "description": "Measurement time (e.g., 11:11)"
+        },
+        {
+          "lineNumber": "n+2",
+          "name": "Blank1",
+          "type": "string",
+          "pattern": "\\s*",
+          "required": false,
+          "description": "Blank line with single space"
+        },
+        {
+          "lineNumber": "n+3",
+          "name": "PHOnly",
+          "type": "decimal",
+          "pattern": "(\\d+\\.\\d+)pH",
+          "format": "F2",
+          "required": false,
+          "description": "pH value only (without temperature)"
+        },
+        {
+          "lineNumber": "n+4",
+          "name": "TempOnly",
+          "type": "decimal",
+          "pattern": "(\\d+\\.\\d+)[\\xF8]C\\s+ATC",
+          "format": "F1",
+          "required": false,
+          "description": "Temperature only (with ATC marker)"
+        },
+        {
+          "lineNumber": "n+5",
+          "name": "StandardMethod",
+          "type": "string",
+          "pattern": "Auto EP Standard",
+          "required": false,
+          "description": "Standard endpoint method indicator"
+        },
+        {
+          "lineNumber": "n+6",
+          "name": "BlankMarker",
+          "type": "string",
+          "pattern": "Blank",
+          "required": false,
+          "description": "Blank measurement marker"
+        },
+        {
+          "lineNumber": "n+7 to n+9",
+          "name": "EmptyLines",
+          "type": "string",
+          "pattern": "",
+          "required": false,
+          "description": "Three empty lines at end"
+        }
+      ]
+    }
+  },
+
+  "parsing": {
+    "strategy": "line-by-line-pattern-match",
+    "description": "Parse each line independently based on content pattern",
+
+    "states": [
+      {
+        "id": 0,
+        "name": "Idle",
+        "description": "Waiting for data",
+        "action": "wait",
+        "transition": {
+          "condition": "detect-line-end",
+          "nextState": 1
+        }
+      },
+      {
+        "id": 1,
+        "name": "ParseLine",
+        "description": "Identify and parse line content",
+        "action": "pattern-match",
+        "patterns": [
+          {
+            "name": "PHWithTemp",
+            "pattern": "(\\d+\\.\\d+)pH\\s+(\\d+\\.\\d+).C\\s+ATC",
+            "action": "extract-ph-and-temp"
+          },
+          {
+            "name": "PHOnly",
+            "pattern": "(\\d+\\.\\d+)pH$",
+            "action": "extract-ph"
+          },
+          {
+            "name": "TempOnly",
+            "pattern": "(\\d+\\.\\d+).C\\s+ATC$",
+            "action": "extract-temp"
+          },
+          {
+            "name": "Date",
+            "pattern": "\\d{2}-[A-Z][a-z]{2}-\\d{4}",
+            "action": "extract-date"
+          },
+          {
+            "name": "Time",
+            "pattern": "\\d{2}:\\d{2}",
+            "action": "extract-time"
+          }
+        ],
+        "transition": {
+          "condition": "always",
+          "nextState": 2
+        }
+      },
+      {
+        "id": 2,
+        "name": "UpdateData",
+        "description": "Update data values",
+        "action": "fire-event",
+        "transition": {
+          "condition": "always",
+          "nextState": 0
+        }
+      }
+    ],
+
+    "errorHandling": {
+      "onTimeout": "reset-to-idle",
+      "onParseError": "continue-next-line",
+      "maxRetries": 3,
+      "timeoutMs": 5000
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "name": "PHRange",
+        "type": "range",
+        "field": "pH",
+        "min": 0,
+        "max": 14,
+        "severity": "error",
+        "message": "pH must be between 0 and 14"
+      },
+      {
+        "name": "TempRange",
+        "type": "range",
+        "field": "TempC",
+        "min": -50,
+        "max": 150,
+        "severity": "warning",
+        "message": "Temperature should be between -50°C and 150°C"
+      },
+      {
+        "name": "DateTimeValid",
+        "type": "datetime-range",
+        "field": "Date",
+        "minDate": "2000-01-01",
+        "maxDate": "2099-12-31",
+        "severity": "warning",
+        "message": "Date should be between 2000 and 2099"
+      }
+    ]
+  },
+
+  "output": {
+    "dataClass": "PHMeterData",
+    "properties": [
+      {
+        "name": "pH",
+        "type": "decimal",
+        "mapping": "pH value"
+      },
+      {
+        "name": "TempC",
+        "type": "decimal",
+        "mapping": "Temperature in Celsius"
+      },
+      {
+        "name": "Date",
+        "type": "DateTime",
+        "mapping": "Combined date and time"
+      }
+    ],
+    "eventTrigger": "LineProcessed",
+    "eventName": "DataReceived"
+  },
+
+  "testing": {
+    "testCases": [
+      {
+        "name": "ValidPackageFull",
+        "description": "Complete measurement package with all fields",
+        "input": "3.01pH 25.5\\xF8C ATC\\r\\n3.01pH 25.5\\xF8C ATC\\r\\n20-Feb-2023\\r\\n11:11\\r\\n \\r\\n3.01pH\\r\\n25.5\\xF8C ATC\\r\\nAuto EP Standard\\r\\nBlank\\r\\n\\r\\n\\r\\n\\r\\n",
+        "expectedOutput": {
+          "pH": 3.01,
+          "TempC": 25.5,
+          "Date": "2023-02-20T11:11:00"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidPHWithTemp",
+        "description": "Single line with pH and temperature",
+        "input": "7.00pH 24.3\\xF8C ATC\\r\\n",
+        "expectedOutput": {
+          "pH": 7.00,
+          "TempC": 24.3
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidPHOnly",
+        "description": "pH value only",
+        "input": "6.85pH\\r\\n",
+        "expectedOutput": {
+          "pH": 6.85
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidTempOnly",
+        "description": "Temperature only",
+        "input": "23.2\\xF8C ATC\\r\\n",
+        "expectedOutput": {
+          "TempC": 23.2
+        },
+        "shouldSucceed": true
+      }
+    ],
+    "coverage": {
+      "fields": "100%",
+      "states": "90%",
+      "errorPaths": "70%"
+    }
+  },
+
+  "documentation": {
+    "references": [
+      "Device-03-PHMeter.md",
+      "CODE_ANALYSIS_NLib.Serial.Devices.md"
+    ],
+    "logFiles": [
+      "Documents/LuckyTex Devices/PH Meter/"
+    ],
+    "notes": [
+      "This is a complex multi-line protocol with variable line count",
+      "The pH+Temperature line may repeat 1-3 times at the beginning",
+      "Special character 0xF8 represents degree symbol (°)",
+      "Date format: dd-MMM-yyyy (e.g., 20-Feb-2023)",
+      "Time format: HH:mm (24-hour)",
+      "Date and time are combined into a single DateTime property",
+      "Not all lines are always present in every transmission",
+      "Parser uses pattern matching to identify line types",
+      "Each line is processed independently and updates the data object",
+      "The device may send partial packets with only pH or only temperature"
+    ]
+  },
+
+  "migration": {
+    "existingClass": "PHMeter.cs",
+    "namespace": "NLib.Serial.Devices",
+    "compatibility": "backward-compatible",
+    "notes": "This definition matches existing C# implementation 1:1"
+  }
+}
