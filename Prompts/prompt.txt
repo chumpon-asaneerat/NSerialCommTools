@@ -1,0 +1,3 @@
+- Last session
+check the @Documents\ModernDesign folder about we talk in last session also 
+check you code in 09.App\NLib.Serial.Protocol.Analyzer project please check project first
