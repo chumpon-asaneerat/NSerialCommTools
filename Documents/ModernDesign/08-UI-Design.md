@@ -23,8 +23,7 @@
 1. **Display Fields**
    - Show all detected fields in editable grid/list
    - Columns:
-     - Auto-Generated Name (read-only)
-     - Custom Name (editable)
+     - Name (editable) - starts as "Field1", user changes to "NetWeight"
      - Data Type (read-only)
      - Sample Values (read-only, multiple samples)
      - Confidence Score (read-only)
@@ -64,14 +63,16 @@
 
 **UI Mockup Concept** (to be detailed):
 ```
-┌─ Field Editor ─────────────────────────────────────────┐
-│ Auto Name   │ Custom Name    │ Type    │ Sample Values │
-├─────────────┼────────────────┼─────────┼───────────────┤
-│ Field1      │ [NetWeight   ] │ decimal │ 1.640, 1.645  │
-│ Field2      │ [Unit        ] │ string  │ kg, kg        │
-│ Field3      │ [Status      ] │ char    │ N, G, S       │
-└─────────────────────────────────────────────────────────┘
-[Suggest Names] [Reset All] [Apply]
+┌─ Field Editor ──────────────────────────────────────────┐
+│ Name         │ Type    │ Sample Values      │ Confidence │
+├──────────────┼─────────┼────────────────────┼────────────┤
+│ [NetWeight ] │ decimal │ 1.640, 1.645, ...  │ 98%        │
+│ [Unit      ] │ string  │ kg, kg, ...        │ 100%       │
+│ [Status    ] │ char    │ N, G, S, ...       │ 95%        │
+└──────────────────────────────────────────────────────────┘
+[Suggest Names] [Validate] [Apply]
+
+Note: Name column is directly editable (starts as "Field1", user changes it)
 ```
 
 ---

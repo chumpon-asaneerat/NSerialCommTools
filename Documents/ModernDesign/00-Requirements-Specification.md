@@ -498,19 +498,19 @@ If device supports commands:
 **Example Workflow**:
 ```
 1. Analyzer detects 3 fields → names them: "Field1", "Field2", "Field3"
-2. User sees grid:
-   | Auto Name | Custom Name | Type    | Sample Value |
-   |-----------|-------------|---------|--------------|
-   | Field1    | [editable]  | decimal | 1.640        |
-   | Field2    | [editable]  | string  | kg           |
-   | Field3    | [editable]  | char    | N            |
+2. User sees editable grid:
+   | Name    | Type    | Sample Values |
+   |---------|---------|---------------|
+   | Field1  | decimal | 1.640, 1.645  |
+   | Field2  | string  | kg, kg        |
+   | Field3  | char    | N, G, S       |
 
-3. User renames:
+3. User edits Name column directly:
    Field1 → NetWeight
    Field2 → Unit
    Field3 → Status
 
-4. Generated JSON uses custom names:
+4. Generated JSON uses edited names:
    "fields": [
      { "name": "NetWeight", ... },
      { "name": "Unit", ... },
