@@ -125,24 +125,44 @@ Output:
 All parsers output to a common structure:
 
 ```
-LogEntry
-├── Bytes: byte[]           // Raw bytes extracted from log file
-├── Text: string            // Human-readable representation
-├── Timestamp: DateTime?    // If available in log
-├── Direction: enum         // TX/RX (if indicated)
-├── FileLineNumber: int     // Original line number in the log file
+LogEntry (Internal Analysis Model)
+├── Bytes: byte[]           // Raw bytes extracted from log file - USED IN ANALYSIS
+├── Text: string            // Human-readable representation - USED IN ANALYSIS
+├── Timestamp: DateTime?    // If available in log - MAY BE IN PROTOCOL DEFINITION
+├── Direction: enum         // TX/RX (if indicated) - ANALYSIS ONLY
+├── FileLineNumber: int     // Original line number in log file - ANALYSIS/DEBUG ONLY
 └── Metadata
-    ├── Format: LogFileFormat enum
-    └── Encoding: Encoding
+    ├── Format: LogFileFormat enum    // ANALYSIS ONLY
+    └── Encoding: Encoding            // WILL BE IN PROTOCOL DEFINITION
 ```
 
 **Key Principle**: Once normalized, analyzer doesn't need to know original format.
 
-**Important Distinction**:
-- **File Lines** - How the log tool saved the data (with OS-specific newlines)
-- **Protocol Messages** - How the serial device actually sends data (with protocol-specific terminators)
-- Parsers extract raw bytes from file lines
-- Analyzer later determines actual protocol message boundaries
+**Important Distinction Between Analysis Data vs Protocol Definition**:
+
+| Field | Used in Analysis | Goes in Protocol Definition | Purpose |
+|-------|-----------------|----------------------------|---------|
+| Bytes | ✓ | ✗ | Analyze patterns, detect terminators |
+| Text | ✓ | ✗ | Display to user, validate patterns |
+| Timestamp | ✓ | Maybe | If protocol includes timestamps as data |
+| Direction | ✓ | ✗ | Understand TX vs RX patterns |
+| FileLineNumber | ✓ | ✗ | Debugging, error reporting, pattern tracking |
+| Format | ✓ | ✗ | Parser-specific, not protocol-related |
+| Encoding | ✓ | ✓ | Needed to decode protocol bytes |
+
+**Two-Stage Process**:
+1. **File Lines → LogEntry** - How the log tool saved the data (with OS-specific newlines)
+2. **LogEntry → Protocol Definition** - How the serial device actually sends data (with protocol-specific terminators)
+
+- **Parsers** extract raw bytes from file lines into LogEntry objects (with FileLineNumber for tracking)
+- **Analyzer** examines LogEntry objects to determine protocol characteristics (uses FileLineNumber for error reporting)
+- **Generator** creates Protocol Definition from analysis results (excludes FileLineNumber and other log-file-specific data)
+
+**Example Use of FileLineNumber**:
+- User sees: "Pattern detected at lines 10, 20, 30, 40..."
+- User sees: "Warning: Incomplete message at line 145"
+- UI highlights: File line 50 → matches "WeightData" message pattern
+- NOT in output: Protocol definition has no concept of "file lines"
 
 ---
 
@@ -240,6 +260,24 @@ Footer:  "B" + 0x83 0x0D (special footer marker)
 ---
 
 ### 5. Protocol Definition Generator
+
+**Purpose**: Generate a protocol definition file that OTHER applications can use to communicate with the serial device.
+
+**Important**: The definition file contains ONLY protocol structure, NOT log-file-specific information.
+
+**What Goes In**:
+- ✓ Protocol terminators (e.g., `\r`, `\x83\r`)
+- ✓ Field delimiters (e.g., spaces, tabs)
+- ✓ Message patterns and structure
+- ✓ Field definitions (name, type, position)
+- ✓ Encoding (e.g., ASCII, UTF-8)
+- ✓ Message sequences
+
+**What Does NOT Go In**:
+- ✗ File line numbers (analysis/debug only)
+- ✗ Log file format (HEX/Text, etc.)
+- ✗ Direction markers (TX/RX - unless part of protocol)
+- ✗ Any log-tool-specific formatting
 
 **Output Format**: JSON
 
@@ -534,11 +572,16 @@ classDiagram
 
 ## Success Criteria
 
-1. **Accuracy**: 90%+ correct pattern detection for sample devices
+1. **Accuracy**: 95%+ correct pattern detection for sample devices
+   - Protocol terminator detection: 95%+ accuracy
+   - Field delimiter detection: 95%+ accuracy
+   - Message pattern identification: 95%+ accuracy
+   - Field structure extraction: 95%+ accuracy
 2. **Usability**: User can load file and generate definition in < 5 clicks
 3. **Performance**: Process 10,000 line log file in < 5 seconds
 4. **Extensibility**: Easy to add new log formats
 5. **Documentation**: Clear JSON schema for definition files
+6. **Validation**: All sample devices in @Documents\LuckyTex Devices\ should be correctly analyzed
 
 ---
 
