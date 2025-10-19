@@ -15,7 +15,8 @@ The example log data files (Capture from the Serial Monitor tools) is in @Docume
 ** Requirements **
 - I want to load log data file in formats (HEX/Text, HEX Only, Text Only) to analyze protocol 
 - When analyzer complete analyze protocols it shoud make protocol definition file to work with that serial device.
-
+- When load definition to let say NTeminal<T> class where T is data class that shoud collcet data receive from serial ports and use definition file to extract data and update the T instance of values from serial ports. 
+- We must have NDevice<T> class where T also same class we use in NTerminal<T> to emulate the device by set value in T instance and then the NDevice<T> can send package for terminal tool for verify correction. 
 
 ** Document Folder structore **
 - let keep new generate document in @Documents\ModernDesign folder (that shoud already exist). Do not access to v1 sub folder (previous design).
