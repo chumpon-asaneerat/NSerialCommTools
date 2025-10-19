@@ -1,0 +1,326 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0",
+  "lastUpdated": "2025-10-19",
+
+  "deviceInfo": {
+    "name": "TScaleQHW",
+    "manufacturer": "Generic",
+    "category": "scale",
+    "model": "T-Scale QHW",
+    "description": "T-Scale with status and mode indicators, comma-separated format",
+    "complexity": "simple",
+    "documentation": "Device-07-TScaleQHW.md"
+  },
+
+  "communication": {
+    "baudRate": 9600,
+    "dataBits": 8,
+    "parity": "None",
+    "stopBits": "One",
+    "handshake": "None",
+    "encoding": "ASCII",
+    "readTimeout": 5000,
+    "writeTimeout": 5000
+  },
+
+  "protocol": {
+    "type": "continuous-stream",
+    "format": "single-line-csv",
+    "encoding": "ASCII",
+    "terminator": "\\r\\n",
+    "packageSize": 1,
+    "updateRate": "continuous",
+
+    "structure": {
+      "lines": [
+        {
+          "lineNumber": 1,
+          "name": "WeightData",
+          "type": "composite",
+          "pattern": "^(\\w+),(\\w+),\\s*(\\d+\\.\\d+)\\s+(\\w+)",
+          "required": true,
+          "description": "Status, Mode, Weight, and Unit in CSV format",
+          "fields": [
+            {
+              "name": "Status",
+              "type": "string",
+              "pattern": "\\w+",
+              "values": ["ST", "US"],
+              "description": "Status indicator: ST=Stable, US=Unstable"
+            },
+            {
+              "name": "Mode",
+              "type": "string",
+              "pattern": "\\w+",
+              "values": ["GS", "NT", "TR"],
+              "description": "Mode: GS=Gross, NT=Net, TR=Tare"
+            },
+            {
+              "name": "Weight",
+              "type": "decimal",
+              "pattern": "\\d+\\.\\d+",
+              "format": "F1",
+              "min": -9999.9,
+              "max": 9999.9,
+              "description": "Weight value (1 decimal place)"
+            },
+            {
+              "name": "Unit",
+              "type": "string",
+              "pattern": "\\w+",
+              "values": ["g", "kg"],
+              "description": "Weight unit (g or kg)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "parsing": {
+    "strategy": "single-line-csv-then-space",
+    "description": "First split by comma, then split weight/unit part by space",
+
+    "states": [
+      {
+        "id": 0,
+        "name": "Idle",
+        "description": "Waiting for data package",
+        "action": "wait",
+        "transition": {
+          "condition": "detect-line-end",
+          "nextState": 1
+        }
+      },
+      {
+        "id": 1,
+        "name": "SplitByComma",
+        "description": "Split line by comma to get Status, Mode, and Weight+Unit",
+        "action": "split",
+        "separator": ",",
+        "expectedParts": 3,
+        "transition": {
+          "condition": "success",
+          "nextState": 2,
+          "onError": 0
+        }
+      },
+      {
+        "id": 2,
+        "name": "ExtractStatusMode",
+        "description": "Extract Status and Mode from first two parts",
+        "action": "trim-and-assign",
+        "fields": [
+          {
+            "index": 0,
+            "name": "Status",
+            "type": "string"
+          },
+          {
+            "index": 1,
+            "name": "Mode",
+            "type": "string"
+          }
+        ],
+        "transition": {
+          "condition": "always",
+          "nextState": 3
+        }
+      },
+      {
+        "id": 3,
+        "name": "SplitWeightUnit",
+        "description": "Split third part by space to get Weight and Unit",
+        "action": "split-by-space",
+        "expectedParts": 2,
+        "transition": {
+          "condition": "success",
+          "nextState": 4
+        }
+      },
+      {
+        "id": 4,
+        "name": "ParseWeight",
+        "description": "Parse weight value and unit",
+        "action": "parse-decimal",
+        "transition": {
+          "condition": "success",
+          "nextState": 5
+        }
+      },
+      {
+        "id": 5,
+        "name": "Complete",
+        "description": "Data successfully parsed",
+        "action": "fire-event",
+        "transition": {
+          "condition": "always",
+          "nextState": 0
+        }
+      }
+    ],
+
+    "errorHandling": {
+      "onTimeout": "reset-to-idle",
+      "onParseError": "reset-to-idle",
+      "maxRetries": 3,
+      "timeoutMs": 5000
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "name": "WeightRange",
+        "type": "range",
+        "field": "W",
+        "min": -9999.9,
+        "max": 9999.9,
+        "severity": "error",
+        "message": "Weight must be between -9999.9 and 9999.9"
+      },
+      {
+        "name": "UnitValid",
+        "type": "enum",
+        "field": "Unit",
+        "values": ["g", "kg"],
+        "severity": "error",
+        "message": "Unit must be 'g' or 'kg'"
+      },
+      {
+        "name": "StatusValid",
+        "type": "enum",
+        "field": "Status",
+        "values": ["ST", "US"],
+        "severity": "warning",
+        "message": "Status should be ST (Stable) or US (Unstable)"
+      },
+      {
+        "name": "ModeValid",
+        "type": "enum",
+        "field": "Mode",
+        "values": ["GS", "NT", "TR"],
+        "severity": "warning",
+        "message": "Mode should be GS (Gross), NT (Net), or TR (Tare)"
+      }
+    ]
+  },
+
+  "output": {
+    "dataClass": "TScaleQHWData",
+    "properties": [
+      {
+        "name": "Status",
+        "type": "string",
+        "mapping": "Status",
+        "default": "ST"
+      },
+      {
+        "name": "Mode",
+        "type": "string",
+        "mapping": "Mode",
+        "default": "GS"
+      },
+      {
+        "name": "W",
+        "type": "decimal",
+        "mapping": "Weight"
+      },
+      {
+        "name": "Unit",
+        "type": "string",
+        "mapping": "Unit",
+        "default": "g"
+      }
+    ],
+    "eventTrigger": "LineComplete",
+    "eventName": "DataReceived"
+  },
+
+  "testing": {
+    "testCases": [
+      {
+        "name": "ValidWeightStableGross",
+        "description": "Stable gross weight in grams",
+        "input": "ST,GS,   245.6 g\\r\\n",
+        "expectedOutput": {
+          "Status": "ST",
+          "Mode": "GS",
+          "W": 245.6,
+          "Unit": "g"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeightUnstableNet",
+        "description": "Unstable net weight in kg",
+        "input": "US,NT,    12.5 kg\\r\\n",
+        "expectedOutput": {
+          "Status": "US",
+          "Mode": "NT",
+          "W": 12.5,
+          "Unit": "kg"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeightTare",
+        "description": "Tare weight (may be negative)",
+        "input": "ST,TR,     0.5 g\\r\\n",
+        "expectedOutput": {
+          "Status": "ST",
+          "Mode": "TR",
+          "W": 0.5,
+          "Unit": "g"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeightZero",
+        "description": "Zero weight",
+        "input": "ST,GS,     0.0 g\\r\\n",
+        "expectedOutput": {
+          "Status": "ST",
+          "Mode": "GS",
+          "W": 0.0,
+          "Unit": "g"
+        },
+        "shouldSucceed": true
+      }
+    ],
+    "coverage": {
+      "fields": "100%",
+      "states": "100%",
+      "errorPaths": "80%"
+    }
+  },
+
+  "documentation": {
+    "references": [
+      "Device-07-TScaleQHW.md",
+      "CODE_ANALYSIS_NLib.Serial.Devices.md"
+    ],
+    "logFiles": [
+      "Documents/LuckyTex Devices/TScaleQHW/"
+    ],
+    "notes": [
+      "This is a simple CSV-format protocol",
+      "Data format: STATUS,MODE, WEIGHT UNIT",
+      "Example: 'ST,GS,   245.6 g'",
+      "STATUS values: ST=Stable, US=Unstable",
+      "MODE values: GS=Gross, NT=Net, TR=Tare",
+      "Weight is padded to 8 characters (left-aligned with spaces)",
+      "Unit follows weight with a space separator",
+      "Parser splits by comma first, then splits weight/unit by space",
+      "Weight has 1 decimal place precision"
+    ]
+  },
+
+  "migration": {
+    "existingClass": "TScaleQHW.cs",
+    "namespace": "NLib.Serial.Devices",
+    "compatibility": "backward-compatible",
+    "notes": "This definition matches existing C# implementation 1:1"
+  }
+}
