@@ -20,3 +20,7 @@ The example log data files (Capture from the Serial Monitor tools) is in @Docume
 
 ** Document Folder structore **
 - let keep new generate document in @Documents\ModernDesign folder (that shoud already exist). Do not access to v1 sub folder (previous design).
+
+
+** Exist production code **
+check @01.Core/NLib.Serial.Devices/NLib.Serial.Devices.csproj for understanding what are production code work. Use code to check what we miss do not use it to design because it not flexible

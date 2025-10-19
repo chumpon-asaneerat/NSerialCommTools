@@ -2,6 +2,32 @@
 
 ## NLib.Serial.Protocol.Analyzer - Modern Design
 
+**Related Documents**:
+- **00-Requirements-Specification.md** - Complete requirements
+- **01-Production-Code-Analysis.md** - Analysis of existing working code
+- **03-Parsing-Strategy-Analysis.md** - Detailed parsing algorithms
+
+---
+
+## Context: Complementary Tool, Not Replacement
+
+**IMPORTANT**: This Protocol Analyzer is a **SEPARATE TOOL** that complements the existing production code:
+
+- **Existing Production Code** (01.Core/NLib.Serial.Devices/):
+  - SerialDevice, SerialDeviceEmulator, SerialDeviceTerminal classes
+  - Real-time serial communication (bidirectional)
+  - Hardcoded protocol parsing per device
+  - **Status**: ✅ WORKING - Production ready - DO NOT CHANGE
+
+- **Protocol Analyzer** (This tool):
+  - Offline log file analysis
+  - Automatic protocol discovery
+  - JSON definition file generation
+  - Enables rapid new device integration
+  - **Status**: 🔄 Design phase - NEW CAPABILITY
+
+See **01-Production-Code-Analysis.md** for detailed analysis of existing code.
+
 ---
 
 ## Requirements Summary
@@ -9,7 +35,13 @@
 **Primary Goal**: Create a protocol analyzer that can:
 1. Load serial device log files in 3 formats (HEX/Text, HEX Only, Text Only)
 2. Analyze the protocol structure automatically
-3. Generate protocol definition files for working with serial devices
+3. Generate **bidirectional** protocol definition files (parse AND serialize)
+4. Support future NTerminal<T> and NDevice<T> runtime classes
+
+**Three User Scenarios**:
+1. **Protocol Analyzer Users**: Developers analyzing log files to generate definitions
+2. **NTerminal<T> Users** (Future): Applications receiving data using JSON definitions
+3. **NDevice<T> Users** (Future): Testing tools emulating devices using JSON definitions
 
 **Technical Constraints**:
 - .NET Framework 4.7.2 only (no .NET Core)
@@ -18,7 +50,47 @@
 
 ---
 
-## System Architecture Overview
+## Ecosystem Integration
+
+```mermaid
+graph TD
+    subgraph "Production Code (Existing - Working)"
+        P1[Serial Device] <--> P2[SerialPort]
+        P2 <--> P3[Terminal Class]
+        P3 --> P4[Hardcoded Parse Logic]
+        P4 --> P5[Data Class]
+    end
+
+    subgraph "Protocol Analyzer (New - This Design)"
+        A1[Third-Party Logs] --> A2[Protocol Analyzer]
+        A2 --> A3[JSON Definition]
+    end
+
+    subgraph "Future Integration (Phase 2)"
+        F1[NTerminal<T>] --> F2[Load JSON Definition]
+        F3[NDevice<T>] --> F4[Load JSON Definition]
+        A3 --> F2
+        A3 --> F4
+    end
+
+    A3 -.->|"Documentation"| D1[Protocol Docs]
+    A3 -.->|"Future: Code Gen"| P3
+
+    style P1 fill:#90EE90
+    style A2 fill:#4A90E2
+    style F1 fill:#FFE4B5
+    style F3 fill:#FFE4B5
+```
+
+**Key Points**:
+- Protocol Analyzer does NOT touch existing production code
+- Generates JSON definitions from captured log files
+- Future runtime classes (NTerminal<T>, NDevice<T>) will use these definitions
+- Optional: Could generate code for new Terminal classes
+
+---
+
+## System Architecture Overview (Protocol Analyzer Only)
 
 ```mermaid
 graph TD
@@ -261,7 +333,15 @@ Footer:  "B" + 0x83 0x0D (special footer marker)
 
 ### 5. Protocol Definition Generator
 
-**Purpose**: Generate a protocol definition file that OTHER applications can use to communicate with the serial device.
+**Purpose**: Generate a **bidirectional** protocol definition file that OTHER applications can use to communicate with the serial device.
+
+**Bidirectional Support**:
+- **Parse Direction** (Device → Application): How to parse incoming bytes into fields
+- **Serialize Direction** (Application → Device): How to format fields into bytes
+
+This enables both:
+- **NTerminal<T>**: Parse received data using the definition
+- **NDevice<T>**: Serialize T instance into protocol bytes
 
 **Important**: The definition file contains ONLY protocol structure, NOT log-file-specific information.
 
@@ -269,9 +349,11 @@ Footer:  "B" + 0x83 0x0D (special footer marker)
 - ✓ Protocol terminators (e.g., `\r`, `\x83\r`)
 - ✓ Field delimiters (e.g., spaces, tabs)
 - ✓ Message patterns and structure
-- ✓ Field definitions (name, type, position)
+- ✓ Field definitions (name, type, position, format)
 - ✓ Encoding (e.g., ASCII, UTF-8)
 - ✓ Message sequences
+- ✓ **Parse rules** (how to extract fields from bytes)
+- ✓ **Format rules** (how to convert fields to bytes)
 
 **What Does NOT Go In**:
 - ✗ File line numbers (analysis/debug only)
@@ -300,7 +382,16 @@ Footer:  "B" + 0x83 0x0D (special footer marker)
           "position": 0,
           "length": 1,
           "type": "char",
-          "description": "Field identifier (F/H/Q/X/A/0/4/1/2)"
+          "description": "Field identifier (F/H/Q/X/A/0/4/1/2)",
+          "parse": {
+            "offset": 0,
+            "length": 1,
+            "encoding": "ASCII"
+          },
+          "serialize": {
+            "position": 0,
+            "required": true
+          }
         },
         {
           "name": "value",
@@ -309,7 +400,21 @@ Footer:  "B" + 0x83 0x0D (special footer marker)
           "format": "fixed-width",
           "width": 10,
           "alignment": "right",
-          "description": "Numeric value"
+          "description": "Numeric value",
+          "parse": {
+            "offset": 1,
+            "length": 9,
+            "encoding": "ASCII",
+            "trim": true,
+            "decimalFormat": "F1"
+          },
+          "serialize": {
+            "position": 1,
+            "padding": "left",
+            "padChar": " ",
+            "width": 9,
+            "decimalFormat": "F1"
+          }
         }
       ],
       "terminator": "\\r"
