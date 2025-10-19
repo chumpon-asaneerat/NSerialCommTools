@@ -476,8 +476,53 @@ If device supports commands:
 - **FR-4.3**: Display parsed messages
 - **FR-4.4**: Display detected patterns with confidence scores
 - **FR-4.5**: Allow pattern override/manual edit
-- **FR-4.6**: Preview generated definition
-- **FR-4.7**: Save definition to file
+- **FR-4.6**: **Allow field renaming** (auto-generated names → user-defined names)
+- **FR-4.7**: Preview generated definition
+- **FR-4.8**: Save definition to file
+
+#### FR-4.6 Field Renaming Details
+
+**Problem**: Protocol data rarely contains field names. Analyzer must generate names automatically (e.g., "Field1", "Field2"), but users need meaningful names for their T class properties.
+
+**Requirements**:
+- Display auto-generated field names in editable grid/list
+- Allow inline editing of field names
+- Validate field names:
+  - Must be valid C# identifier (no spaces, special chars except _)
+  - Must be unique within definition
+  - Suggest naming based on field content/type (e.g., "NumericField1" → "Weight")
+- Show field preview with sample data
+- Real-time update of JSON definition preview
+- Preserve custom names when regenerating/refreshing analysis
+
+**Example Workflow**:
+```
+1. Analyzer detects 3 fields → names them: "Field1", "Field2", "Field3"
+2. User sees grid:
+   | Auto Name | Custom Name | Type    | Sample Value |
+   |-----------|-------------|---------|--------------|
+   | Field1    | [editable]  | decimal | 1.640        |
+   | Field2    | [editable]  | string  | kg           |
+   | Field3    | [editable]  | char    | N            |
+
+3. User renames:
+   Field1 → NetWeight
+   Field2 → Unit
+   Field3 → Status
+
+4. Generated JSON uses custom names:
+   "fields": [
+     { "name": "NetWeight", ... },
+     { "name": "Unit", ... },
+     { "name": "Status", ... }
+   ]
+```
+
+**UI Suggestions**:
+- Double-click to edit
+- Tab to navigate between fields
+- Auto-suggest names based on value patterns
+- Bulk rename option (e.g., prefix all fields with device name)
 
 ### FR-5: Error Handling
 - **FR-5.1**: Report parsing errors with line numbers
