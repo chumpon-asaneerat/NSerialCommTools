@@ -23,15 +23,15 @@
 
 | Document | Status | File | Notes |
 |----------|--------|------|-------|
-| Requirements Specification | ✅ Complete | 00-Requirements-Specification.md | Includes NTerminal<T> and NDevice<T> use cases |
+| Requirements Specification | ✅ Complete | 00-Requirements-Specification.md | FR-4.6 field renaming added |
 | Production Code Analysis | ✅ Complete | 01-Production-Code-Analysis.md | Analyzes existing working code, defines complementary role |
-| System Architecture | ✅ Complete | 02-System-Architecture.md | Updated with clarity on terminology |
+| System Architecture | ✅ Complete | 02-System-Architecture.md | Field editor component added to design |
 | Parsing Strategy Analysis | ✅ Complete | 03-Parsing-Strategy-Analysis.md | Real-world complexity analysis, 5-stage approach |
 | Data Models Design | ⏳ Not Started | 04-Data-Models-Design.md | Pending |
-| JSON Schema Design | ⏳ Not Started | 05-JSON-Schema-Design.md | Pending |
+| JSON Schema Design | 📝 Draft Notes | 05-JSON-Schema-Design.md | Field naming requirements documented |
 | Parser Design | ⏳ Not Started | 06-Parser-Design.md | Pending |
 | Analyzer Algorithms | ⏳ Not Started | 07-Analyzer-Algorithms.md | Pending |
-| UI Design | ⏳ Not Started | 08-UI-Design.md | Pending |
+| UI Design | 📝 Draft Notes | 08-UI-Design.md | Field editor UI requirements documented |
 | NTerminal<T> Design | ⏳ Not Started | 09-NTerminal-Design.md | Pending |
 | NDevice<T> Design | ⏳ Not Started | 10-NDevice-Design.md | Pending |
 | Implementation Plan | ⏳ Not Started | 11-Implementation-Plan.md | Pending |
@@ -52,6 +52,7 @@
 - ✅ Generate bidirectional definition files (parse AND serialize)
 - ✅ Support NTerminal<T> for receiving data
 - ✅ Support NDevice<T> for emulating devices
+- ✅ **Allow field renaming** (auto names → user-defined names)
 - ✅ < 5 clicks from load to save
 
 ### Technical Constraints
