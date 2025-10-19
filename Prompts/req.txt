@@ -1,0 +1,17 @@
+** Sample Log Data Files **
+The example log data files (Capture from the Serial Monitor tools) is in @Documents\LuckyTex Devices folder with normally in format 
+- HEX/Text 
+- HEX Only 
+- Text Only 
+
+
+** Working C# project **
+- Use .NET 4.7.2 Framework only (No .NET Core allow).
+- Allow the Microsoft NuGet packages (Already in References folder)
+- Current working project for Modern Implaments in in @09.App\NLib.Serial.Protocol.Analyzer project
+  (i have v1 sub folder that is from previous implements do not access to this folder).
+
+
+** Requirements **
+- I want to load log data file in formats (HEX/Text, HEX Only, Text Only) to analyze protocol 
+- When analyzer complete analyze protocols it shoud make protocol definition file to work with that serial device.
