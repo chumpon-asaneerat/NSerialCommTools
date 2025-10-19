@@ -1,0 +1,320 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0",
+  "lastUpdated": "2025-10-19",
+
+  "deviceInfo": {
+    "name": "WeightQA",
+    "manufacturer": "LuckyTex",
+    "category": "scale",
+    "model": "WeightQA",
+    "description": "QA weight scale with fractional digit format and mode indicator",
+    "complexity": "medium",
+    "documentation": "Device-05-WeightQA.md"
+  },
+
+  "communication": {
+    "baudRate": 9600,
+    "dataBits": 8,
+    "parity": "None",
+    "stopBits": "One",
+    "handshake": "None",
+    "encoding": "ASCII",
+    "readTimeout": 5000,
+    "writeTimeout": 5000
+  },
+
+  "protocol": {
+    "type": "continuous-stream",
+    "format": "single-line-special",
+    "encoding": "ASCII",
+    "terminator": "\\r\\n",
+    "packageSize": 1,
+    "updateRate": "continuous",
+
+    "specialFormat": {
+      "name": "fractional-digit-separator",
+      "description": "Last digit of decimal is separated by '/' character",
+      "example": "+007.12/3 G S means 7.123"
+    },
+
+    "structure": {
+      "lines": [
+        {
+          "lineNumber": 1,
+          "name": "WeightData",
+          "type": "composite",
+          "pattern": "^([+-])(\\d{3})\\.(\\d{2})/(\\d)\\s+(\\w+)\\s+(\\w+)",
+          "required": true,
+          "description": "Weight with sign, fractional format, unit, and mode",
+          "fields": [
+            {
+              "name": "Sign",
+              "type": "string",
+              "pattern": "[+-]",
+              "values": ["+", "-"],
+              "description": "Weight sign"
+            },
+            {
+              "name": "IntegerPart",
+              "type": "string",
+              "pattern": "\\d{3}",
+              "format": "000",
+              "description": "Integer part with leading zeros (3 digits)"
+            },
+            {
+              "name": "DecimalPart1",
+              "type": "string",
+              "pattern": "\\d{2}",
+              "description": "First 2 decimal digits"
+            },
+            {
+              "name": "DecimalPart2",
+              "type": "string",
+              "pattern": "\\d",
+              "description": "Last decimal digit (after /)"
+            },
+            {
+              "name": "Unit",
+              "type": "string",
+              "pattern": "\\w+",
+              "values": ["G", "g"],
+              "description": "Weight unit (grams)"
+            },
+            {
+              "name": "Mode",
+              "type": "string",
+              "pattern": "\\w+",
+              "values": ["S"],
+              "description": "Measurement mode (S=Stable)"
+            }
+          ],
+          "assemblyLogic": "Weight = Sign + IntegerPart + '.' + DecimalPart1 + DecimalPart2"
+        }
+      ]
+    }
+  },
+
+  "parsing": {
+    "strategy": "single-line-split-reassemble",
+    "description": "Split by '/' separator and reassemble decimal value",
+
+    "states": [
+      {
+        "id": 0,
+        "name": "Idle",
+        "description": "Waiting for data package",
+        "action": "wait",
+        "transition": {
+          "condition": "detect-line-end",
+          "nextState": 1
+        }
+      },
+      {
+        "id": 1,
+        "name": "SplitBySlash",
+        "description": "Split line by '/' character",
+        "action": "split",
+        "separator": "/",
+        "expectedParts": 2,
+        "transition": {
+          "condition": "success",
+          "nextState": 2,
+          "onError": 0
+        }
+      },
+      {
+        "id": 2,
+        "name": "ParseFirstPart",
+        "description": "Extract sign and main decimal part",
+        "action": "extract",
+        "pattern": "^([+-]\\d{3}\\.\\d{2})",
+        "transition": {
+          "condition": "success",
+          "nextState": 3
+        }
+      },
+      {
+        "id": 3,
+        "name": "ParseSecondPart",
+        "description": "Extract last digit, unit, and mode",
+        "action": "split-by-space",
+        "expectedFields": 3,
+        "transition": {
+          "condition": "success",
+          "nextState": 4
+        }
+      },
+      {
+        "id": 4,
+        "name": "AssembleWeight",
+        "description": "Combine parts into final decimal value",
+        "action": "concatenate",
+        "formula": "firstPart + lastDigit",
+        "transition": {
+          "condition": "success",
+          "nextState": 5
+        }
+      },
+      {
+        "id": 5,
+        "name": "Complete",
+        "description": "Data successfully parsed",
+        "action": "fire-event",
+        "transition": {
+          "condition": "always",
+          "nextState": 0
+        }
+      }
+    ],
+
+    "errorHandling": {
+      "onTimeout": "reset-to-idle",
+      "onParseError": "reset-to-idle",
+      "maxRetries": 3,
+      "timeoutMs": 5000
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "name": "WeightRange",
+        "type": "range",
+        "field": "W",
+        "min": -999.999,
+        "max": 999.999,
+        "severity": "error",
+        "message": "Weight must be between -999.999 and 999.999 grams"
+      },
+      {
+        "name": "UnitValid",
+        "type": "enum",
+        "field": "Unit",
+        "values": ["G", "g"],
+        "severity": "error",
+        "message": "Unit must be 'G' or 'g'"
+      },
+      {
+        "name": "ModeValid",
+        "type": "enum",
+        "field": "Mode",
+        "values": ["S"],
+        "severity": "warning",
+        "message": "Mode should be 'S' (Stable)"
+      }
+    ]
+  },
+
+  "output": {
+    "dataClass": "WeightQAData",
+    "properties": [
+      {
+        "name": "W",
+        "type": "decimal",
+        "mapping": "Assembled weight value",
+        "description": "Weight in grams (3 decimal places)"
+      },
+      {
+        "name": "Unit",
+        "type": "string",
+        "mapping": "Unit",
+        "default": "G"
+      },
+      {
+        "name": "Mode",
+        "type": "string",
+        "mapping": "Mode",
+        "default": "S"
+      }
+    ],
+    "eventTrigger": "LineComplete",
+    "eventName": "DataReceived"
+  },
+
+  "testing": {
+    "testCases": [
+      {
+        "name": "ValidWeight1",
+        "description": "Normal positive weight",
+        "input": "+007.12/3 G S\\r\\n",
+        "expectedOutput": {
+          "W": 7.123,
+          "Unit": "G",
+          "Mode": "S"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeight2",
+        "description": "Larger weight value",
+        "input": "+123.45/6 G S\\r\\n",
+        "expectedOutput": {
+          "W": 123.456,
+          "Unit": "G",
+          "Mode": "S"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "ValidWeightZero",
+        "description": "Zero weight",
+        "input": "+000.00/0 G S\\r\\n",
+        "expectedOutput": {
+          "W": 0.000,
+          "Unit": "G",
+          "Mode": "S"
+        },
+        "shouldSucceed": true
+      },
+      {
+        "name": "NegativeWeight",
+        "description": "Negative weight (tare)",
+        "input": "-005.50/2 G S\\r\\n",
+        "expectedOutput": {
+          "W": -5.502,
+          "Unit": "G",
+          "Mode": "S"
+        },
+        "shouldSucceed": true
+      }
+    ],
+    "coverage": {
+      "fields": "100%",
+      "states": "100%",
+      "errorPaths": "80%"
+    }
+  },
+
+  "documentation": {
+    "references": [
+      "Device-05-WeightQA.md",
+      "CODE_ANALYSIS_NLib.Serial.Devices.md"
+    ],
+    "logFiles": [
+      "Documents/LuckyTex Devices/WEIGHT QA/"
+    ],
+    "notes": [
+      "This device uses a unique fractional digit format",
+      "Data format: +AAA.BB/C U M",
+      "Example: '+007.12/3 G S' represents 7.123 grams",
+      "The '/' character separates the last decimal digit",
+      "Sign can be + or -",
+      "Integer part is always 3 digits with leading zeros",
+      "First decimal part is 2 digits",
+      "Last decimal digit comes after '/'",
+      "Unit is typically 'G' (grams)",
+      "Mode is typically 'S' (stable)",
+      "Parser must split by '/', combine digits, then split by space",
+      "Final weight = firstPart + lastDigit",
+      "Example parsing: '+007.12' + '3' = 7.123"
+    ]
+  },
+
+  "migration": {
+    "existingClass": "WeightQA.cs",
+    "namespace": "NLib.Serial.Devices",
+    "compatibility": "backward-compatible",
+    "notes": "This definition matches existing C# implementation 1:1"
+  }
+}
