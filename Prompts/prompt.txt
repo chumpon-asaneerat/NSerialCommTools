@@ -3,6 +3,8 @@ refer to 03-Parsing-Strategy-Analysis.md (the previous file which heavy depend o
 I told that you should think that you dont know anything beforehand so just pure datastructure and 
 algorithm can be used. After that you create 03-Parsing-Strategy-Analysis_New.md but session reach limit 
 before i ask question so check both documents and tell me 
+- Why you not keep HEX log data in document (i prefer to see HEX/Text and HEX only instead of Text only 
+because as i told you before that not all protocols use CR LF as terminator or seperator)
 - Are State Machine Parser no need anymore or the ContentBased can cover all case?
 - If it still need are new documents cover State Machine Parser?
 - Can each Algorithms has diagrams that i can see i visually (the text description shoud stay in document)
@@ -15,7 +17,7 @@ shoud each sub folder should contains
 - origin.md (summary information (Device Name/Model) with source/link) 
 - log_data.txt (MUST Have the log data prefer in HEX/Text format) 
 
-
 As for UI (Protocol Analyzer) if we can supports both read log file and direct read serial ports must be nice.
 
-let create update tracker to make sure that when session reach limit we can continue in another session.
+let create update tracker for this task to make sure that when session reach limit we can continue in another session.
+
