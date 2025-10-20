@@ -1,3 +1,14 @@
+- Last Sesion
+refer to 03-Parsing-Strategy-Analysis.md (the previous file which heavy depend on my production code) 
+I told that you should think that you dont know anything beforehand so just pure datastructure and 
+algorithm can be used. After that you create 03-Parsing-Strategy-Analysis_New.md but session reach limit 
+before i ask question so check both documents and tell me Are new documents cover State Machine Parser?
 
+Also for make more precision let find the examples log data from another devices (let reduce scope only 
+weight machine that you can find information on web by hardware producer) please give me another 5 devices 
+and create new folder ExtraDevices and let keep each device information you found in each sub folder which 
+shoud each sub folder should contains
+- origin.md (summary information (Device Name/Model) with source/link) 
+- log_data.txt (MUST Have the log data prefer in HEX/Text format) 
 
 
