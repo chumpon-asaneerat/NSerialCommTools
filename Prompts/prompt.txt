@@ -1,4 +1,7 @@
 - Last Sesion
+
+** NOTE: The Generate Files should be large (over 1000 lines) make sure you use proper tool to update/recreate file ** 
+
 refer to 03-Parsing-Strategy-Analysis.md (the previous file which heavy depend on my production code) 
 I told that you should think that you dont know anything beforehand so just pure datastructure and 
 algorithm can be used. After that you create 03-Parsing-Strategy-Analysis_New.md but session reach limit 
