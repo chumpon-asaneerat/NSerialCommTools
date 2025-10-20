@@ -696,7 +696,412 @@ This validates the **5-stage parsing strategy** defined earlier in this document
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2025-10-19
-**Status**: Design Phase - Parsing Strategy
-**Changes**: Added production code parsing examples and insights
+## Advanced Parsing Strategies
+
+### State Machine Parsing (Sequential Lines)
+
+**Purpose**: Parse complex multi-line protocols where each line must be processed sequentially in order.
+
+**Best For**: JIK6CAB-style protocols with:
+- Fixed line count per message
+- Start/end markers
+- Each line has specific meaning based on position
+- Mixed data types across lines
+
+#### State Machine Algorithm
+
+```
+State: IDLE
+├─ Receive line
+├─ IF line matches StartMarker (e.g., "^KJIK000")
+│  ├─ TRANSITION to PARSING_STARTED
+│  ├─ Reset all field variables
+│  ├─ lineCount = 0
+│  └─ Set completedFlag = false
+└─ ELSE stay in IDLE
+
+State: PARSING_STARTED
+├─ lineCount++
+├─ SWITCH on lineCount:
+│  ├─ CASE 1: Parse Date (pattern: YYYY-MM-DD)
+│  ├─ CASE 2: Parse Time (pattern: HH:MM:SS)
+│  ├─ CASE 3: Parse TareWeight (pattern: \d+\.\d+ kg)
+│  ├─ CASE 4: Parse GrossWeight (pattern: \d+\.\d+ kg)
+│  ├─ CASE 5-6: Skip (reserved fields)
+│  ├─ CASE 7: Parse NetWeight (pattern: \d+\.\d+ kg)
+│  ├─ CASE 8: Skip (duplicate display weight)
+│  ├─ CASE 9: Parse PieceCount (pattern: \d+ pcs)
+│  ├─ CASE 10-11: Skip (empty lines)
+│  ├─ CASE 12: Skip (status indicator)
+│  └─ CASE 13: Validate EndMarker (pattern: "~P1")
+│     ├─ IF valid: TRANSITION to COMPLETE
+│     └─ ELSE: ERROR → IDLE
+└─ IF timeout exceeded: ERROR → IDLE
+
+State: COMPLETE
+├─ Combine Date + Time → DateTime property
+├─ Apply validation rules
+├─ Fire DataReceived event
+└─ TRANSITION to IDLE
+```
+
+#### Implementation Pattern
+
+```csharp
+public class SequentialLineParser
+{
+    private ParserState state = ParserState.Idle;
+    private int lineCount = 0;
+    private Dictionary<string, object> fieldValues = new Dictionary<string, object>();
+    private DateTime? date;
+    private TimeSpan? time;
+
+    public void ProcessLine(string line)
+    {
+        switch (state)
+        {
+            case ParserState.Idle:
+                if (line.Contains(StartMarker))
+                {
+                    state = ParserState.Parsing;
+                    lineCount = 0;
+                    fieldValues.Clear();
+                }
+                break;
+
+            case ParserState.Parsing:
+                lineCount++;
+                LineDefinition lineDef = config.Lines[lineCount - 1];
+
+                switch (lineDef.Action)
+                {
+                    case LineAction.Parse:
+                        var value = ExtractValue(line, lineDef);
+                        fieldValues[lineDef.FieldName] = value;
+                        break;
+
+                    case LineAction.Skip:
+                        // Do nothing, just advance
+                        break;
+
+                    case LineAction.Validate:
+                        if (!ValidatePattern(line, lineDef.Pattern))
+                            state = ParserState.Error;
+                        break;
+
+                    case LineAction.Marker:
+                        if (lineDef.Pattern == EndMarker && line.Contains(EndMarker))
+                        {
+                            state = ParserState.Complete;
+                            OnPackageComplete();
+                        }
+                        break;
+                }
+                break;
+
+            case ParserState.Complete:
+                // Already handled
+                state = ParserState.Idle;
+                break;
+        }
+    }
+}
+```
+
+#### Key Features:
+- ✅ **Ordered Processing**: Lines must be processed in sequence
+- ✅ **State Tracking**: Knows current position in message
+- ✅ **Skip Lines**: Can skip reserved/empty lines
+- ✅ **Marker Validation**: Verifies start/end markers
+- ✅ **Timeout Handling**: Resets if incomplete package
+
+---
+
+### Validation Rules Strategy
+
+**Purpose**: Apply data integrity checks after parsing or before serialization.
+
+#### Validation Types
+
+1. **Range Validation**
+   ```csharp
+   // Field value must be within min-max
+   Rule: TareWeight >= 0 && TareWeight <= 999.99
+   ```
+
+2. **Formula Validation**
+   ```csharp
+   // Formula must evaluate correctly
+   Rule: GrossWeight - TareWeight = NetWeight
+   Tolerance: ±0.01
+
+   Algorithm:
+   1. Parse formula: "GrossWeight - TareWeight = NetWeight"
+   2. Extract field names: [GrossWeight, TareWeight, NetWeight]
+   3. Get field values from parsed data
+   4. Evaluate: |GW - TW - NW| <= tolerance
+   5. If true: PASS, else: FAIL
+   ```
+
+3. **DateTime Range Validation**
+   ```csharp
+   // DateTime must be within range
+   Rule: Date >= 2020-01-01 && Date <= 2099-12-31
+   ```
+
+4. **Field Relationship Validation**
+   ```csharp
+   // One field must be related to another
+   Rule: GrossWeight >= TareWeight
+   ```
+
+5. **Custom Expression Validation**
+   ```csharp
+   // Custom condition
+   Rule: IF PieceCount > 0 THEN NetWeight > 0
+   ```
+
+#### Validation Execution Flow
+
+```
+Parse Data
+   ↓
+Store in Data Object
+   ↓
+Apply Validation Rules
+   ↓
+   ├─ Rule 1: Range checks → PASS/FAIL
+   ├─ Rule 2: Formula checks → PASS/FAIL
+   ├─ Rule 3: DateTime checks → PASS/FAIL
+   └─ Rule N: Custom checks → PASS/FAIL
+   ↓
+Collect Results
+   ↓
+   ├─ All PASS → Accept Data
+   ├─ Any ERROR severity → Reject Data
+   └─ Only WARNING severity → Accept with Warnings
+```
+
+#### Implementation Pattern
+
+```csharp
+public class ValidationEngine
+{
+    public ValidationResult Validate(object data, List<ValidationRule> rules)
+    {
+        var result = new ValidationResult { IsValid = true };
+
+        foreach (var rule in rules.Where(r => r.Enabled))
+        {
+            switch (rule.Type)
+            {
+                case ValidationType.Range:
+                    ValidateRange(data, rule, result);
+                    break;
+
+                case ValidationType.Formula:
+                    ValidateFormula(data, rule, result);
+                    break;
+
+                case ValidationType.DateTimeRange:
+                    ValidateDateTimeRange(data, rule, result);
+                    break;
+
+                case ValidationType.FieldRelationship:
+                    ValidateFieldRelationship(data, rule, result);
+                    break;
+
+                case ValidationType.Custom:
+                    ValidateCustom(data, rule, result);
+                    break;
+            }
+
+            // If any ERROR severity fails, mark entire validation as failed
+            if (rule.Severity == ValidationSeverity.Error && !result.IsValid)
+                break;
+        }
+
+        return result;
+    }
+
+    private void ValidateFormula(object data, ValidationRule rule, ValidationResult result)
+    {
+        // Example: "GrossWeight - TareWeight = NetWeight"
+        var formula = ParseFormula(rule.Formula);
+
+        double leftSide = EvaluateExpression(formula.LeftSide, data);
+        double rightSide = EvaluateExpression(formula.RightSide, data);
+
+        double diff = Math.Abs(leftSide - rightSide);
+
+        if (diff > (rule.Tolerance ?? 0.001))
+        {
+            result.AddError(rule.Severity, rule.Message);
+            if (rule.Severity == ValidationSeverity.Error)
+                result.IsValid = false;
+        }
+    }
+}
+```
+
+---
+
+### Field Relationship Strategy
+
+**Purpose**: Handle combined, split, or calculated fields.
+
+#### Relationship Types
+
+**1. Combine Fields (Date + Time → DateTime)**
+
+```csharp
+// Input fields:
+Line 2: "2023-11-07"  → Date field
+Line 3: "17:19:38"    → Time field
+
+// Relationship:
+Type: Combine
+SourceFields: ["Date", "Time"]
+TargetField: "DateTime"
+Operation: "Date.Date + Time"
+
+// Output:
+data.DateTime = new DateTime(2023, 11, 7, 17, 19, 38)
+```
+
+**2. Split Field (Value + Unit)**
+
+```csharp
+// Input field:
+Line 4: "  1.94 kg"
+
+// Relationship 1:
+Type: Split
+SourceFields: ["TareWeightLine"]
+TargetField: "TareWeight"
+Operation: "Extract(\d+\.\d+)"
+Result: 1.94
+
+// Relationship 2:
+Type: Split
+SourceFields: ["TareWeightLine"]
+TargetField: "TareUnit"
+Operation: "Extract(kg|g)"
+Result: "kg"
+```
+
+**3. Calculate Field (NetWeight = Gross - Tare)**
+
+```csharp
+// Input fields:
+GrossWeight: 1.94
+TareWeight: 0.00
+
+// Relationship:
+Type: Calculate
+SourceFields: ["GrossWeight", "TareWeight"]
+TargetField: "NetWeight"
+Operation: "GrossWeight - TareWeight"
+
+// Output:
+data.NetWeight = 1.94 - 0.00 = 1.94
+```
+
+#### Implementation Pattern
+
+```csharp
+public class FieldRelationshipProcessor
+{
+    public void ApplyRelationships(object data, List<FieldRelationship> relationships)
+    {
+        foreach (var rel in relationships)
+        {
+            switch (rel.Type)
+            {
+                case RelationshipType.Combine:
+                    CombineFields(data, rel);
+                    break;
+
+                case RelationshipType.Split:
+                    SplitField(data, rel);
+                    break;
+
+                case RelationshipType.Calculate:
+                    CalculateField(data, rel);
+                    break;
+            }
+        }
+    }
+
+    private void CombineFields(object data, FieldRelationship rel)
+    {
+        // Example: Date + Time → DateTime
+        var dateValue = GetFieldValue<DateTime>(data, rel.SourceFields[0]);
+        var timeValue = GetFieldValue<TimeSpan>(data, rel.SourceFields[1]);
+
+        var combined = dateValue.Date + timeValue;
+
+        SetFieldValue(data, rel.TargetField, combined);
+    }
+
+    private void SplitField(object data, FieldRelationship rel)
+    {
+        // Example: "1.94 kg" → Value=1.94, Unit="kg"
+        var sourceValue = GetFieldValue<string>(data, rel.SourceFields[0]);
+
+        var match = Regex.Match(sourceValue, rel.Operation);
+        if (match.Success)
+        {
+            var extractedValue = match.Groups[1].Value;
+            SetFieldValue(data, rel.TargetField, extractedValue);
+        }
+    }
+
+    private void CalculateField(object data, FieldRelationship rel)
+    {
+        // Example: NetWeight = GrossWeight - TareWeight
+        var values = rel.SourceFields
+            .Select(f => GetFieldValue<decimal>(data, f))
+            .ToArray();
+
+        var result = EvaluateExpression(rel.Operation, values);
+
+        SetFieldValue(data, rel.TargetField, result);
+    }
+}
+```
+
+---
+
+## Enhanced Production Code Insights Summary
+
+From analyzing the existing Terminal classes and adding advanced strategies, we identified **six parsing patterns**:
+
+| Pattern | Devices | Characteristics | Auto-Detection Strategy |
+|---------|---------|----------------|------------------------|
+| **String Splitting** | WeightQA, CordDEFENDER3000 | Simple delimiters (/, spaces) | High delimiter frequency analysis |
+| **Content-Based** | PHMeter | If/else on line content | Pattern variance across lines |
+| **Fixed-Position** | TFO1 | Switch on header byte + byte offsets | Consistent field positions |
+| **Sequential Lines** | JIK6CAB | Multi-line with state machine | Start/end markers + fixed line count ⭐ NEW |
+| **Field Relationships** | JIK6CAB (Date+Time) | Combined/calculated fields | Multiple related fields ⭐ NEW |
+| **Validation Rules** | All devices | Data integrity checks | Formula/range validation ⭐ NEW |
+
+**Key Learning**: The Protocol Analyzer must automatically determine which pattern(s) apply to each device by:
+1. Statistical analysis (frequency of delimiters, terminators)
+2. Positional analysis (fixed vs variable width fields)
+3. Content analysis (header bytes, markers, patterns)
+4. Variance analysis (which fields change vs stay constant)
+5. **Marker detection** (start/end patterns for state machine) ⭐ NEW
+6. **Field correlation** (related fields for relationships) ⭐ NEW
+
+This validates and enhances the **5-stage parsing strategy** defined earlier in this document.
+
+---
+
+**Document Version**: 2.0
+**Last Updated**: 2025-10-21
+**Status**: Design Phase - Complete with Advanced Strategies
+**Changes**:
+- v1.0: Initial parsing strategy with production code examples
+- v1.1: Added production code parsing examples and insights
+- v2.0: Added state machine parsing, validation rules, field relationships
