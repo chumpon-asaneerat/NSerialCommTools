@@ -7,7 +7,7 @@ I told that you should think that you dont know anything beforehand so just pure
 algorithm can be used. After that you create 03-Parsing-Strategy-Analysis_New.md but session reach limit 
 before i ask question so check both documents and tell me 
 - Why you not keep HEX log data in document (i prefer to see HEX/Text and HEX only instead of Text only 
-because as i told you before that not all protocols use CR LF as terminator or seperator)
+because as i told you before that not all protocols use CR-LF as terminator or seperator)
 - Are State Machine Parser no need anymore or the ContentBased can cover all case?
 - If it still need are new documents cover State Machine Parser?
 - Can each Algorithms has diagrams that i can see i visually (the text description shoud stay in document)
