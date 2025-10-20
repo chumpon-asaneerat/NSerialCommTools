@@ -902,6 +902,26 @@ public class ProtocolDefinition
 
     #endregion
 
+    #region Validation Rules (Optional)
+
+    /// <summary>
+    /// Validation rules for data integrity (optional).
+    /// Used to validate parsed/serialized data.
+    /// </summary>
+    public List<ValidationRule> ValidationRules { get; set; }
+
+    #endregion
+
+    #region Field Relationships (Optional)
+
+    /// <summary>
+    /// Field relationships for combined/calculated fields (optional).
+    /// Example: Combine Date + Time fields into single DateTime property.
+    /// </summary>
+    public List<FieldRelationship> FieldRelationships { get; set; }
+
+    #endregion
+
     #region Constructor
 
     public ProtocolDefinition()
@@ -912,6 +932,8 @@ public class ProtocolDefinition
         Fields = new List<FieldDefinition>();
         Messages = new List<MessageDefinition>();
         Commands = new List<CommandDefinition>();
+        ValidationRules = new List<ValidationRule>();
+        FieldRelationships = new List<FieldRelationship>();
     }
 
     #endregion
