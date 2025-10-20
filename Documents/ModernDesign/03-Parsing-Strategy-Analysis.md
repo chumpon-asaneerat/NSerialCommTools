@@ -4,6 +4,61 @@
 - **00-Requirements-Specification.md** - Complete requirements
 - **01-Production-Code-Analysis.md** - How production code handles these protocols
 - **02-System-Architecture.md** - Overall system design
+- **04-Data-Models-Design.md** - Data models supporting these strategies
+- **05-JSON-Schema-Design.md** - JSON examples for each strategy
+
+---
+
+## Overview: Complete Parsing Strategy Diagram
+
+```mermaid
+flowchart TD
+    A[Log File] --> B[Format Detection]
+
+    B --> C1[HEX/Text]
+    B --> C2[HEX Only]
+    B --> C3[Text Only]
+
+    C1 --> D[Extract Bytes & Text]
+    C2 --> D
+    C3 --> D
+
+    D --> E[Detect Message Structure]
+
+    E --> F1[Single Line<br/>CordDEFENDER3000]
+    E --> F2[Multi-Line Frame<br/>TFO1]
+    E --> F3[Sequential Lines<br/>JIK6CAB ⭐]
+    E --> F4[Content-Based<br/>PHMeter]
+
+    F1 --> G1[String Split Strategy<br/>Delimiters: space, slash]
+    F2 --> G2[Header Byte Switch<br/>Fixed Position Extract]
+    F3 --> G3[State Machine Parser ⭐<br/>Line-by-Line Sequential]
+    F4 --> G4[Content Detection<br/>Pattern Matching]
+
+    G1 --> H[Parse Fields]
+    G2 --> H
+    G3 --> H
+    G4 --> H
+
+    H --> I[Apply Field Relationships ⭐<br/>Combine, Split, Calculate]
+
+    I --> J[Apply Validation Rules ⭐<br/>Formula, Range, DateTime]
+
+    J --> K{Validation Pass?}
+
+    K -->|Yes| L[Accept Data<br/>Fire Event]
+    K -->|No - Error| M[Reject Data<br/>Log Error]
+    K -->|No - Warning| N[Accept with Warning<br/>Log Warning]
+
+    N --> L
+
+    style F3 fill:#FFE4B5
+    style G3 fill:#FFE4B5
+    style I fill:#90EE90
+    style J fill:#87CEEB
+
+    note1[⭐ NEW in v2.0]
+```
 
 ---
 
@@ -708,6 +763,100 @@ This validates the **5-stage parsing strategy** defined earlier in this document
 - Each line has specific meaning based on position
 - Mixed data types across lines
 
+#### State Machine Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+
+    Idle --> ParsingStarted : Detect StartMarker\n(^KJIK000)
+
+    ParsingStarted --> ParseLine1 : lineCount = 1
+    ParseLine1 --> ParseLine2 : Parse Date
+    ParseLine2 --> ParseLine3 : Parse Time
+    ParseLine3 --> ParseLine4 : Parse TareWeight
+    ParseLine4 --> ParseLine5 : Parse GrossWeight
+    ParseLine5 --> SkipLine6 : Parse Reserved1
+    SkipLine6 --> SkipLine7 : Skip Reserved2
+    SkipLine7 --> ParseLine8 : Parse NetWeight
+    ParseLine8 --> SkipLine9 : Skip DisplayWeight
+    SkipLine9 --> ParseLine10 : Parse PieceCount
+    ParseLine10 --> SkipLine11 : Skip Empty1
+    SkipLine11 --> SkipLine12 : Skip Empty2
+    SkipLine12 --> ValidateLine13 : Skip StatusIndicator
+    ValidateLine13 --> Complete : Validate EndMarker\n(~P1)
+
+    ParsingStarted --> Error : Timeout exceeded
+    ValidateLine13 --> Error : Invalid EndMarker
+
+    Complete --> ApplyRelationships : Combine Date+Time
+    ApplyRelationships --> ApplyValidation : Apply field relationships
+    ApplyValidation --> FireEvent : Validate data
+    FireEvent --> Idle : Fire DataReceived event
+
+    Error --> Idle : Reset state
+
+    note right of ParsingStarted
+        Reset all variables
+        lineCount = 0
+        bCompleted = false
+    end note
+
+    note right of Complete
+        Package complete
+        All 14 lines processed
+    end note
+```
+
+#### Parsing Flow Diagram
+
+```mermaid
+flowchart TD
+    A[Receive Line] --> B{Current State?}
+
+    B -->|Idle| C{StartMarker?}
+    C -->|Yes| D[State = ParsingStarted<br/>Reset Variables<br/>lineCount = 0]
+    C -->|No| A
+
+    B -->|ParsingStarted| E[lineCount++]
+    E --> F{lineCount}
+
+    F -->|1| G1[Parse Date<br/>YYYY-MM-DD]
+    F -->|2| G2[Parse Time<br/>HH:MM:SS]
+    F -->|3| G3[Parse TareWeight<br/>decimal + kg]
+    F -->|4| G4[Parse GrossWeight<br/>decimal + kg]
+    F -->|5-6| G5[Skip Reserved<br/>Not needed]
+    F -->|7| G6[Parse NetWeight<br/>decimal + kg]
+    F -->|8| G7[Skip DisplayWeight<br/>Duplicate]
+    F -->|9| G8[Parse PieceCount<br/>integer + pcs]
+    F -->|10-12| G9[Skip Empty Lines<br/>Whitespace only]
+    F -->|13| G10{EndMarker?}
+
+    G1 --> A
+    G2 --> A
+    G3 --> A
+    G4 --> A
+    G5 --> A
+    G6 --> A
+    G7 --> A
+    G8 --> A
+    G9 --> A
+
+    G10 -->|Valid ~P1| H[State = Complete]
+    G10 -->|Invalid| I[State = Error]
+
+    B -->|Complete| J[Combine Date + Time]
+    J --> K[Apply Validation Rules]
+    K --> L[Fire DataReceived Event]
+    L --> M[State = Idle]
+
+    B -->|Error| N[Reset to Idle]
+
+    I --> N
+    M --> A
+    N --> A
+```
+
 #### State Machine Algorithm
 
 ```
@@ -820,6 +969,87 @@ public class SequentialLineParser
 ### Validation Rules Strategy
 
 **Purpose**: Apply data integrity checks after parsing or before serialization.
+
+#### Validation Architecture Diagram
+
+```mermaid
+flowchart TD
+    A[Parsed Data Object] --> B[Validation Engine]
+
+    B --> C{For Each Rule}
+
+    C --> D1[Range Validation<br/>Min/Max Check]
+    C --> D2[Formula Validation<br/>GW - TW = NW]
+    C --> D3[DateTime Validation<br/>Date Range Check]
+    C --> D4[Field Relationship<br/>GW >= TW]
+    C --> D5[Custom Expression<br/>User Defined]
+
+    D1 --> E1{Pass?}
+    D2 --> E2{Pass?}
+    D3 --> E3{Pass?}
+    D4 --> E4{Pass?}
+    D5 --> E5{Pass?}
+
+    E1 -->|Yes| F[Continue]
+    E1 -->|No| G1{Severity?}
+    G1 -->|Error| H[Reject Data]
+    G1 -->|Warning| I[Accept with Warning]
+    G1 -->|Info| F
+
+    E2 -->|Yes| F
+    E2 -->|No| G2{Severity?}
+    G2 -->|Error| H
+    G2 -->|Warning| I
+    G2 -->|Info| F
+
+    E3 -->|Yes| F
+    E3 -->|No| G3{Severity?}
+    G3 -->|Error| H
+    G3 -->|Warning| I
+    G3 -->|Info| F
+
+    E4 -->|Yes| F
+    E4 -->|No| G4{Severity?}
+    G4 -->|Error| H
+    G4 -->|Warning| I
+    G4 -->|Info| F
+
+    E5 -->|Yes| F
+    E5 -->|No| G5{Severity?}
+    G5 -->|Error| H
+    G5 -->|Warning| I
+    G5 -->|Info| F
+
+    F --> J{More Rules?}
+    J -->|Yes| C
+    J -->|No| K[All Passed]
+
+    K --> L[Accept Data]
+    I --> L
+    H --> M[Return Error Result]
+```
+
+#### Formula Validation Detail
+
+```mermaid
+flowchart LR
+    A["Formula:<br/>GW - TW = NW<br/>Tolerance: 0.01"] --> B[Parse Formula]
+
+    B --> C[Extract Fields<br/>GrossWeight<br/>TareWeight<br/>NetWeight]
+
+    C --> D[Get Field Values<br/>GW = 1.94<br/>TW = 0.00<br/>NW = 1.94]
+
+    D --> E[Evaluate Left Side<br/>GW - TW<br/>= 1.94 - 0.00<br/>= 1.94]
+
+    E --> F[Evaluate Right Side<br/>NW<br/>= 1.94]
+
+    F --> G[Calculate Difference<br/>|1.94 - 1.94|<br/>= 0.00]
+
+    G --> H{diff <= tolerance?<br/>0.00 <= 0.01}
+
+    H -->|Yes| I[PASS]
+    H -->|No| J[FAIL<br/>Show Message]
+```
 
 #### Validation Types
 
@@ -949,6 +1179,81 @@ public class ValidationEngine
 ### Field Relationship Strategy
 
 **Purpose**: Handle combined, split, or calculated fields.
+
+#### Field Relationship Architecture
+
+```mermaid
+flowchart TD
+    A[Parsed Fields] --> B[Field Relationship Processor]
+
+    B --> C{Relationship Type?}
+
+    C -->|Combine| D1[Combine Fields]
+    C -->|Split| D2[Split Field]
+    C -->|Calculate| D3[Calculate Field]
+    C -->|Derive| D4[Derive Field]
+
+    D1 --> E1["Example:<br/>Date + Time → DateTime"]
+    D2 --> E2["Example:<br/>'1.94 kg' → Value + Unit"]
+    D3 --> E3["Example:<br/>GW - TW → NetWeight"]
+    D4 --> E4["Example:<br/>Extract Unit from Weight"]
+
+    E1 --> F1[Get Source Fields<br/>Date: 2023-11-07<br/>Time: 17:19:38]
+    E2 --> F2[Get Source Field<br/>'  1.94 kg']
+    E3 --> F3[Get Source Fields<br/>GW: 1.94<br/>TW: 0.00]
+    E4 --> F4[Get Source Field<br/>'1.94 kg']
+
+    F1 --> G1[Apply Operation<br/>Date.Date + Time]
+    F2 --> G2[Apply Regex<br/>Extract \d+\.\d+]
+    F3 --> G3[Apply Formula<br/>GW - TW]
+    F4 --> G4[Apply Pattern<br/>Extract kg|g]
+
+    G1 --> H1[Set Target Field<br/>DateTime = 2023-11-07 17:19:38]
+    G2 --> H2[Set Target Field<br/>TareWeight = 1.94]
+    G3 --> H3[Set Target Field<br/>NetWeight = 1.94]
+    G4 --> H4[Set Target Field<br/>TareUnit = 'kg']
+
+    H1 --> I[Updated Data Object]
+    H2 --> I
+    H3 --> I
+    H4 --> I
+```
+
+#### Combine Fields Detail (Date + Time → DateTime)
+
+```mermaid
+flowchart LR
+    A[Line 2:<br/>'2023-11-07'] --> B[Parse as Date<br/>DateTime object]
+    C[Line 3:<br/>'17:19:38'] --> D[Parse as Time<br/>TimeSpan object]
+
+    B --> E[Date Field<br/>Year: 2023<br/>Month: 11<br/>Day: 7<br/>Time: 00:00:00]
+
+    D --> F[Time Field<br/>Hours: 17<br/>Minutes: 19<br/>Seconds: 38]
+
+    E --> G[Combine Operation<br/>Date.Date + Time]
+    F --> G
+
+    G --> H[Result:<br/>DateTime Property<br/>2023-11-07 17:19:38]
+
+    style H fill:#90EE90
+```
+
+#### Split Field Detail (Value + Unit Extraction)
+
+```mermaid
+flowchart TD
+    A["Line 4:<br/>'  1.94 kg'"] --> B[Apply Regex 1<br/>Pattern: \d+\.\d+]
+    A --> C[Apply Regex 2<br/>Pattern: kg|g]
+
+    B --> D[Match: '1.94'<br/>Parse as decimal]
+    C --> E[Match: 'kg'<br/>Store as string]
+
+    D --> F[TareWeight Property<br/>Type: decimal<br/>Value: 1.94]
+    E --> G[TareUnit Property<br/>Type: string<br/>Value: 'kg']
+
+    style F fill:#87CEEB
+    style G fill:#87CEEB
+```
 
 #### Relationship Types
 
@@ -1098,10 +1403,19 @@ This validates and enhances the **5-stage parsing strategy** defined earlier in 
 
 ---
 
-**Document Version**: 2.0
+**Document Version**: 2.1
 **Last Updated**: 2025-10-21
-**Status**: Design Phase - Complete with Advanced Strategies
+**Status**: Design Phase - Complete with Diagrams & Advanced Strategies
 **Changes**:
 - v1.0: Initial parsing strategy with production code examples
 - v1.1: Added production code parsing examples and insights
 - v2.0: Added state machine parsing, validation rules, field relationships
+- v2.1: Added comprehensive Mermaid diagrams (7 diagrams total):
+  - Overview parsing strategy diagram
+  - State machine diagram (stateDiagram-v2)
+  - Parsing flow diagram (flowchart)
+  - Validation architecture diagram
+  - Formula validation detail diagram
+  - Field relationship architecture diagram
+  - Combine fields detail diagram
+  - Split field detail diagram
