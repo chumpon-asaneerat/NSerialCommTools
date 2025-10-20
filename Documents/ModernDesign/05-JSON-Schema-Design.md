@@ -985,6 +985,470 @@ Blank\r\n
 
 ---
 
+### Example 5: JIK6CAB (Most Complex - State Machine Multi-Line)
+
+**Protocol**: 14-line package with start/end markers and state machine parsing
+
+```
+^KJIK000\r\n
+2023-11-07\r\n
+17:19:38\r\n
+  0.00 kg\r\n
+  1.94 kg\r\n
+0\r\n
+0\r\n
+  1.94 kg\r\n
+  1.94 kg\r\n
+    0 pcs\r\n
+ \r\n
+ \r\n
+E\r\n
+~P1\r\n
+```
+
+**Production Code Strategy**: State machine with package markers (^KJIK000 start, ~P1 end), line-by-line extraction with content detection (Contains("kg"), Contains("pcs"), Contains(":"), Contains("-"))
+
+**Complexity Features**:
+- Multi-line package (14 lines)
+- Start marker detection
+- End marker validation
+- Combined DateTime (date + time)
+- Multiple weight fields with units
+- Reserved/skip lines
+- State tracking (bCompleted flag)
+
+```json
+{
+  "deviceName": "JIK6CAB",
+  "version": "1.0",
+  "generatedDate": "2025-10-19T12:00:00Z",
+  "description": "JADEVER JIK-6CAB - Complex multi-line package protocol with state machine",
+  "encoding": "ASCII",
+  "messageTerminator": "0D 0A",
+  "messageStructure": "multi-line-frame",
+  "messageHeader": "^KJIK000",
+  "messageFooter": "~P1",
+
+  "fields": [
+    {
+      "name": "StartMarker",
+      "dataType": "string",
+      "position": 0,
+      "required": true,
+      "description": "Package start marker",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^\\^KJIK000$",
+        "group": 0,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": null,
+        "padding": "none"
+      }
+    },
+
+    {
+      "name": "Date",
+      "dataType": "datetime",
+      "position": 1,
+      "required": true,
+      "description": "Measurement date (combined with Time)",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^(\\d{4}-\\d{2}-\\d{2})$",
+        "group": 1,
+        "trim": true,
+        "format": "yyyy-MM-dd"
+      },
+
+      "serialize": {
+        "format": "yyyy-MM-dd"
+      }
+    },
+
+    {
+      "name": "Time",
+      "dataType": "timespan",
+      "position": 2,
+      "required": true,
+      "description": "Measurement time (combined with Date)",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^(\\d{2}:\\d{2}:\\d{2})$",
+        "group": 1,
+        "trim": true,
+        "format": "HH:mm:ss"
+      },
+
+      "serialize": {
+        "format": "HH:mm:ss"
+      }
+    },
+
+    {
+      "name": "TareWeight",
+      "dataType": "decimal",
+      "position": 3,
+      "required": true,
+      "description": "Tare weight (TW) in kg",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^\\s*(\\d+\\.\\d+)\\s*kg",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": "F2",
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 6,
+        "alignment": "right"
+      }
+    },
+
+    {
+      "name": "TareUnit",
+      "dataType": "string",
+      "position": 4,
+      "required": true,
+      "description": "Tare weight unit",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "(kg|g)$",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": null,
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 2,
+        "alignment": "left"
+      }
+    },
+
+    {
+      "name": "GrossWeight",
+      "dataType": "decimal",
+      "position": 5,
+      "required": true,
+      "description": "Gross weight (GW) in kg",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^\\s*(\\d+\\.\\d+)\\s*kg",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": "F2",
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 6,
+        "alignment": "right"
+      }
+    },
+
+    {
+      "name": "GrossUnit",
+      "dataType": "string",
+      "position": 6,
+      "required": true,
+      "description": "Gross weight unit",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "(kg|g)$",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": null,
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 2,
+        "alignment": "left"
+      }
+    },
+
+    {
+      "name": "Reserved1",
+      "dataType": "int",
+      "position": 7,
+      "required": false,
+      "description": "Reserved field 1 (typically 0)",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^(\\d+)$",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": "D",
+        "padding": "none"
+      }
+    },
+
+    {
+      "name": "Reserved2",
+      "dataType": "int",
+      "position": 8,
+      "required": false,
+      "description": "Reserved field 2 (typically 0)",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^(\\d+)$",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": "D",
+        "padding": "none"
+      }
+    },
+
+    {
+      "name": "NetWeight",
+      "dataType": "decimal",
+      "position": 9,
+      "required": true,
+      "description": "Net weight (NW) = GW - TW",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^\\s*(\\d+\\.\\d+)\\s*kg",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": "F2",
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 6,
+        "alignment": "right"
+      }
+    },
+
+    {
+      "name": "NetUnit",
+      "dataType": "string",
+      "position": 10,
+      "required": true,
+      "description": "Net weight unit",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "(kg|g)$",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": null,
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 2,
+        "alignment": "left"
+      }
+    },
+
+    {
+      "name": "DisplayWeight",
+      "dataType": "decimal",
+      "position": 11,
+      "required": false,
+      "description": "Display weight (duplicate of NW)",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^\\s*(\\d+\\.\\d+)\\s*kg",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": "F2",
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 6,
+        "alignment": "right"
+      }
+    },
+
+    {
+      "name": "PieceCount",
+      "dataType": "int",
+      "position": 12,
+      "required": false,
+      "description": "Piece count",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^\\s*(\\d+)\\s*pcs",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": "D",
+        "padding": "left",
+        "paddingChar": " ",
+        "width": 5,
+        "alignment": "right"
+      }
+    },
+
+    {
+      "name": "StatusIndicator",
+      "dataType": "char",
+      "position": 13,
+      "required": false,
+      "description": "Status indicator (E=Empty, S=Stable, N=Normal)",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^([A-Z])$",
+        "group": 1,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": null,
+        "padding": "none"
+      }
+    },
+
+    {
+      "name": "EndMarker",
+      "dataType": "string",
+      "position": 14,
+      "required": true,
+      "description": "Package end marker",
+
+      "parse": {
+        "method": "regex",
+        "pattern": "^~P1$",
+        "group": 0,
+        "trim": true
+      },
+
+      "serialize": {
+        "format": null,
+        "padding": "none"
+      }
+    }
+  ],
+
+  "messages": [
+    {
+      "messageId": "WeightPackage",
+      "messageType": "response",
+      "pattern": "^\\^KJIK000",
+      "fieldNames": [
+        "StartMarker",
+        "Date",
+        "Time",
+        "TareWeight",
+        "TareUnit",
+        "GrossWeight",
+        "GrossUnit",
+        "Reserved1",
+        "Reserved2",
+        "NetWeight",
+        "NetUnit",
+        "DisplayWeight",
+        "PieceCount",
+        "StatusIndicator",
+        "EndMarker"
+      ],
+      "terminator": "0D 0A"
+    }
+  ],
+
+  "validation": {
+    "rules": [
+      {
+        "name": "DateTimeValid",
+        "type": "datetime-range",
+        "field": "Date",
+        "minDate": "2020-01-01",
+        "maxDate": "2099-12-31"
+      },
+      {
+        "name": "WeightCalculation",
+        "type": "formula",
+        "formula": "GrossWeight - TareWeight = NetWeight",
+        "tolerance": 0.01
+      },
+      {
+        "name": "GrossVsTare",
+        "type": "custom",
+        "condition": "GrossWeight >= TareWeight"
+      }
+    ]
+  }
+}
+```
+
+**Key Implementation Notes**:
+
+1. **State Machine Parsing**:
+   - Start: Detect `^KJIK000` → Reset all variables
+   - Process 14 lines sequentially
+   - End: Validate `~P1` → Fire data received event
+
+2. **DateTime Combination**:
+   ```csharp
+   // Parse separately
+   DateTime date = ParseDate(line2);  // 2023-11-07
+   TimeSpan time = ParseTime(line3);  // 17:19:38
+
+   // Combine into single DateTime property
+   data.Date = date.Date + time;  // 2023-11-07 17:19:38
+   ```
+
+3. **Unit Extraction**:
+   - Each weight value has separate unit field
+   - Pattern: `"  1.94 kg"` → Weight=1.94, Unit="kg"
+
+4. **Skip Lines**:
+   - Lines 11-12: Empty/whitespace (` \r\n`)
+   - Can skip during parsing if not needed
+
+5. **Production Code Mapping**:
+   ```csharp
+   // Existing C# class
+   public class JIK6CABData
+   {
+       public DateTime Date { get; set; }  // Combined date+time
+       public decimal TW { get; set; }     // TareWeight
+       public decimal GW { get; set; }     // GrossWeight
+       public decimal NW { get; set; }     // NetWeight
+       public decimal PCS { get; set; }    // PieceCount
+       public string TUnit { get; set; }   // TareUnit
+       public string GUnit { get; set; }   // GrossUnit
+       public string NUnit { get; set; }   // NetUnit
+   }
+   ```
+
+---
+
 ## Validation Rules
 
 ### Definition File Validation
@@ -1104,12 +1568,15 @@ This JSON schema enables:
 2. ✅ WeightQA - Nested delimiters with reconstruction
 3. ✅ TFO1 - Fixed-position with binary bytes
 4. ✅ PHMeter - Content-based multi-line
+5. ✅ JIK6CAB - Most complex: State machine multi-line package with markers
 
 All examples include both **parse** and **serialize** configurations for every field.
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: 2025-10-19
+**Document Version**: 2.1
+**Last Updated**: 2025-10-21
 **Status**: Complete - Ready for Implementation
-**Changes**: Complete rewrite with full schema and 4 device examples
+**Changes**:
+- v2.0: Complete rewrite with full schema and 4 device examples
+- v2.1: Added JIK6CAB example (most complex protocol)

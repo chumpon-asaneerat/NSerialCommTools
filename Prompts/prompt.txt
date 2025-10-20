@@ -1,5 +1,3 @@
-- Last session
-in @Documents\ModernDesign folder check all generate documents for understand what we are doing.
-then let add JIK6CAB example to 05-JSON-Schema-Design.md too. I think it the most complex protocol for exists device
+
 
 
