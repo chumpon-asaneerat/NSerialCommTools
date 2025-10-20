@@ -1303,6 +1303,282 @@ public class LogFile
 
 ---
 
+### ValidationRule Class
+
+**Purpose**: Defines validation rules for data integrity checks.
+
+```csharp
+/// <summary>
+/// Validation rule for data integrity.
+/// Applied to parsed or serialized data to ensure correctness.
+/// </summary>
+public class ValidationRule
+{
+    /// <summary>
+    /// Rule name (unique identifier).
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Validation type.
+    /// </summary>
+    public ValidationType Type { get; set; }
+
+    /// <summary>
+    /// Field name to validate (for single-field rules).
+    /// </summary>
+    public string Field { get; set; }
+
+    /// <summary>
+    /// Formula for calculation-based validation (e.g., "GrossWeight - TareWeight = NetWeight").
+    /// Used when Type = Formula.
+    /// </summary>
+    public string Formula { get; set; }
+
+    /// <summary>
+    /// Tolerance for formula validation (e.g., 0.01 for decimal comparisons).
+    /// </summary>
+    public double? Tolerance { get; set; }
+
+    /// <summary>
+    /// Minimum value (for range validation).
+    /// </summary>
+    public object MinValue { get; set; }
+
+    /// <summary>
+    /// Maximum value (for range validation).
+    /// </summary>
+    public object MaxValue { get; set; }
+
+    /// <summary>
+    /// Custom condition expression (for custom validation).
+    /// Example: "GrossWeight >= TareWeight"
+    /// </summary>
+    public string Condition { get; set; }
+
+    /// <summary>
+    /// Validation severity.
+    /// </summary>
+    public ValidationSeverity Severity { get; set; }
+
+    /// <summary>
+    /// Error/warning message to display if validation fails.
+    /// </summary>
+    public string Message { get; set; }
+
+    /// <summary>
+    /// Is this rule enabled?
+    /// </summary>
+    public bool Enabled { get; set; }
+
+    public ValidationRule()
+    {
+        Type = ValidationType.Unknown;
+        Severity = ValidationSeverity.Error;
+        Enabled = true;
+    }
+
+    /// <summary>
+    /// Validates the rule configuration itself.
+    /// </summary>
+    public List<string> Validate()
+    {
+        List<string> errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(Name))
+            errors.Add("ValidationRule: Name is required");
+
+        if (Type == ValidationType.Unknown)
+            errors.Add($"ValidationRule {Name}: Type must be specified");
+
+        if (Type == ValidationType.Range && (MinValue == null || MaxValue == null))
+            errors.Add($"ValidationRule {Name}: MinValue and MaxValue required for Range validation");
+
+        if (Type == ValidationType.Formula && string.IsNullOrWhiteSpace(Formula))
+            errors.Add($"ValidationRule {Name}: Formula is required for Formula validation");
+
+        return errors;
+    }
+}
+```
+
+---
+
+### FieldRelationship Class
+
+**Purpose**: Defines relationships between fields (combining, splitting, calculating).
+
+```csharp
+/// <summary>
+/// Defines relationships between multiple fields.
+/// Used for combined fields (e.g., Date + Time → DateTime) or calculated fields.
+/// </summary>
+public class FieldRelationship
+{
+    /// <summary>
+    /// Relationship name (unique identifier).
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Relationship type.
+    /// </summary>
+    public RelationshipType Type { get; set; }
+
+    /// <summary>
+    /// Source field names (fields to combine/use in calculation).
+    /// </summary>
+    public List<string> SourceFields { get; set; }
+
+    /// <summary>
+    /// Target field name (result of combination/calculation).
+    /// </summary>
+    public string TargetField { get; set; }
+
+    /// <summary>
+    /// Operation to perform.
+    /// </summary>
+    public string Operation { get; set; }
+
+    /// <summary>
+    /// Description of this relationship.
+    /// </summary>
+    public string Description { get; set; }
+
+    public FieldRelationship()
+    {
+        Type = RelationshipType.Unknown;
+        SourceFields = new List<string>();
+    }
+
+    /// <summary>
+    /// Validates the relationship configuration.
+    /// </summary>
+    public List<string> Validate()
+    {
+        List<string> errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(Name))
+            errors.Add("FieldRelationship: Name is required");
+
+        if (Type == RelationshipType.Unknown)
+            errors.Add($"FieldRelationship {Name}: Type must be specified");
+
+        if (SourceFields == null || SourceFields.Count == 0)
+            errors.Add($"FieldRelationship {Name}: At least one source field required");
+
+        if (string.IsNullOrWhiteSpace(TargetField))
+            errors.Add($"FieldRelationship {Name}: TargetField is required");
+
+        return errors;
+    }
+}
+```
+
+---
+
+### LineSequenceConfig Class
+
+**Purpose**: Configuration for sequential line parsing (state machine approach).
+
+```csharp
+/// <summary>
+/// Configuration for sequential line-by-line parsing.
+/// Used for complex multi-line protocols like JIK6CAB.
+/// </summary>
+public class LineSequenceConfig
+{
+    /// <summary>
+    /// Sequence name.
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Line definitions in order.
+    /// </summary>
+    public List<LineDefinition> Lines { get; set; }
+
+    /// <summary>
+    /// Start marker pattern (e.g., "^KJIK000").
+    /// </summary>
+    public string StartMarker { get; set; }
+
+    /// <summary>
+    /// End marker pattern (e.g., "~P1").
+    /// </summary>
+    public string EndMarker { get; set; }
+
+    /// <summary>
+    /// Total number of lines in complete sequence.
+    /// </summary>
+    public int ExpectedLineCount { get; set; }
+
+    /// <summary>
+    /// Timeout for incomplete sequences (milliseconds).
+    /// </summary>
+    public int TimeoutMs { get; set; }
+
+    public LineSequenceConfig()
+    {
+        Lines = new List<LineDefinition>();
+        TimeoutMs = 5000;
+    }
+}
+```
+
+---
+
+### LineDefinition Class
+
+**Purpose**: Defines a single line in a sequential parsing sequence.
+
+```csharp
+/// <summary>
+/// Definition of a single line in a multi-line sequence.
+/// </summary>
+public class LineDefinition
+{
+    /// <summary>
+    /// Line number (0-based position in sequence).
+    /// </summary>
+    public int LineNumber { get; set; }
+
+    /// <summary>
+    /// Field name to extract from this line.
+    /// Null if line should be skipped.
+    /// </summary>
+    public string FieldName { get; set; }
+
+    /// <summary>
+    /// Line action (parse, skip, validate).
+    /// </summary>
+    public LineAction Action { get; set; }
+
+    /// <summary>
+    /// Pattern to match this line (for validation).
+    /// </summary>
+    public string Pattern { get; set; }
+
+    /// <summary>
+    /// Is this line required?
+    /// </summary>
+    public bool Required { get; set; }
+
+    /// <summary>
+    /// Description of this line.
+    /// </summary>
+    public string Description { get; set; }
+
+    public LineDefinition()
+    {
+        Action = LineAction.Parse;
+        Required = true;
+    }
+}
+```
+
+---
+
 ## Enumerations
 
 ### LogFileFormat Enum
@@ -1480,6 +1756,88 @@ public enum TextAlignment
 }
 ```
 
+### ValidationType Enum
+
+```csharp
+/// <summary>
+/// Validation rule types.
+/// </summary>
+public enum ValidationType
+{
+    Unknown = 0,
+    Range = 1,              // Field value must be within min-max range
+    Formula = 2,            // Formula calculation must match (e.g., GW - TW = NW)
+    DateTimeRange = 3,      // DateTime must be within date range
+    Custom = 4,             // Custom condition expression
+    RequiredField = 5,      // Field must have a value
+    FieldRelationship = 6,  // Relationship between fields (e.g., Field1 >= Field2)
+    Pattern = 7             // Field must match regex pattern
+}
+```
+
+### ValidationSeverity Enum
+
+```csharp
+/// <summary>
+/// Validation severity levels.
+/// </summary>
+public enum ValidationSeverity
+{
+    Info = 0,       // Informational only
+    Warning = 1,    // Warning but accepts data
+    Error = 2       // Error - prevents data acceptance
+}
+```
+
+### RelationshipType Enum
+
+```csharp
+/// <summary>
+/// Field relationship types.
+/// </summary>
+public enum RelationshipType
+{
+    Unknown = 0,
+    Combine = 1,        // Combine multiple fields into one (e.g., Date + Time → DateTime)
+    Split = 2,          // Split one field into multiple (e.g., "1.94 kg" → Value + Unit)
+    Calculate = 3,      // Calculate field from others (e.g., NetWeight = Gross - Tare)
+    Derive = 4          // Derive field from another (e.g., Unit from Weight string)
+}
+```
+
+### LineAction Enum
+
+```csharp
+/// <summary>
+/// Action to perform on a line in sequential parsing.
+/// </summary>
+public enum LineAction
+{
+    Unknown = 0,
+    Parse = 1,          // Parse and extract field value
+    Skip = 2,           // Skip this line (don't parse)
+    Validate = 3,       // Validate line exists but don't extract value
+    Marker = 4          // Line is a start/end marker
+}
+```
+
+### ParsingStrategy Enum
+
+```csharp
+/// <summary>
+/// Overall parsing strategy for the protocol.
+/// </summary>
+public enum ParsingStrategy
+{
+    Unknown = 0,
+    SingleLine = 1,         // One line = one message, parse all fields from single line
+    MultiLineFrame = 2,     // Multi-line with header/footer markers
+    SequentialLines = 3,    // State machine - parse lines sequentially (like JIK6CAB)
+    ContentBased = 4,       // Detect line type by content (like PHMeter)
+    HeaderByte = 5          // Switch on first byte (like TFO1)
+}
+```
+
 ---
 
 ## Relationships
@@ -1576,11 +1934,24 @@ This document defines all data models needed for the Protocol Analyzer:
 - **FieldDefinition** - Field in definition
 - **ParseConfiguration** - How to parse
 - **SerializeConfiguration** - How to serialize
+- **ValidationRule** - Data integrity validation rules ⭐ NEW
+- **FieldRelationship** - Combined/calculated fields ⭐ NEW
+
+### State Machine Models:
+- **LineSequenceConfig** - Sequential line parsing configuration ⭐ NEW
+- **LineDefinition** - Single line in sequence ⭐ NEW
 
 ### Supporting Models:
-- 11 enumerations for type safety
+- **17 enumerations** for type safety (6 new enums added)
 - Statistics and confidence scoring classes
 - Validation methods
+
+### New Features Supported:
+- ✅ **Validation Rules** - Formula, range, datetime, custom validations
+- ✅ **Field Relationships** - Combine Date+Time, split Value+Unit, calculate fields
+- ✅ **State Machine Parsing** - Sequential line-by-line parsing (JIK6CAB pattern)
+- ✅ **Skip Lines** - Mark lines as parse/skip/validate
+- ✅ **Multi-Field Units** - Separate value and unit fields
 
 All models are:
 - ✅ .NET 4.7.2 compatible
@@ -1588,9 +1959,13 @@ All models are:
 - ✅ Include validation logic
 - ✅ Support bidirectional operations
 - ✅ Based on production code patterns
+- ✅ Support complex protocols (JIK6CAB, TFO1, PHMeter)
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-10-19
-**Status**: Complete - Ready for Implementation
+**Document Version**: 2.0
+**Last Updated**: 2025-10-21
+**Status**: Complete - Enhanced with Validation & State Machine Support
+**Changes**:
+- v1.0: Initial complete data models
+- v2.0: Added ValidationRule, FieldRelationship, LineSequenceConfig, 6 new enums
