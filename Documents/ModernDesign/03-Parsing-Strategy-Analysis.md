@@ -1,1506 +1,868 @@
 # Parsing Strategy Analysis
 
+**Purpose**: Define algorithms to **automatically detect** parsing strategies from unknown log files using pure pattern analysis.
+
+**Core Principle**: The Protocol Analyzer knows **nothing** about devices beforehand. All strategies must be derived from **statistical analysis** and **pattern detection** of raw log data.
+
 **Related Documents**:
-- **00-Requirements-Specification.md** - Complete requirements
-- **01-Production-Code-Analysis.md** - How production code handles these protocols
-- **02-System-Architecture.md** - Overall system design
-- **04-Data-Models-Design.md** - Data models supporting these strategies
-- **05-JSON-Schema-Design.md** - JSON examples for each strategy
+- **00-Requirements-Specification.md** - Requirements
+- **02-System-Architecture.md** - System design
+- **04-Data-Models-Design.md** - Data models
+- **05-JSON-Schema-Design.md** - JSON examples (reference only)
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Challenge Categories](#challenge-categories)
-3. [Core Problems Identified](#core-problems-identified)
+2. [Input: Raw Log File Analysis](#input-raw-log-file-analysis)
+3. [Pattern Detection Algorithms](#pattern-detection-algorithms)
 4. [Proposed Parsing Strategy](#proposed-parsing-strategy)
 5. [Implementation Considerations](#implementation-considerations)
-6. [Detailed Strategy Patterns](#detailed-strategy-patterns)
 
 ---
 
 ## Overview
 
-### Purpose
+### The Challenge
 
-This document analyzes the **real-world complexity** of serial device protocols found in production log files and defines comprehensive parsing strategies.
+Given an **unknown log file**, automatically:
+1. Detect message boundaries
+2. Identify field structure
+3. Determine parsing strategy
+4. Generate JSON protocol definition
 
-**Based on analysis of**:
-- Log files: `@Documents\LuckyTex Devices\`
-- Production code: `@01.Core\NLib.Serial.Devices\Serial\`
+**No prior knowledge allowed** - pure algorithm-based detection.
 
-**Device Coverage**:
-1. ✅ Simple single-line (CordDEFENDER3000, WeightQA)
-2. ✅ Multi-line frames (TFO1)
-3. ✅ **State machine sequential lines (JIK6CAB)** ⭐ MOST COMPLEX
-4. ✅ Content-based multi-line (PHMeter)
-
-### Complete Parsing Strategy Overview
+### Strategy Detection Pipeline
 
 ```mermaid
 flowchart TD
-    A[Log File] --> B[Stage 1: Byte Extraction]
+    A[Unknown Log File] --> B[Stage 1:<br/>Byte Extraction]
 
-    B --> C[Stage 2: Message Boundary Detection]
+    B --> C[Stage 2:<br/>Statistical Analysis]
 
-    C --> D{Message Structure?}
+    C --> D{Detect Patterns}
 
-    D -->|Single Line| E1[Single Message Parser]
-    D -->|Multi-Line Frame| E2[Frame Parser with Headers]
-    D -->|Sequential Lines| E3[State Machine Parser ⭐<br/>JIK6CAB Pattern]
-    D -->|Content-Based| E4[Content Detector<br/>Pattern Matching]
+    D --> E1[Pattern: High Delimiter Frequency<br/>→ Delimiter-Based Strategy]
+    D --> E2[Pattern: Start/End Markers Found<br/>→ Frame-Based Strategy]
+    D --> E3[Pattern: Fixed Byte Positions<br/>→ Position-Based Strategy]
+    D --> E4[Pattern: Line Content Variance<br/>→ Content-Based Strategy]
 
-    E1 --> F[Stage 3: Field Structure Analysis]
-    E2 --> F
+    E2 --> E2A{Position-Dependent<br/>Fields?}
+    E2A -->|Yes| E2B[⭐ State Machine Strategy<br/>Position determines meaning]
+    E2A -->|No| E2C[Frame-Based Strategy<br/>Content determines meaning]
+
+    E1 --> F[Stage 3:<br/>Field Detection]
+    E2B --> F
+    E2C --> F
     E3 --> F
     E4 --> F
 
-    F --> G[Stage 4: Field Classification]
+    F --> G[Stage 4:<br/>Data Type Detection]
 
-    G --> H[Stage 5: Apply Field Relationships ⭐]
+    G --> H[Stage 5:<br/>Relationship Detection]
 
-    H --> I[Stage 6: Apply Validation Rules ⭐]
+    H --> I[Stage 6:<br/>Validation Generation]
 
-    I --> J{Validation Pass?}
+    I --> J[Output:<br/>JSON Protocol Definition]
 
-    J -->|Yes| K[Accept Data]
-    J -->|Error| L[Reject Data]
-    J -->|Warning| M[Accept with Warning]
-
-    style E3 fill:#FFE4B5
-    style H fill:#90EE90
-    style I fill:#87CEEB
+    style E2B fill:#FFE4B5
 ```
 
-**Key Insight**: The Protocol Analyzer must automatically detect which parsing strategy to use through:
-- Statistical analysis (delimiter frequency, field positions)
-- Structural analysis (markers, line counts, terminators)
-- Pattern analysis (content detection, data types)
+### Key Insight
+
+Parsing strategies are detected through:
+- **Frequency analysis** (delimiters, terminators, markers)
+- **Position analysis** (fixed vs variable field locations)
+- **Pattern analysis** (regex matching, content variance)
+- **Structure analysis** (single-line vs multi-line messages)
 
 ---
 
-## Challenge Categories
+## Input: Raw Log File Analysis
 
-### Category 1: Simple Single-Line Repeating Messages
+### Sample Log Files (Unknown Devices)
 
-**Example: CordDEFENDER3000**
+We have log files but **don't know** what devices they're from. All logs are in HEX/Text format:
 
+**Log File 1** (Unknown Device A - Weight Scale):
 ```
--  1.640 kg    N
--  1.640 kg    N
--  1.640 kg    N
-```
+HEX: 2D 20 20 31 2E 36 34 30 20 6B 67 20 20 20 20 4E 0D 0A
+TEXT: -  1.640 kg    N\r\n
 
-**Characteristics**:
-- One line = one complete message
-- Space-delimited fields
-- Repeating same structure
-- Simple data types (decimal, string, char)
+HEX: 2D 20 20 31 2E 36 34 32 20 6B 67 20 20 20 20 4E 0D 0A
+TEXT: -  1.642 kg    N\r\n
 
-**Production Code Strategy** (CordDEFENDER3000.cs:300-334):
-
-```csharp
-string line = Encoding.ASCII.GetString(content);
-string[] elems = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-Value.W = decimal.Parse(elems[0]);    // "1.640"
-Value.Unit = elems[1];                // "kg"
-Value.O = elems[2];                   // "N"
+HEX: 2D 20 20 31 2E 36 33 38 20 6B 67 20 20 20 20 4E 0D 0A
+TEXT: -  1.638 kg    N\r\n
 ```
 
-**Challenges**:
-- Variable space count (leading/trailing/between fields)
-- Must handle RemoveEmptyEntries logic
-- Fixed field order dependency
+**Log File 2** (Unknown Device B - Multi-Line Frame Scale):
+```
+HEX: 5E 4B 4A 49 4B 30 30 30 0D 0A
+TEXT: ^KJIK000\r\n
 
-**Auto-Detection Strategy**:
-- High space delimiter frequency (>80%)
-- Consistent field count across all lines
-- Low line variance
+HEX: 32 30 32 33 2D 31 31 2D 30 37 0D 0A
+TEXT: 2023-11-07\r\n
 
-**Parsing Approach**: String split with delimiter analysis
+HEX: 31 37 3A 31 39 3A 33 38 0D 0A
+TEXT: 17:19:38\r\n
+
+HEX: 20 20 30 2E 30 30 20 6B 67 0D 0A
+TEXT:   0.00 kg\r\n
+
+HEX: 20 20 31 2E 39 34 20 6B 67 0D 0A
+TEXT:   1.94 kg\r\n
+
+HEX: 30 0D 0A
+TEXT: 0\r\n
+
+HEX: 30 0D 0A
+TEXT: 0\r\n
+
+HEX: 20 20 31 2E 39 34 20 6B 67 0D 0A
+TEXT:   1.94 kg\r\n
+
+HEX: 20 20 31 2E 39 34 20 6B 67 0D 0A
+TEXT:   1.94 kg\r\n
+
+HEX: 20 20 20 20 30 20 70 63 73 0D 0A
+TEXT:     0 pcs\r\n
+
+HEX: 0D 0A
+TEXT: \r\n
+
+HEX: 0D 0A
+TEXT: \r\n
+
+HEX: 45 0D 0A
+TEXT: E\r\n
+
+HEX: 7E 50 31 0D 0A
+TEXT: ~P1\r\n
+```
+
+**Log File 3** (Unknown Device C - Compound Delimiter):
+```
+HEX: 2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A
+TEXT: +007.12/3 G S\r\n
+
+HEX: 2B 30 30 38 2E 31 35 2F 32 20 47 20 53 0D 0A
+TEXT: +008.15/2 G S\r\n
+
+HEX: 2B 30 30 39 2E 32 30 2F 31 20 47 20 53 0D 0A
+TEXT: +009.20/1 G S\r\n
+```
+
+**Question**: How do we automatically detect the parsing strategy for each?
+
+**Note**: The HEX format is critical because:
+- Binary terminators (0x0D, 0x0A) are visible
+- Special markers (0x5E for ^, 0x7E for ~) are clearly shown
+- Delimiters (0x20 for space, 0x2F for /) are identifiable
+- Non-printable bytes can be detected
 
 ---
 
-### Category 2: Nested Delimiter Format
+## Pattern Detection Algorithms
 
-**Example: WeightQA**
+### Algorithm 1: Message Boundary Detection
 
-```
-+007.12/3 G S
-+008.12/2 G S
-+009.36/0 G S
-```
+**Goal**: Determine where one message ends and another begins
 
-**Characteristics**:
-- Multiple delimiter types ("/" and space)
-- Nested parsing required (split, then split again)
-- Value reconstruction logic
-- Compact format (no extra spaces)
-
-**Production Code Strategy** (WeightQA.cs:299-335):
-
-```csharp
-string line = Encoding.ASCII.GetString(content);
-string[] elems = line.Split("/");              // Primary delimiter
-string sUM = elems[1].Trim();                  // "3 G S"
-string[] elems2 = sUM.Split(" ", RemoveEmptyEntries); // Secondary delimiter
-
-string w = elems[0].Trim() + elems2[0].Trim(); // Reconstruct: "+007.12" + "3"
-Value.W = decimal.Parse(w);                    // 007.123
-Value.Unit = elems2[1];                        // "G"
-Value.Mode = elems2[2];                        // "S"
-```
-
-**Challenges**:
-- Hierarchical delimiter structure
-- Field value reconstruction across delimiters
-- Mixed numeric formats
-
-**Auto-Detection Strategy**:
-- Detect "/" delimiter frequency
-- Detect nested space delimiters
-- Identify reconstruction pattern
-
-**Parsing Approach**: Hierarchical string split
-
----
-
-### Category 3: Fixed-Position with Header Byte
-
-**Example: TFO1**
-
-```
-F      0.0\r
-H      0.0\r
-Q      0.0\r
-A    349.0\r
-B<0x83>\r
-C20<0xF4> 02<0xF3> 2023<0xF2> MON 09:20AM\r
-V<0x31>\r\n
-```
-
-**Characteristics**:
-- First byte identifies field type (switch/case pattern)
-- Fixed-width values after header byte
-- Mix of ASCII text and binary bytes
-- Special byte separators (0xF2, 0xF3, 0xF4)
-- Multi-line message with variable line count
-
-**Production Code Strategy** (TFO1.cs:464-685):
-
-```csharp
-char hdr = (char)content[0];  // First byte = header
-switch (hdr) {
-    case 'F':
-        string val = Encoding.ASCII.GetString(content, 1, 9);
-        Value.F = decimal.Parse(val);
-        break;
-    case 'B':
-        Value.B = content[1];  // Direct binary byte
-        break;
-    case 'C':  // Complex: mix of ASCII + special bytes
-        string _dd = ASCII.GetString(content, 1, 2);
-        // content[3] is 0xF4 (separator)
-        string _mm = ASCII.GetString(content, 5, 2);
-        // content[7] is 0xF3 (separator)
-        // ... parse datetime with special separators
-        break;
-}
-```
-
-**Challenges**:
-- Header byte switching logic
-- Fixed-position extraction (byte offsets)
-- Binary byte handling
-- Special character separators in data
-- Variable line count per message
-
-**Auto-Detection Strategy**:
-- First byte has limited set of values
-- Consistent field positions after header
-- Detect special byte patterns
-
-**Parsing Approach**: Header byte switch + fixed position extraction
-
----
-
-### Category 4: Content-Based Multi-Line
-
-**Example: PHMeter**
-
-```
-3.01pH 25.5°C ATC
-20-Feb-2023
-11:11
-
-3.01pH
-25.5°C ATC
-Auto EP Standard
-Blank
-```
-
-**Characteristics**:
-- Variable line count per message
-- Line content determines field type
-- Pattern detection: Contains("pH"), Contains("-"), Contains(":")
-- Non-ASCII characters (0xF8 = ° degree symbol)
-- Compound values ("3.01pH" - no space between number and unit)
-
-**Production Code Strategy** (PHMeter.cs:358-462):
-
-```csharp
-string line = Encoding.ASCII.GetString(content).Trim();
-
-if (line.Contains("ATC") && line.Contains("pH")) {
-    // Parse both pH and temperature on same line
-    int iPh = line.IndexOf("pH");
-    string sPh = line.Substring(0, iPh);
-    Value.pH = decimal.Parse(sPh);
-
-    int iTmp = line.IndexOf("C ATC");
-    string sTmp = line.Substring(0, iTmp - 1);
-    Value.TempC = decimal.Parse(sTmp);
-}
-else if (line.Contains("-")) {
-    // Parse date: "20-Feb-2023"
-    Value.Date = DateTime.ParseExact(line, "dd-MMM-yyyy", ...);
-}
-else if (line.Contains(":")) {
-    // Parse time: "11:11"
-    TimeSpan time = DateTime.ParseExact(line, "HH:mm", ...).TimeOfDay;
-    Value.Date = Value.Date.Date + time;
-}
-```
-
-**Challenges**:
-- Content-based detection (if/else on line patterns)
-- Compound values (no space: "3.01pH", "25.5°C")
-- Variable message length
-- Special characters (0xF8)
-- Multiple message types (reading vs report)
-
-**Auto-Detection Strategy**:
-- Pattern variance across lines
-- Detect Contains() patterns
-- No fixed start/end markers
-
-**Parsing Approach**: Content pattern matching with if/else logic
-
----
-
-### Category 5: State Machine Sequential Lines ⭐ MOST COMPLEX
-
-**Example: JIK6CAB (JADEVER JIK-6C-AB Weight Scale)**
-
-```
-^KJIK000
-2023-11-07
-17:19:38
-  0.00 kg
-  1.94 kg
-0
-0
-  1.94 kg
-  1.94 kg
-    0 pcs
-
-
-E
-~P1
-```
-
-**Characteristics** (Why it's the most complex):
-- ✅ **Fixed 14-line package** - All 14 lines required
-- ✅ **Start marker**: `^KJIK000` (line 1)
-- ✅ **End marker**: `~P1` (line 14)
-- ✅ **Each line position has specific meaning** - Can't identify by content alone
-- ✅ **Mixed data types**: Date, Time, Decimal, Integer, Empty lines
-- ✅ **Skip lines required**: Lines 6-7 (reserved), 9 (duplicate), 11-12 (empty), 13 (status)
-- ✅ **State machine parsing mandatory** - Must track position in sequence
-- ✅ **Field relationships**: Date (line 2) + Time (line 3) → DateTime property
-- ✅ **Validation rules**: GrossWeight - TareWeight = NetWeight (must verify)
-- ✅ **Multiple fields per line**: "  1.94 kg" → Value (1.94) + Unit ("kg")
-- ✅ **Content detection within state machine**: Use Contains("kg"), Contains("pcs") to validate
-
-**Production Code Strategy** (JIK6CABTerminal.cs:394-605):
-
-```csharp
-// State tracking variables
-private bool bCompleted = true;
-private DateTime? date;
-private TimeSpan? time;
-private decimal? tw, gw, nw, pcs;
-
-private void UpdateValue(byte[] content) {
-    string line = Encoding.ASCII.GetString(content).Trim();
-
-    if (line.Contains("KJIK")) {
-        // ═══ START MARKER DETECTED ═══
-        bCompleted = false;  // Start new package
-        // Reset all field variables
-        date = null; time = null;
-        tw = null; gw = null; nw = null; pcs = null;
-    }
-    else if (line.Contains("kg") || line.Contains("g")) {
-        // ═══ WEIGHT LINE ═══
-        // Order matters: first weight = TW, second = GW, third = NW
-        if (!tw.HasValue)
-            tw = ParseWeight(line);
-        else if (!gw.HasValue)
-            gw = ParseWeight(line);
-        else if (!nw.HasValue)
-            nw = ParseWeight(line);
-    }
-    else if (line.Contains("pcs")) {
-        // ═══ PIECE COUNT LINE ═══
-        pcs = ParsePieceCount(line);
-    }
-    else if (line.Contains("-") || line.Contains("/")) {
-        // ═══ DATE LINE ═══
-        date = ParseDate(line);
-    }
-    else if (line.Contains(":")) {
-        // ═══ TIME LINE ═══
-        time = ParseTime(line);
-        // Combine with date
-        if (date.HasValue && time.HasValue)
-            date = date.Value.Date + time.Value;
-    }
-    else if (line.Contains("P1")) {
-        // ═══ END MARKER DETECTED ═══
-        if (!bCompleted) {
-            // Package complete - validate and assign
-            if (date.HasValue && tw.HasValue && gw.HasValue &&
-                nw.HasValue && pcs.HasValue) {
-
-                Value.Date = date.Value;
-                Value.TW = tw.Value;
-                Value.GW = gw.Value;
-                Value.NW = nw.Value;
-                Value.PCS = pcs.Value;
-
-                bCompleted = true;  // Package done
-            }
-        }
-    }
-    // Else: Skip line (reserved, empty, status)
-}
-```
-
-**Why State Machine is Critical**:
-
-| Problem | Why Content Detection Fails | State Machine Solution |
-|---------|---------------------------|----------------------|
-| Line 4 and Line 8 both contain "kg" | Can't tell if TareWeight or NetWeight | Position determines field: Line 4 = TW, Line 8 = NW |
-| Date and Time on separate lines | Must combine after both parsed | Store date, wait for time, then combine |
-| Lines 6, 7 are "0" (reserved) | Look like data but should be skipped | Position determines action: Skip lines 6-7 |
-| Lines 11, 12 are empty | Could indicate end of message | Position determines action: Skip, not end |
-| Incomplete packages | Content detection would accept partial data | Start/end markers enforce complete package |
-
-**Challenges** (Ranked by Complexity):
-
-1. **Multi-line package** (14 lines = 1 message) - Most devices: 1 line = 1 message
-2. **State tracking** required (bCompleted flag, line count) - Most devices: stateless
-3. **Sequential processing** (line position matters) - Most devices: content-based
-4. **Start/end marker detection** - Most devices: terminator-based
-5. **Field order dependency** (1st weight = TW, 2nd = GW, 3rd = NW) - Most devices: position-independent
-6. **Skip logic** (some lines don't produce fields) - Most devices: all lines matter
-7. **Field combination** (Date + Time → DateTime) - Most devices: one field per line
-8. **Variable initialization/reset** - Most devices: no state to reset
-9. **Content detection within state machine** - Hybrid approach unique to this device
-
-**State Machine Diagram**:
-
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-
-    Idle --> ParsingStarted : Detect ^KJIK000
-
-    ParsingStarted --> Line1 : lineCount = 1
-    Line1 --> Line2 : Parse Date
-    Line2 --> Line3 : Parse Time<br/>Combine Date+Time
-    Line3 --> Line4 : Parse TareWeight + TareUnit
-    Line4 --> Line5 : Parse GrossWeight + GrossUnit
-    Line5 --> Line6 : Skip Reserved1
-    Line6 --> Line7 : Skip Reserved2
-    Line7 --> Line8 : Parse NetWeight + NetUnit
-    Line8 --> Line9 : Skip DisplayWeight
-    Line9 --> Line10 : Parse PieceCount
-    Line10 --> Line11 : Skip Empty1
-    Line11 --> Line12 : Skip Empty2
-    Line12 --> Line13 : Skip StatusIndicator
-    Line13 --> Complete : Validate ~P1
-
-    ParsingStarted --> Error : Timeout
-    Line13 --> Error : Invalid EndMarker
-
-    Complete --> ApplyValidation : All 14 lines parsed
-    ApplyValidation --> FireEvent : GW-TW=NW check
-    FireEvent --> Idle : Fire DataReceived
-
-    Error --> Idle : Reset State
-
-    note right of ParsingStarted
-        Reset Variables:
-        bCompleted = false
-        date = null
-        tw/gw/nw/pcs = null
-        lineCount = 0
-    end note
-
-    note right of Complete
-        Package Complete
-        All required fields populated
-    end note
-```
-
-**Parsing Flow Diagram**:
-
-```mermaid
-flowchart TD
-    A[Receive Line] --> B{Current State?}
-
-    B -->|Idle| C{Contains ^KJIK?}
-    C -->|Yes| D[State = Parsing<br/>Reset Variables<br/>lineCount = 0]
-    C -->|No| A
-
-    B -->|Parsing| E[lineCount++]
-    E --> F{lineCount}
-
-    F -->|1| G1[Validate StartMarker<br/>^KJIK000]
-    F -->|2| G2[Parse Date<br/>yyyy-MM-dd]
-    F -->|3| G3[Parse Time<br/>HH:mm:ss<br/>Combine with Date]
-    F -->|4| G4[Parse TareWeight<br/>Extract value + kg]
-    F -->|5| G5[Parse GrossWeight<br/>Extract value + kg]
-    F -->|6-7| G6[Skip Reserved<br/>Just advance]
-    F -->|8| G7[Parse NetWeight<br/>Extract value + kg]
-    F -->|9| G8[Skip DisplayWeight<br/>Duplicate of NW]
-    F -->|10| G9[Parse PieceCount<br/>Extract value + pcs]
-    F -->|11-12| G10[Skip Empty Lines<br/>Whitespace only]
-    F -->|13| G11[Skip StatusIndicator<br/>E/S/N]
-    F -->|14| G12{Validate ~P1?}
-
-    G1 --> A
-    G2 --> A
-    G3 --> A
-    G4 --> A
-    G5 --> A
-    G6 --> A
-    G7 --> A
-    G8 --> A
-    G9 --> A
-    G10 --> A
-    G11 --> A
-
-    G12 -->|Valid| H[State = Complete]
-    G12 -->|Invalid| I[State = Error]
-
-    B -->|Complete| J[Apply Validation Rules]
-    J --> K{GW - TW = NW?}
-    K -->|Yes| L[Fire DataReceived Event]
-    K -->|No| M[Log Validation Error]
-
-    L --> N[State = Idle]
-    M --> N
-
-    B -->|Error| O[Reset to Idle]
-    I --> O
-    N --> A
-    O --> A
-```
-
-**Auto-Detection Strategy**:
-
-```
-START MARKER DETECTION:
-- Pattern: ^KJIK\d{3}
-- Regex: ^\^KJIK\d{3}$
-- First byte: 0x5E (^)
-- Frequency: Should appear every 14 lines
-- Confidence: 100% if pattern matches and frequency consistent
-
-END MARKER DETECTION:
-- Pattern: ~P1
-- Regex: ^~P1$
-- First byte: 0x7E (~)
-- Position: Should be 14 lines after start marker
-- Confidence: 100% if found at expected position
-
-LINE COUNT VALIDATION:
-- Expected: 14 lines per package
-- Count lines between markers across all packages
-- If consistent (variance < 5%): Confidence = 100%
-- If varies: Confidence = (consistency_percentage)
-
-DECISION:
-- If StartMarker + EndMarker + FixedLineCount detected:
-  → MessageStructure = SequentialLines
-  → ParsingStrategy = StateMachine
-  → Generate LineSequenceConfig with 14 LineDefinitions
-```
-
-**Parsing Approach**: State machine with sequential line processing + validation
-
----
-
-## Core Problems Identified
-
-### Problem 1: Message Boundary Detection
-
-**Issue**: File lines ≠ Protocol messages
-
-Not all protocols follow "one file line = one message"!
-
-| Device | File Lines per Message | Detection Method |
-|--------|----------------------|------------------|
-| CordDEFENDER3000 | 1 line = 1 message | Terminator (CRLF) only |
-| WeightQA | 1 line = 1 message | Terminator (CRLF) only |
-| TFO1 | 6-12 lines = 1 message | Header bytes ('F', 'H', 'Q', etc.) |
-| PHMeter | 3-8 lines = 1 message | Content patterns (pH, date, time) |
-| **JIK6CAB** ⭐ | **14 lines = 1 message** | **Start marker + End marker** |
-
-**JIK6CAB Example**:
-
-```
-File Line 1:  ^KJIK000     ← Start marker (message begins)
-File Line 2:  2023-11-07   ← Part of message
-File Line 3:  17:19:38     ← Part of message
-...
-File Line 13: E            ← Part of message
-File Line 14: ~P1          ← End marker (message complete)
-File Line 15: ^KJIK000     ← Next message starts
-```
-
-**Solution Required**:
-
-Stage 2 must detect message boundaries using:
-1. **Terminator pattern analysis** (0x0D 0x0A frequency) → Single-line messages
-2. **Start/end marker detection** (regex patterns) → Multi-line packages
-3. **Line count patterns** (consistent gaps between markers) → State machine
-4. **Header byte patterns** (first byte values) → Frame-based
-5. **Content structure analysis** (pattern consistency) → Content-based
-
-**Implementation**:
-
-```
-FOR each log entry:
-    1. Scan for start markers (^KJIK, etc.)
-    2. If found:
-       - Start accumulating lines
-       - Count lines until end marker
-       - Validate line count consistency
-    3. If line count matches expected:
-       - MessageStructure = SequentialLines
-       - Create message with all accumulated lines
-    4. If no markers:
-       - Fall back to terminator-based grouping
-```
-
----
-
-### Problem 2: Multiple Parsing Strategies Required
-
-**From Production Code Analysis**: Each device uses a different strategy
-
-| Strategy | Used By | Complexity | Implementation | Auto-Detect By |
-|----------|---------|-----------|----------------|----------------|
-| String Split | CordDEFENDER3000, WeightQA | ⭐ Low | `line.Split()` | High delimiter frequency (>80%) |
-| Fixed Position | TFO1 | ⭐⭐ Medium | `GetString(offset, length)` | Consistent field byte positions |
-| Content-Based | PHMeter | ⭐⭐ Medium | `if Contains()` | Pattern variance across lines |
-| **State Machine** ⭐ | **JIK6CAB** | **⭐⭐⭐ High** | **Position-based switch** | **Start/end markers + fixed line count** |
-
-**Why Auto-Detection is Critical**:
-
-The Protocol Analyzer cannot assume a strategy. It must:
-1. Analyze log file structure
-2. Detect which strategy applies
-3. Generate appropriate configuration
-4. Support hybrid strategies (e.g., state machine with content detection)
-
-**JIK6CAB Detection Algorithm**:
-
-```
-markers_found = DetectMarkers(log_entries)
-IF markers_found.StartMarker AND markers_found.EndMarker:
-    line_counts = CountLinesBetweenMarkers(markers_found)
-
-    IF line_counts.Variance < 5%:  // Consistent line count
-        strategy = "StateMachine"
-        line_count = line_counts.Average
-
-        FOR position = 1 TO line_count:
-            line_samples = GetSamplesAtPosition(position, log_entries)
-            field_info = AnalyzeFieldPattern(line_samples)
-
-            IF field_info.IsMarker:
-                action = "Validate"
-            ELSE IF field_info.IsEmpty OR field_info.IsReserved:
-                action = "Skip"
-            ELSE:
-                action = "Parse"
-
-            line_definitions.Add(position, field_info, action)
-
-        RETURN LineSequenceConfig(line_definitions)
-```
-
----
-
-### Problem 3: Field Relationships ⭐ NEW
-
-**Issue**: Some protocols require field combination, split, or calculation
-
-This is especially critical for state machine protocols like JIK6CAB.
-
-**Types of Relationships**:
-
-#### 1. Combine Fields (Date + Time → DateTime)
-
-**JIK6CAB Example**:
-
-```
-Line 2: "2023-11-07"     → Date field (DateTime with time = 00:00:00)
-Line 3: "17:19:38"       → Time field (TimeSpan)
-
-Relationship: Combine
-Operation: Date.Date + Time
-Result: DateTime = 2023-11-07 17:19:38
-```
-
-**Why This is Needed**:
-- C# DateTime property can't be split across two lines
-- Must parse both lines separately, then combine
-- Timing matters: Can't combine until both are parsed
-
-#### 2. Split Fields (Value + Unit from same line)
-
-**JIK6CAB Example**:
-
-```
-Line 4: "  0.00 kg"
-
-Split into:
-- TareWeight: 0.00 (decimal)
-- TareUnit: "kg" (string)
-
-Pattern for Weight: \s*(\d+\.\d+)\s*
-Pattern for Unit: (kg|g)
-```
-
-**Why This is Needed**:
-- Data class has separate properties for value and unit
-- Single line contains both
-- Regex extraction creates two fields from one line
-
-#### 3. Calculate Fields (Validation)
-
-**JIK6CAB Example**:
-
-```
-Line 5: GrossWeight = 1.94
-Line 4: TareWeight = 0.00
-Line 8: NetWeight = 1.94
-
-Validation: GrossWeight - TareWeight = NetWeight
-Formula: 1.94 - 0.00 = 1.94 ✓
-
-If mismatch (e.g., 1.94 - 0.00 ≠ 1.95):
-- Severity: Error
-- Action: Reject data
-- Message: "Net weight calculation mismatch"
-```
-
-**Solution Required**:
-
-1. **FieldRelationship model** (defined in 04-Data-Models-Design.md):
-   - Type: Combine, Split, Calculate, Derive
-   - SourceFields: List of input fields
-   - TargetField: Output field name
-   - Operation: Formula or pattern
-
-2. **Validation after parsing**:
-   - Apply relationships first
-   - Then validate calculated values
-   - Reject data if validation fails
-
----
-
-### Problem 4: State Tracking and Reset ⭐ NEW
-
-**Issue**: State machine protocols require managing state across multiple lines
-
-**JIK6CAB State Variables**:
-
-```csharp
-private bool bCompleted = true;      // Package completion flag
-private DateTime? date;              // Accumulated date (line 2)
-private TimeSpan? time;              // Accumulated time (line 3)
-private decimal? tw, gw, nw;         // Weights (lines 4, 5, 8)
-private decimal? pcs;                // Piece count (line 10)
-private int lineCount;               // Current position in package
-```
-
-**State Lifecycle**:
-
-```
-Idle State:
-- bCompleted = true
-- All field variables = null
-- lineCount = 0
-↓
-Start Marker Detected (^KJIK000):
-- bCompleted = false  ← START PARSING
-- Reset all variables to null
-- lineCount = 0
-↓
-Parsing Lines 2-13:
-- lineCount increments
-- Fields populated based on position
-- Validation happens per line
-↓
-End Marker Detected (~P1):
-- Validate all required fields populated
-- Apply field relationships
-- Apply validation rules
-- If valid: Fire event, bCompleted = true
-- Reset to Idle
-↓
-Error or Timeout:
-- Log error
-- Reset all variables
-- bCompleted = true
-- Return to Idle
-```
-
-**Why This is Complex**:
-
-1. **Memory Management**: Must track partial package state
-2. **Error Recovery**: Invalid package must reset cleanly
-3. **Timeout Handling**: Incomplete package can't block forever
-4. **Thread Safety**: If multi-threaded, state must be protected
-
-**Solution Required**:
-
-- State machine implementation (see Implementation Considerations)
-- Timeout mechanism (default 5 seconds per package)
-- Error recovery (reset to Idle on any error)
-- Clear documentation of state transitions
-
----
-
-### Problem 5: Mixed File Formats
-
-**Issue**: Some logs mix format types within same file
-
-**Example: WEIGHT QA log file structure**:
-
-```
-Lines 1-12:   Text only (ASCII)
-Line 13:      Empty
-Line 14:      Empty
-Lines 15-22:  HEX/Text mixed
-Lines 23-28:  Text only
-Line 29:      Empty
-Line 30:      Comment "-- Generate"
-Lines 31+:    HEX/Text mixed
-```
-
-**Challenge**: Can't assume file format is consistent throughout.
-
-**Solution**:
-- Stage 1 must detect format **per line** or **per section**
-- Handle format transitions gracefully
-- Ignore comment lines and separators
-
----
-
-## Proposed Parsing Strategy
-
-### 6-Stage Pipeline
-
-The parsing strategy consists of 6 sequential stages, with special handling for state machine protocols:
-
-```mermaid
-flowchart TD
-    A[Stage 1:<br/>Byte Extraction] --> B[Stage 2:<br/>Message Boundary<br/>Detection]
-
-    B --> C{Message Structure?}
-
-    C -->|Single Line| D1[Simple Parser]
-    C -->|Multi-Line Frame| D2[Frame Parser]
-    C -->|Sequential Lines| D3[State Machine Parser ⭐]
-    C -->|Content-Based| D4[Content Parser]
-
-    D1 --> E[Stage 3:<br/>Field Structure<br/>Analysis]
-    D2 --> E
-    D3 --> E
-    D4 --> E
-
-    E --> F[Stage 4:<br/>Field Classification<br/>& Data Types]
-
-    F --> G[Stage 5:<br/>Apply Field<br/>Relationships ⭐]
-
-    G --> H[Stage 6:<br/>Apply Validation<br/>Rules ⭐]
-
-    H --> I[Generate<br/>Protocol Definition<br/>JSON]
-
-    style D3 fill:#FFE4B5
-    style G fill:#90EE90
-    style H fill:#87CEEB
-```
-
----
-
-### Stage 1: Byte Extraction
-
-**Purpose**: Parse log file and extract raw protocol bytes
-
-**Input**: Log file path (HEX/Text, HEX Only, or Text Only)
-
-**Output**: `List<LogEntry>` with normalized bytes
+**Input**: List of file lines (strings)
 
 **Algorithm**:
 
 ```
-FUNCTION ExtractBytes(logFilePath):
-    entries = []
+FUNCTION DetectMessageBoundaries(lines):
 
-    FOR each line in logFilePath:
-        // Detect format for this line
-        format = DetectLineFormat(line)
+    // ═══ STEP 1: Analyze Terminators ═══
+    terminator_patterns = []
 
-        // Extract bytes based on format
-        SWITCH format:
-            CASE HexText:
-                // Format: "3D 2E 30 31   =.01"
-                bytes = ParseHexColumn(line)
-                text = ParseTextColumn(line)
+    FOR each line in lines:
+        last_bytes = GetLastBytes(line, 4)  // Check last 4 bytes
+        terminator_patterns.Add(last_bytes)
 
-            CASE HexOnly:
-                // Format: "3D 2E 30 31"
-                bytes = ParseHexValues(line)
-                text = Encoding.ASCII.GetString(bytes)
+    // Find most common terminator
+    common_terminator = MostFrequent(terminator_patterns)
+    terminator_frequency = Count(common_terminator) / lines.Count
 
-            CASE TextOnly:
-                // Format: "=.01"
-                text = line
-                bytes = Encoding.ASCII.GetBytes(text)
+    // ═══ STEP 2: Detect Start/End Markers ═══
 
-        // Create LogEntry
-        entry = NEW LogEntry {
-            Bytes: bytes,
-            Text: text,
-            FileLineNumber: current_line_number,
-            Timestamp: ExtractTimestamp(line),  // If present in log
-            Direction: ExtractDirection(line)    // TX/RX if present
-        }
+    potential_markers = []
 
-        entries.Add(entry)
+    FOR each line in lines:
+        first_char = line[0]
 
-    RETURN entries
-```
+        // Check for special characters at start (^, ~, <, >, etc.)
+        IF first_char IN ['^', '~', '<', '>', '@', '#', '$']:
+            pattern = ExtractPattern(line)  // e.g., "^KJIK\d{3}"
 
-**JIK6CAB Specific Considerations**:
+            IF pattern NOT IN potential_markers:
+                potential_markers[pattern] = {
+                    count: 0,
+                    positions: [],
+                    line_samples: []
+                }
 
-- Each file line → one LogEntry
-- Preserve all bytes including 0x5E (^) and 0x7E (~)
-- Text column example values:
-  - Line 1: "^KJIK000"
-  - Line 2: "2023-11-07"
-  - Line 3: "17:19:38"
-  - Line 4: "  0.00 kg"
-  - ...
-  - Line 14: "~P1"
+            potential_markers[pattern].count++
+            potential_markers[pattern].positions.Add(line_number)
+            potential_markers[pattern].line_samples.Add(line)
 
-**Output Example**:
+    // ═══ STEP 3: Analyze Marker Positions ═══
 
-```json
-[
-  {
-    "bytes": [0x5E, 0x4B, 0x4A, 0x49, 0x4B, 0x30, 0x30, 0x30],
-    "text": "^KJIK000",
-    "fileLineNumber": 1,
-    "timestamp": null,
-    "direction": "RX"
-  },
-  {
-    "bytes": [0x32, 0x30, 0x32, 0x33, 0x2D, 0x31, 0x31, 0x2D, 0x30, 0x37],
-    "text": "2023-11-07",
-    "fileLineNumber": 2,
-    "timestamp": null,
-    "direction": "RX"
-  }
-  // ... 12 more entries ...
-]
-```
+    FOR each marker in potential_markers:
+        positions = marker.positions
+        gaps = CalculateGaps(positions)  // Distance between occurrences
 
----
+        // Check if gaps are consistent
+        gap_stddev = StandardDeviation(gaps)
+        gap_average = Average(gaps)
 
-### Stage 2: Message Boundary Detection ⭐ CRITICAL FOR STATE MACHINE
+        marker.confidence = 1.0 - gap_stddev / gap_average
+        marker.expected_lines = gap_average
 
-**Purpose**: Group LogEntries into complete messages
+        // Check for corresponding end marker
+        IF marker.pattern starts with '^' or '<':
+            // This might be a start marker
+            // Look for end marker at position + gap_average - 1
 
-**Input**: `List<LogEntry>` (from Stage 1)
+            FOR each position in marker.positions:
+                expected_end_line = position + gap_average - 1
 
-**Output**: `List<Message>` where each Message contains `List<LogEntry>`
+                IF expected_end_line < lines.Count:
+                    potential_end = lines[expected_end_line]
 
-**Algorithm**:
+                    // Check if this line has marker characteristics
+                    IF potential_end.StartsWith('~') OR
+                       potential_end.Length < 5:
+                        marker.end_marker = potential_end
+                        marker.is_frame = true
 
-```
-FUNCTION DetectMessageBoundaries(entries):
+    // ═══ STEP 4: Decision Tree ═══
 
-    // ═══ Step 1: Analyze Terminators ═══
-    terminators = AnalyzeTerminators(entries)
-    // Returns: Most common terminator pattern, frequency, confidence
+    best_marker = potential_markers.MaxBy(m => m.confidence)
 
-    // ═══ Step 2: Detect Start/End Markers ═══
-    markers = DetectMarkers(entries)
-
-    FUNCTION DetectMarkers(entries):
-        start_patterns = {}
-        end_patterns = {}
-
-        FOR each entry in entries:
-            // Look for patterns that appear at regular intervals
-
-            // Check if line starts with special characters
-            IF entry.Text MATCHES ^[^\w\s]:  // Non-word, non-space at start
-                pattern = ExtractPattern(entry.Text)
-
-                IF pattern NOT IN start_patterns:
-                    start_patterns[pattern] = {
-                        count: 0,
-                        positions: [],
-                        confidence: 0
-                    }
-
-                start_patterns[pattern].count++
-                start_patterns[pattern].positions.Add(entry.FileLineNumber)
-
-        // Analyze start pattern positions for regularity
-        FOR each pattern in start_patterns:
-            gaps = CalculateGaps(pattern.positions)
-
-            IF gaps.StdDev < 0.1:  // Very consistent gaps
-                pattern.confidence = 1.0 - gaps.StdDev
-                pattern.lineCount = gaps.Average
-
-        // Find best start pattern
-        best_start = start_patterns.MaxBy(p => p.confidence)
-
-        // Find corresponding end pattern
-        FOR each entry at (start_position + lineCount - 1):
-            IF entry.Text matches pattern:
-                end_pattern = entry.Text
-
+    IF best_marker.confidence > 0.9 AND best_marker.expected_lines > 1:
+        // Multi-line frame with markers detected
         RETURN {
-            StartMarker: best_start.pattern,
-            EndMarker: end_pattern,
-            LineCount: best_start.lineCount,
-            Confidence: best_start.confidence
+            structure: "FrameBased",
+            start_marker: best_marker.pattern,
+            end_marker: best_marker.end_marker,
+            lines_per_message: best_marker.expected_lines,
+            confidence: best_marker.confidence
         }
 
-    // ═══ Step 3: Determine Message Structure ═══
-
-    IF markers.Confidence > 0.9 AND markers.LineCount > 1:
-        structure = "SequentialLines"  // ← JIK6CAB detected here!
-        strategy = "StateMachine"
-
-        messages = GroupByMarkers(entries, markers)
-
-    ELSE IF terminators.Confidence > 0.9:
-        structure = "SingleLine"
-        messages = SplitByTerminator(entries, terminators.Pattern)
-
-    ELSE IF HasHeaderBytes(entries):
-        structure = "MultiLineFrame"
-        messages = GroupByHeaders(entries)
+    ELSE IF terminator_frequency > 0.95:
+        // Single line per message
+        RETURN {
+            structure: "SingleLine",
+            terminator: common_terminator,
+            confidence: terminator_frequency
+        }
 
     ELSE:
-        structure = "ContentBased"
-        messages = GroupByContent(entries)
-
-    RETURN messages, structure, markers
+        // Content-based or variable structure
+        RETURN {
+            structure: "ContentBased",
+            confidence: 0.7
+        }
 ```
 
-**JIK6CAB Detection Example**:
+**Example Results**:
 
-```
-Input: 28 LogEntries (2 packages × 14 lines each)
+| Log File | Detected Structure | Confidence | Reasoning |
+|----------|-------------------|-----------|-----------|
+| Log 1 | SingleLine | 1.0 | Every line ends with CRLF, no markers |
+| Log 2 | FrameBased | 1.0 | "^KJIK000" at line 1, 15, 29... Gap=14, End="~P1" |
+| Log 3 | SingleLine | 1.0 | Every line ends with CRLF, no markers |
 
-DetectMarkers:
-  - Scan all entries for special start characters
-  - Find: "^KJIK000" at lines 1, 15
-  - Pattern: ^\\^KJIK\\d{3}
-  - Positions: [1, 15]
-  - Gap: 14 lines
-  - StdDev: 0.0 (perfect consistency)
-  - Confidence: 1.0
+**Flowchart: Message Boundary Detection Algorithm**
 
-  - Check line 14 (1 + 14 - 1): "~P1"
-  - Check line 28 (15 + 14 - 1): "~P1"
-  - End Pattern: ^~P1$
-  - Confidence: 1.0
+```mermaid
+flowchart TD
+    Start([Start: List of Lines]) --> Step1["<b>STEP 1: Analyze Terminators</b><br/>Extract last 4 bytes from each line<br/>Find most common terminator pattern"]
 
-Result:
-  MessageStructure: SequentialLines
-  ParsingStrategy: StateMachine
-  StartMarker: "^\\^KJIK\\d{3}"
-  EndMarker: "~P1"
-  LineCount: 14
-  Confidence: 1.0
+    Step1 --> Step2["<b>STEP 2: Detect Start/End Markers</b><br/>Look for special chars at start<br/>^, ~, <, >, @, #, $<br/>Track pattern, count, positions"]
 
-Messages:
-  Message 1: Entries[0..13]   (lines 1-14)
-  Message 2: Entries[14..27]  (lines 15-28)
-```
+    Step2 --> Step3["<b>STEP 3: Analyze Marker Positions</b><br/>Calculate gaps between occurrences<br/>Check gap consistency<br/>Look for end markers"]
 
-**Output Example**:
+    Step3 --> Decide{"Decision Tree:<br/>What's the<br/>Terminator Freq & <br/>Marker Confidence?"}
 
-```json
-{
-  "messageStructure": "SequentialLines",
-  "parsingStrategy": "StateMachine",
-  "startMarker": "^\\^KJIK\\d{3}",
-  "endMarker": "~P1",
-  "expectedLineCount": 14,
-  "confidence": 1.0,
-  "messages": [
-    {
-      "messageNumber": 1,
-      "entries": [
-        { "fileLineNumber": 1, "text": "^KJIK000" },
-        { "fileLineNumber": 2, "text": "2023-11-07" },
-        // ... 12 more entries ...
-        { "fileLineNumber": 14, "text": "~P1" }
-      ]
-    },
-    {
-      "messageNumber": 2,
-      "entries": [
-        { "fileLineNumber": 15, "text": "^KJIK000" },
-        // ... etc ...
-      ]
-    }
-  ]
-}
+    Decide -->|High confidence marker<br/>Consistent gaps| Return1["<b>RETURN FrameBased</b><br/>✓ Multi-line frames detected<br/>✓ Start/end markers found<br/>✓ Consistent line count"]
+
+    Decide -->|No markers<br/>High terminator freq| Return2["<b>RETURN SingleLine</b><br/>✓ Every line ends with<br/>same terminator<br/>✓ One message per line"]
+
+    Decide -->|Uncertain patterns| Return3["<b>RETURN ContentBased</b><br/>✓ Low confidence<br/>✓ Needs content analysis"]
+
+    Return1 --> End([End])
+    Return2 --> End
+    Return3 --> End
+
+    style Start fill:#E1F5FE
+    style Decide fill:#FFF9C4
+    style Return1 fill:#C8E6C9
+    style Return2 fill:#C8E6C9
+    style Return3 fill:#FFCCBC
+    style End fill:#E1F5FE
 ```
 
 ---
 
-### Stage 3: Field Structure Analysis ⭐ POSITION-BASED FOR STATE MACHINE
+### Algorithm 2: Delimiter Detection
 
-**Purpose**: Identify fields within each message
+**Goal**: Find what separates fields within a line/message
 
-**Input**: `List<Message>`, message structure type
-
-**Output**: `List<FieldInfo>` with positions and patterns
+**Input**: List of message lines
 
 **Algorithm**:
 
 ```
-FUNCTION AnalyzeFieldStructure(messages, structure):
+FUNCTION DetectDelimiters(messages):
 
-    IF structure == "SequentialLines":
-        // ═══ STATE MACHINE APPROACH ═══
-        RETURN AnalyzeSequentialLineFields(messages)
+    delimiter_candidates = {
+        ' ': 0,     // Space
+        '\t': 0,    // Tab
+        ',': 0,     // Comma
+        ';': 0,     // Semicolon
+        ':': 0,     // Colon
+        '/': 0,     // Slash
+        '|': 0      // Pipe
+    }
 
-    ELSE IF structure == "SingleLine":
-        RETURN AnalyzeSingleLineFields(messages)
+    // ═══ STEP 1: Count Occurrences ═══
 
-    // ... other structures ...
+    FOR each message in messages:
+        FOR each candidate_char in delimiter_candidates:
+            count = CountOccurrences(message, candidate_char)
+            delimiter_candidates[candidate_char] += count
 
+    // ═══ STEP 2: Calculate Consistency ═══
 
-FUNCTION AnalyzeSequentialLineFields(messages):
-    """
-    For state machine protocols (JIK6CAB):
-    - Process line-by-line sequentially
-    - Each line position maps to specific field(s)
-    """
+    FOR each delimiter in delimiter_candidates:
+        occurrences_per_message = []
 
-    fields = []
-    lineCount = messages[0].entries.Length
-
-    FOR lineNumber = 1 TO lineCount:
-        // Collect all samples at this line position
-        samples = []
         FOR each message in messages:
-            line_text = message.entries[lineNumber - 1].Text
-            samples.Add(line_text)
+            count = CountOccurrences(message, delimiter)
+            occurrences_per_message.Add(count)
 
-        // Analyze pattern at this position
-        field_info = AnalyzeLinePosition(lineNumber, samples)
-        fields.Add(field_info)
+        // Check consistency (should be same count per message)
+        avg = Average(occurrences_per_message)
+        stddev = StandardDeviation(occurrences_per_message)
 
-    RETURN fields
+        IF avg > 0:
+            delimiter.consistency = 1.0 - (stddev / avg)
+            delimiter.frequency = avg
+        ELSE:
+            delimiter.consistency = 0
+            delimiter.frequency = 0
 
+    // ═══ STEP 3: Detect Hierarchical Delimiters ═══
 
-FUNCTION AnalyzeLinePosition(lineNumber, samples):
-    """
-    Determine what field(s) this line contains
-    """
+    // Check if multiple delimiters exist with high consistency
+    high_consistency_delimiters = delimiter_candidates
+        .Where(d => d.consistency > 0.8 AND d.frequency > 0)
+        .OrderByDescending(d => d.frequency)
 
-    // Check if this is a marker
-    IF lineNumber == 1:
+    IF high_consistency_delimiters.Count > 1:
+        // Potential hierarchical delimiter structure
         RETURN {
-            LineNumber: 1,
-            Name: "StartMarker",
-            Pattern: DetectPattern(samples),  // "^\\^KJIK\\d{3}"
-            Action: "Validate",
-            DataType: "String",
-            Required: true,
-            Confidence: 1.0
+            type: "Hierarchical",
+            primary: high_consistency_delimiters[0],
+            secondary: high_consistency_delimiters[1],
+            confidence: Min(high_consistency_delimiters[0].consistency,
+                           high_consistency_delimiters[1].consistency)
         }
 
-    // Check for date pattern
-    IF AllMatch(samples, "\\d{4}-\\d{2}-\\d{2}"):
+    ELSE IF high_consistency_delimiters.Count == 1:
         RETURN {
-            LineNumber: lineNumber,
-            Name: "Date",
-            Pattern: "^(\\d{4}-\\d{2}-\\d{2})$",
-            Action: "Parse",
-            DataType: "DateTime",
-            Format: "yyyy-MM-dd",
-            SampleValues: samples,
-            Required: true,
-            Confidence: 1.0
+            type: "Simple",
+            delimiter: high_consistency_delimiters[0],
+            confidence: high_consistency_delimiters[0].consistency
         }
 
-    // Check for time pattern
-    IF AllMatch(samples, "\\d{2}:\\d{2}:\\d{2}"):
+    ELSE:
         RETURN {
-            LineNumber: lineNumber,
-            Name: "Time",
-            Pattern: "^(\\d{2}:\\d{2}:\\d{2})$",
-            Action: "Parse",
-            DataType: "TimeSpan",
-            Format: "HH:mm:ss",
-            SampleValues: samples,
-            Required: true,
-            Confidence: 1.0,
-            Relationship: {
-                Type: "Combine",
-                SourceFields: ["Date", "Time"],
-                TargetField: "DateTime"
-            }
+            type: "None",
+            confidence: 0
         }
-
-    // Check for weight pattern (contains kg or g)
-    IF AllContain(samples, "kg") OR AllContain(samples, "g"):
-        // This line has TWO fields: value and unit
-        RETURN [
-            {
-                LineNumber: lineNumber,
-                Name: SuggestWeightName(lineNumber),  // TareWeight, GrossWeight, etc
-                Pattern: "\\s*(\\d+\\.\\d+)\\s*",
-                Action: "Parse",
-                DataType: "Decimal",
-                SampleValues: ExtractValues(samples),
-                Required: true,
-                Confidence: 1.0
-            },
-            {
-                LineNumber: lineNumber,
-                Name: SuggestWeightName(lineNumber) + "Unit",
-                Pattern: "(kg|g)",
-                Action: "Parse",
-                DataType: "String",
-                SampleValues: ExtractUnits(samples),
-                Required: true,
-                Confidence: 1.0
-            }
-        ]
-
-    // Check for piece count pattern
-    IF AllContain(samples, "pcs"):
-        RETURN {
-            LineNumber: lineNumber,
-            Name: "PieceCount",
-            Pattern: "\\s*(\\d+)\\s*pcs",
-            Action: "Parse",
-            DataType: "Integer",
-            SampleValues: ExtractValues(samples),
-            Required: false,
-            Confidence: 1.0
-        }
-
-    // Check if empty or whitespace only
-    IF AllMatch(samples, "^\\s*$"):
-        RETURN {
-            LineNumber: lineNumber,
-            Name: $"Empty{lineNumber}",
-            Pattern: "^\\s*$",
-            Action: "Skip",
-            DataType: "String",
-            Required: false,
-            Confidence: 1.0
-        }
-
-    // Check if reserved/constant value
-    IF AllSame(samples) AND samples[0].Length < 5:
-        RETURN {
-            LineNumber: lineNumber,
-            Name: $"Reserved{lineNumber}",
-            Pattern: samples[0],
-            Action: "Skip",
-            DataType: "String",
-            Required: false,
-            Confidence: 1.0
-        }
-
-    // Check for end marker
-    IF lineNumber == GetLastLineNumber():
-        RETURN {
-            LineNumber: lineNumber,
-            Name: "EndMarker",
-            Pattern: DetectPattern(samples),  // "^~P1$"
-            Action: "Validate",
-            DataType: "String",
-            Required: true,
-            Confidence: 1.0
-        }
-
-    // Default: unknown field
-    RETURN {
-        LineNumber: lineNumber,
-        Name: $"Field{lineNumber}",
-        Pattern: ".*",
-        Action: "Parse",
-        DataType: "String",
-        SampleValues: samples,
-        Required: false,
-        Confidence: 0.5
-    }
-
-
-FUNCTION SuggestWeightName(lineNumber):
-    """
-    Suggest field name based on position
-    JIK6CAB specific:
-    - Line 4: TareWeight
-    - Line 5: GrossWeight
-    - Line 8: NetWeight
-    - Line 9: DisplayWeight
-    """
-    SWITCH lineNumber:
-        CASE 4: RETURN "TareWeight"
-        CASE 5: RETURN "GrossWeight"
-        CASE 8: RETURN "NetWeight"
-        CASE 9: RETURN "DisplayWeight"
-        DEFAULT: RETURN "Weight"
 ```
 
-**JIK6CAB Output Example**:
+**Example Results**:
 
-```json
-{
-  "fields": [
-    {
-      "lineNumber": 1,
-      "name": "StartMarker",
-      "pattern": "^\\^KJIK\\d{3}$",
-      "action": "Validate",
-      "dataType": "String",
-      "required": true,
-      "confidence": 1.0
-    },
-    {
-      "lineNumber": 2,
-      "name": "Date",
-      "pattern": "^(\\d{4}-\\d{2}-\\d{2})$",
-      "action": "Parse",
-      "dataType": "DateTime",
-      "format": "yyyy-MM-dd",
-      "sampleValues": ["2023-11-07", "2023-11-08"],
-      "required": true,
-      "confidence": 1.0
-    },
-    {
-      "lineNumber": 3,
-      "name": "Time",
-      "pattern": "^(\\d{2}:\\d{2}:\\d{2})$",
-      "action": "Parse",
-      "dataType": "TimeSpan",
-      "format": "HH:mm:ss",
-      "sampleValues": ["17:19:38", "10:30:15"],
-      "required": true,
-      "confidence": 1.0,
-      "relationship": {
-        "type": "Combine",
-        "sourceFields": ["Date", "Time"],
-        "targetField": "DateTime"
-      }
-    },
-    {
-      "lineNumber": 4,
-      "name": "TareWeight",
-      "pattern": "\\s*(\\d+\\.\\d+)\\s*",
-      "action": "Parse",
-      "dataType": "Decimal",
-      "sampleValues": ["0.00", "0.50"],
-      "required": true,
-      "confidence": 1.0
-    },
-    {
-      "lineNumber": 4,
-      "name": "TareUnit",
-      "pattern": "(kg|g)",
-      "action": "Parse",
-      "dataType": "String",
-      "sampleValues": ["kg", "kg"],
-      "required": true,
-      "confidence": 1.0
-    },
-    // Lines 5-13...
-    {
-      "lineNumber": 14,
-      "name": "EndMarker",
-      "pattern": "^~P1$",
-      "action": "Validate",
-      "dataType": "String",
-      "required": true,
-      "confidence": 1.0
-    }
-  ]
-}
+| Log File | Primary Delimiter | Secondary | Type | Confidence |
+|----------|------------------|-----------|------|-----------|
+| Log 1 | Space (multiple) | None | Simple | 0.95 |
+| Log 2 | None detected | None | None | 0 |
+| Log 3 | "/" (1 per line) | Space (2 per line) | Hierarchical | 1.0 |
+
+**Flowchart: Delimiter Detection Algorithm**
+
+```mermaid
+flowchart TD
+    Start([Start: List of Messages]) --> Step1["<b>STEP 1: Count Occurrences</b><br/>For each candidate delimiter:<br/>Space, Tab, Comma, Semicolon<br/>Colon, Slash, Pipe<br/>Count total appearances"]
+
+    Step1 --> Step2["<b>STEP 2: Calculate Consistency</b><br/>For each delimiter:<br/>Count occurrences per message<br/>Calculate average & std deviation<br/>Consistency = 1 - stddev/avg"]
+
+    Step2 --> Step3["<b>STEP 3: Detect Hierarchical</b><br/>Find all delimiters with<br/>consistency > 0.8 AND frequency > 0<br/>Order by frequency"]
+
+    Step3 --> Check{"How many<br/>high-consistency<br/>delimiters found?"}
+
+    Check -->|2 or more| Return1["<b>RETURN Hierarchical</b><br/>Primary: highest frequency<br/>Secondary: second highest<br/>Multi-level structure detected"]
+
+    Check -->|Exactly 1| Return2["<b>RETURN Simple</b><br/>Single delimiter found<br/>Fields separated by one char"]
+
+    Check -->|None| Return3["<b>RETURN None</b><br/>No consistent delimiters<br/>Fixed position or complex"]
+
+    Return1 --> End([End])
+    Return2 --> End
+    Return3 --> End
+
+    style Start fill:#E1F5FE
+    style Check fill:#FFF9C4
+    style Return1 fill:#C8E6C9
+    style Return2 fill:#C8E6C9
+    style Return3 fill:#FFCCBC
+    style End fill:#E1F5FE
 ```
 
 ---
 
-### Stage 4: Field Classification & Data Types
+### Algorithm 3: Field Position Analysis
 
-**Purpose**: Classify fields and refine data type detection
+**Goal**: Determine if fields are at fixed positions or delimiter-separated
 
-**Input**: `List<FieldInfo>` (from Stage 3)
-
-**Output**: Enhanced `FieldInfo` with classifications
+**Input**: List of messages, delimiter info
 
 **Algorithm**:
 
 ```
-FUNCTION ClassifyFields(fields):
+FUNCTION AnalyzeFieldPositions(messages, delimiter_info):
 
-    FOR each field in fields:
+    IF delimiter_info.type == "None":
+        // No delimiters - check for fixed positions
+        RETURN AnalyzeFixedPositions(messages)
+    ELSE:
+        // Delimiters found - analyze token positions
+        RETURN AnalyzeDelimiterBased(messages, delimiter_info)
 
-        // ═══ Calculate Variance ═══
-        IF field.SampleValues.Count > 1:
-            unique_count = field.SampleValues.Distinct().Count()
-            total_count = field.SampleValues.Count
-            variance = unique_count / total_count
-        ELSE:
-            variance = 0
 
-        // ═══ Classify Field Type ═══
-        IF variance == 0:
-            field.Classification = "FixedLabel"
-            // Examples: StartMarker, EndMarker, Reserved fields
+FUNCTION AnalyzeFixedPositions(messages):
 
-        ELSE IF variance < 0.1:
-            field.Classification = "StatusCode"
-            // Examples: Unit ("kg", "kg", "kg"), Status ("E", "S", "N")
+    // ═══ Check for First-Byte Pattern ═══
 
-        ELSE IF variance >= 0.1 AND variance < 0.9:
-            field.Classification = "DataField"
-            // Examples: Weight values, dates, times, piece counts
+    first_bytes = []
+    FOR each message in messages:
+        first_bytes.Add(message[0])
 
-        ELSE IF variance >= 0.9:
-            field.Classification = "UniqueIdentifier"
-            // Examples: Timestamps, sequence numbers (rare in our devices)
+    unique_first_bytes = first_bytes.Distinct().ToList()
 
-        // ═══ Refine Data Type ═══
-        IF field.Action == "Skip":
-            // Don't change data type for skip fields
-            CONTINUE
+    // If limited set of first bytes, might be header-byte protocol
+    IF unique_first_bytes.Count <= 10 AND unique_first_bytes.Count > 1:
 
-        // Try parsing sample values as different types
-        success_rates = {
-            "Integer": TryParseAll(field.SampleValues, int.Parse),
-            "Decimal": TryParseAll(field.SampleValues, decimal.Parse),
-            "DateTime": TryParseAll(field.SampleValues, DateTime.Parse),
-            "TimeSpan": TryParseAll(field.SampleValues, TimeSpan.Parse),
-            "Boolean": TryParseAll(field.SampleValues, bool.Parse)
+        // Analyze each header byte type
+        header_patterns = {}
+
+        FOR each first_byte in unique_first_bytes:
+            messages_with_byte = messages.Where(m => m[0] == first_byte)
+
+            // Check if messages with same first byte have consistent length
+            lengths = messages_with_byte.Select(m => m.Length)
+            avg_length = Average(lengths)
+            stddev_length = StandardDeviation(lengths)
+
+            header_patterns[first_byte] = {
+                count: messages_with_byte.Count,
+                avg_length: avg_length,
+                length_consistency: 1.0 - (stddev_length / avg_length)
+            }
+
+        // If high consistency, this is header-byte based
+        avg_consistency = Average(header_patterns.Values.Select(p => p.length_consistency))
+
+        IF avg_consistency > 0.9:
+            RETURN {
+                strategy: "HeaderByte",
+                header_bytes: unique_first_bytes,
+                patterns: header_patterns,
+                confidence: avg_consistency
+            }
+
+    // ═══ Check for Fixed-Width Fields ═══
+
+    // Look for consistent byte positions across messages
+    message_length = messages[0].Length
+    all_same_length = messages.All(m => m.Length == message_length)
+
+    IF all_same_length:
+        // Fixed length messages - analyze positions
+        RETURN {
+            strategy: "FixedWidth",
+            message_length: message_length,
+            confidence: 1.0
         }
 
-        // Select data type with highest success rate
-        best_type = success_rates.MaxBy(rate => rate.Value)
-
-        IF best_type.Value >= 0.9:  // 90%+ success
-            field.DataType = best_type.Key
-            field.Confidence = best_type.Value
-        ELSE:
-            field.DataType = "String"  // Default fallback
-            field.Confidence = 1.0      // Always can parse as string
-
-        // ═══ Suggest Better Field Name ═══
-        IF field.Name.StartsWith("Field"):  // Auto-generated name
-            field.SuggestedName = SuggestNameFromContent(field)
-
-
-FUNCTION SuggestNameFromContent(field):
-    """
-    Suggest meaningful name based on field characteristics
-    """
-
-    // Check data type and patterns
-    IF field.DataType == "DateTime" AND field.Format.Contains("HH:mm"):
-        RETURN "Time"
-
-    IF field.DataType == "DateTime" AND field.Format.Contains("yyyy-MM-dd"):
-        RETURN "Date"
-
-    IF field.DataType == "Decimal" AND field.SampleValues.All(v => v < 1000):
-        RETURN "Weight" OR "Value"
-
-    IF field.DataType == "Integer" AND field.Pattern.Contains("pcs"):
-        RETURN "PieceCount" OR "Quantity"
-
-    IF field.DataType == "String" AND field.SampleValues.Length <= 3:
-        IF field.Classification == "StatusCode":
-            RETURN "Status" OR "Mode" OR "Unit"
-
-    IF field.Classification == "FixedLabel":
-        IF field.Pattern.Contains("^"):
-            RETURN "StartMarker"
-        IF field.Pattern.Contains("~"):
-            RETURN "EndMarker"
-
-    // Default
-    RETURN field.Name
+    RETURN {
+        strategy: "Unknown",
+        confidence: 0
+    }
 ```
 
-**JIK6CAB Classification Example**:
+**Decision Tree: Field Position Analysis Algorithm**
 
-| Line | Field | Variance | Classification | Data Type | Suggested Name |
-|------|-------|----------|---------------|-----------|----------------|
-| 1 | StartMarker | 0% | FixedLabel | String | StartMarker ✓ |
-| 2 | Date | 85% | DataField | DateTime | Date ✓ |
-| 3 | Time | 90% | DataField | TimeSpan | Time ✓ |
-| 4 | TareWeight | 75% | DataField | Decimal | TareWeight ✓ |
-| 4 | TareUnit | 0% | StatusCode | String | TareUnit ✓ |
-| 5 | GrossWeight | 80% | DataField | Decimal | GrossWeight ✓ |
-| 5 | GrossUnit | 0% | StatusCode | String | GrossUnit ✓ |
-| 6 | Reserved1 | 0% | FixedLabel | String | Reserved1 ✓ |
-| 7 | Reserved2 | 0% | FixedLabel | String | Reserved2 ✓ |
-| 8 | NetWeight | 80% | DataField | Decimal | NetWeight ✓ |
-| 8 | NetUnit | 0% | StatusCode | String | NetUnit ✓ |
-| 9 | DisplayWeight | 80% | DataField | Decimal | DisplayWeight ✓ |
-| 10 | PieceCount | 70% | DataField | Integer | PieceCount ✓ |
-| 11 | Empty1 | 0% | FixedLabel | String | Empty1 ✓ |
-| 12 | Empty2 | 0% | FixedLabel | String | Empty2 ✓ |
-| 13 | StatusIndicator | 20% | StatusCode | Char | StatusIndicator ✓ |
-| 14 | EndMarker | 0% | FixedLabel | String | EndMarker ✓ |
+```mermaid
+flowchart TD
+    Start([Start: Messages<br/>+ Delimiter Info]) --> Q1{"Are delimiters<br/>detected?<br/>delimiter_info.type != 'None'"}
+
+    Q1 -->|Yes, Delimiters Found| DelimPath["<b>Path: DELIMITER-BASED</b><br/>Split messages by delimiter<br/>Analyze token positions"]
+
+    Q1 -->|No Delimiters| FixedPath["<b>Path: FIXED POSITIONS</b><br/>Check first-byte patterns<br/>Check fixed-width fields"]
+
+    DelimPath --> D1{"Limited set of<br/>first bytes?<br/>1-10 unique bytes"}
+
+    D1 -->|Yes| HeaderByte["<b>HeaderByte Strategy</b><br/>Different message types<br/>Different first byte = type<br/>Consistent length per type"]
+
+    D1 -->|No| FixedWidth["<b>FixedWidth Strategy</b><br/>All messages same length<br/>Fields at fixed positions<br/>Consistency = 1.0"]
+
+    D1 -->|No, Many Bytes| D2{"Are messages<br/>all same length?"}
+
+    D2 -->|Yes| FW["<b>FixedWidth</b>"]
+
+    D2 -->|No| DelimResult["<b>DelimiterBased Strategy</b><br/>Avg field count<br/>Consistency score<br/>Hierarchical support"]
+
+    FixedPath --> F1{"Limited set<br/>first bytes?"}
+
+    F1 -->|Yes, 1-10| HeaderByte
+
+    F1 -->|No| F2{"All messages<br/>same length?"}
+
+    F2 -->|Yes| FixedWidthResult["<b>FixedWidth Strategy</b><br/>Position-based parsing<br/>Field starts at byte N"]
+
+    F2 -->|No| UnknownResult["<b>Unknown Strategy</b><br/>Need content analysis"]
+
+    HeaderByte --> End1([End: HeaderByte])
+    FixedWidth --> End2([End: FixedWidth])
+    DelimResult --> End3([End: DelimiterBased])
+    FW --> End4([End: FixedWidth])
+    FixedWidthResult --> End5([End: FixedWidth])
+    UnknownResult --> End6([End: Unknown])
+
+    style Start fill:#E1F5FE
+    style Q1 fill:#FFF9C4
+    style F1 fill:#FFF9C4
+    style F2 fill:#FFF9C4
+    style D1 fill:#FFF9C4
+    style D2 fill:#FFF9C4
+    style HeaderByte fill:#C8E6C9
+    style FixedWidth fill:#C8E6C9
+    style DelimResult fill:#C8E6C9
+    style FixedWidthResult fill:#C8E6C9
+    style UnknownResult fill:#FFCCBC
+```
+
+FUNCTION AnalyzeDelimiterBased(messages, delimiter_info):
+
+    delimiter = delimiter_info.delimiter
+
+    field_counts = []
+    fields_by_position = {}
+
+    FOR each message in messages:
+
+        IF delimiter_info.type == "Hierarchical":
+            // Split by primary first
+            parts1 = message.Split(delimiter_info.primary)
+
+            // Then split each part by secondary
+            all_fields = []
+            FOR each part in parts1:
+                parts2 = part.Split(delimiter_info.secondary)
+                all_fields.AddRange(parts2)
+        ELSE:
+            // Simple split
+            all_fields = message.Split(delimiter, RemoveEmptyEntries)
+
+        field_counts.Add(all_fields.Count)
+
+        // Track field values by position
+        FOR i = 0 TO all_fields.Count - 1:
+            IF i NOT IN fields_by_position:
+                fields_by_position[i] = []
+
+            fields_by_position[i].Add(all_fields[i])
+
+    // Check field count consistency
+    avg_field_count = Average(field_counts)
+    stddev_field_count = StandardDeviation(field_counts)
+
+    field_count_consistency = 1.0 - (stddev_field_count / avg_field_count)
+
+    RETURN {
+        strategy: "DelimiterBased",
+        delimiter: delimiter,
+        hierarchical: delimiter_info.type == "Hierarchical",
+        avg_field_count: avg_field_count,
+        field_count_consistency: field_count_consistency,
+        fields_by_position: fields_by_position,
+        confidence: field_count_consistency
+    }
+```
 
 ---
 
-### Stage 5: Apply Field Relationships ⭐ NEW
+### Algorithm 4: Multi-Line Frame Field Extraction
 
-**Purpose**: Detect and configure field relationships
+**Goal**: For frame-based messages, extract fields from each line
 
-**Input**: `List<FieldInfo>` (from Stage 4)
+**Input**: Framed messages (start marker to end marker)
 
-**Output**: `List<FieldRelationship>`
+**Algorithm**:
+
+```
+FUNCTION ExtractFieldsFromFrame(frames, start_marker, end_marker, lines_per_frame):
+
+    fields_by_line_number = {}
+
+    // Initialize: Create list for each line position
+    FOR line_num = 1 TO lines_per_frame:
+        fields_by_line_number[line_num] = []
+
+    // ═══ STEP 1: Collect Samples for Each Line Position ═══
+
+    FOR each frame in frames:
+        FOR line_num = 1 TO frame.lines.Count:
+            line_text = frame.lines[line_num - 1]
+            fields_by_line_number[line_num].Add(line_text)
+
+    // ═══ STEP 2: Analyze Each Line Position ═══
+
+    line_patterns = []
+
+    FOR line_num = 1 TO lines_per_frame:
+        samples = fields_by_line_number[line_num]
+
+        pattern = AnalyzeLinePattern(line_num, samples)
+        line_patterns.Add(pattern)
+
+    RETURN line_patterns
+
+
+FUNCTION AnalyzeLinePattern(line_number, samples):
+
+    // ═══ Check for Marker Lines ═══
+
+    IF line_number == 1:
+        // This should be start marker
+        RETURN {
+            line_number: line_number,
+            field_type: "StartMarker",
+            pattern: DetectRegexPattern(samples),
+            action: "Validate",
+            variance: CalculateVariance(samples)
+        }
+
+    // Check if this is end marker line
+    unique_samples = samples.Distinct().ToList()
+
+    IF unique_samples.Count == 1 AND unique_samples[0].Length < 5:
+        // Likely end marker or fixed label
+        RETURN {
+            line_number: line_number,
+            field_type: "Marker" OR "FixedLabel",
+            pattern: unique_samples[0],
+            action: "Validate",
+            variance: 0
+        }
+
+    // ═══ Check for Empty/Whitespace Lines ═══
+
+    IF samples.All(s => string.IsNullOrWhiteSpace(s)):
+        RETURN {
+            line_number: line_number,
+            field_type: "Empty",
+            pattern: "^\\s*$",
+            action: "Skip",
+            variance: 0
+        }
+
+    // ═══ Detect Data Patterns ═══
+
+    // Try common patterns
+    patterns_to_try = [
+        { name: "Date-YYYYMMDD", regex: "^\d{4}-\d{2}-\d{2}$" },
+        { name: "Date-DDMMYYYY", regex: "^\d{2}/\d{2}/\d{4}$" },
+        { name: "Time-HHMMSS", regex: "^\d{2}:\d{2}:\d{2}$" },
+        { name: "Decimal-WithUnit", regex: "^\s*[+-]?\d+\.\d+\s*[a-zA-Z]+\s*$" },
+        { name: "Integer-WithUnit", regex: "^\s*\d+\s*[a-zA-Z]+\s*$" },
+        { name: "Integer", regex: "^\s*\d+\s*$" },
+        { name: "Decimal", regex: "^\s*[+-]?\d+\.\d+\s*$" }
+    ]
+
+    FOR each pattern_test in patterns_to_try:
+        match_count = samples.Count(s => Regex.IsMatch(s, pattern_test.regex))
+        match_rate = match_count / samples.Count
+
+        IF match_rate > 0.9:  // 90%+ match
+
+            // Extract sub-fields if this is compound (value + unit)
+            IF pattern_test.name.Contains("WithUnit"):
+                sub_fields = ExtractCompoundFields(samples, pattern_test.regex)
+
+                RETURN {
+                    line_number: line_number,
+                    field_type: "CompoundData",
+                    pattern: pattern_test.regex,
+                    action: "Parse",
+                    variance: CalculateVariance(samples),
+                    sub_fields: sub_fields  // e.g., ["Value", "Unit"]
+                }
+
+            RETURN {
+                line_number: line_number,
+                field_type: pattern_test.name,
+                pattern: pattern_test.regex,
+                action: "Parse",
+                variance: CalculateVariance(samples),
+                sample_values: samples.Take(5).ToList()
+            }
+
+    // ═══ No Pattern Matched ═══
+
+    // Check variance to determine if this is data or constant
+    variance = CalculateVariance(samples)
+
+    IF variance < 0.1:
+        // Low variance - probably reserved/constant
+        RETURN {
+            line_number: line_number,
+            field_type: "Reserved",
+            pattern: ".*",
+            action: "Skip",
+            variance: variance
+        }
+    ELSE:
+        // High variance - unknown data field
+        RETURN {
+            line_number: line_number,
+            field_type: "UnknownData",
+            pattern: ".*",
+            action: "Parse",
+            variance: variance,
+            sample_values: samples.Take(5).ToList()
+        }
+
+
+FUNCTION CalculateVariance(samples):
+    """
+    Calculate how much variation exists in samples
+    0.0 = all same
+    1.0 = all different
+    """
+    unique_count = samples.Distinct().Count()
+    total_count = samples.Count
+
+    RETURN unique_count / total_count
+
+
+FUNCTION ExtractCompoundFields(samples, pattern):
+    """
+    For patterns like "1.94 kg", extract value and unit separately
+    """
+
+    // Try to split value from unit
+    value_samples = []
+    unit_samples = []
+
+    FOR each sample in samples:
+        match = Regex.Match(sample, pattern)
+
+        IF match.Success:
+            // Extract numeric part
+            numeric_match = Regex.Match(sample, "[+-]?\d+\.?\d*")
+            IF numeric_match.Success:
+                value_samples.Add(numeric_match.Value)
+
+            // Extract unit part
+            unit_match = Regex.Match(sample, "[a-zA-Z]+")
+            IF unit_match.Success:
+                unit_samples.Add(unit_match.Value)
+
+    RETURN [
+        {
+            name: "Value",
+            dataType: "Decimal",
+            pattern: "[+-]?\d+\.?\d*",
+            samples: value_samples
+        },
+        {
+            name: "Unit",
+            dataType: "String",
+            pattern: "[a-zA-Z]+",
+            samples: unit_samples
+        }
+    ]
+```
+
+**Sequence Diagram: Multi-Line Frame Field Extraction Algorithm**
+
+```mermaid
+sequenceDiagram
+    actor Analyzer
+    participant Frames as Frame Data<br/>Buffer
+    participant LinePos as Line Position<br/>Tracker
+    participant Samples as Sample<br/>Collection
+    participant Analysis as Pattern<br/>Analyzer
+    participant Results as Results<br/>Output
+
+    Analyzer->>Frames: Input: List of Frames<br/>(start marker to end marker)
+    Note over Analyzer,Results: STEP 1: Collect Samples for Each Line Position
+
+    loop For each Frame in Frames
+        Analyzer->>LinePos: Get frame.lines.Count
+        LinePos->>Samples: Create list for each line position<br/>lines_by_pos[1..N]
+
+        loop For each line in frame
+            Analyzer->>Samples: Add line_text to<br/>lines_by_pos[line_number]
+        end
+    end
+
+    Note over Analyzer,Results: STEP 2: Analyze Each Line Position
+
+    loop For each Line Position (1 to N)
+        Analyzer->>Samples: Get all samples for this position
+        Samples->>Analysis: Pass samples array
+
+        alt Line is Position 1
+            Analysis->>Analysis: Detect: StartMarker
+            Analysis->>Results: pattern + variance
+        else Check if EndMarker
+            Analysis->>Analysis: Count unique samples
+            alt Low variance, short length
+                Analysis->>Results: Type: EndMarker
+            else Check for Empty
+                Analysis->>Analysis: All whitespace?
+                alt Yes
+                    Analysis->>Results: Type: Empty
+                else Try Patterns
+                    Analysis->>Analysis: Test regex patterns<br/>Date, Time, Decimal, etc.
+                    Analysis->>Results: Type: Matched Pattern
+                end
+            end
+        end
+    end
+
+    Results->>Analyzer: Return: Array of<br/>line_patterns[] with<br/>all line metadata
+```
+
+---
+
+### Algorithm 5: Field Relationship Detection
+
+**Goal**: Detect if fields are related (combined, calculated, split)
+
+**Input**: Detected fields with sample values
 
 **Algorithm**:
 
@@ -1509,204 +871,143 @@ FUNCTION DetectFieldRelationships(fields):
 
     relationships = []
 
-    // ═══ 1. Detect Combine Relationships (Date + Time) ═══
+    // ═══ 1. Detect Date + Time Combination ═══
 
-    date_fields = fields.Where(f => f.DataType == "DateTime" AND
-                                    f.Format.Contains("yyyy-MM-dd"))
-    time_fields = fields.Where(f => f.DataType == "TimeSpan" AND
-                                    f.Format.Contains("HH:mm:ss"))
+    date_fields = fields.Where(f => f.field_type.Contains("Date"))
+    time_fields = fields.Where(f => f.field_type.Contains("Time"))
 
     FOR each date_field in date_fields:
-        // Look for time field immediately after date
-        time_field = time_fields.FirstOrDefault(t => t.LineNumber == date_field.LineNumber + 1)
+        FOR each time_field in time_fields:
 
-        IF time_field != null:
+            // Check if they are adjacent line numbers
+            IF Abs(date_field.line_number - time_field.line_number) == 1:
+
+                relationships.Add({
+                    type: "Combine",
+                    source_fields: [date_field.name, time_field.name],
+                    target_field: "DateTime",
+                    operation: "Date.Date + Time",
+                    confidence: 1.0,
+                    reason: "Adjacent date and time fields detected"
+                })
+
+    // ═══ 2. Detect Split Fields (Compound → Multiple) ═══
+
+    compound_fields = fields.Where(f => f.field_type == "CompoundData")
+
+    FOR each compound_field in compound_fields:
+        IF compound_field.sub_fields.Count > 1:
+
             relationships.Add({
-                Name: "CombineDateAndTime",
-                Type: "Combine",
-                SourceFields: [date_field.Name, time_field.Name],
-                TargetField: "DateTime",
-                Operation: "Date.Date + Time",
-                Description: $"Combine {date_field.Name} (line {date_field.LineNumber}) and {time_field.Name} (line {time_field.LineNumber})",
-                Confidence: 1.0
+                type: "Split",
+                source_field: $"Line{compound_field.line_number}",
+                target_fields: compound_field.sub_fields.Select(sf => sf.name).ToList(),
+                operations: compound_field.sub_fields.Select(sf => sf.pattern).ToList(),
+                confidence: 1.0,
+                reason: "Compound field with extractable sub-components"
             })
 
+    // ═══ 3. Detect Calculated Fields (Formula) ═══
 
-    // ═══ 2. Detect Split Relationships (Value + Unit) ═══
+    numeric_fields = fields.Where(f => f.dataType == "Decimal" OR f.dataType == "Integer")
 
-    // Group fields by line number
-    grouped_by_line = fields.GroupBy(f => f.LineNumber)
+    // Try common formulas
+    IF numeric_fields.Count >= 3:
 
-    FOR each line_group in grouped_by_line:
-        line_fields = line_group.ToList()
+        // Check for Weight formulas: GW - TW = NW pattern
+        // Need at least 3 weight fields
 
-        // Check if this line has both value and unit
-        value_field = line_fields.FirstOrDefault(f => f.DataType == "Decimal")
-        unit_field = line_fields.FirstOrDefault(f => f.DataType == "String" AND
-                                                     f.Name.Contains("Unit"))
+        FOR i = 0 TO numeric_fields.Count - 3:
+            field1 = numeric_fields[i]
+            field2 = numeric_fields[i + 1]
+            field3 = numeric_fields[i + 2]
 
-        IF value_field != null AND unit_field != null:
-            // This is a split from single line text
-            relationships.Add({
-                Name: $"Split{value_field.Name}AndUnit",
-                Type: "Split",
-                SourceFields: [$"Line{line_group.Key}Text"],
-                TargetFields: [value_field.Name, unit_field.Name],
-                Operations: [
-                    { Field: value_field.Name, Pattern: value_field.Pattern },
-                    { Field: unit_field.Name, Pattern: unit_field.Pattern }
-                ],
-                Description: $"Extract {value_field.Name} and {unit_field.Name} from line {line_group.Key}",
-                Confidence: 1.0
-            })
+            // Get sample values
+            samples_match_count = 0
+            total_samples = Min(field1.samples.Count, field2.samples.Count, field3.samples.Count)
 
+            FOR j = 0 TO total_samples - 1:
+                val1 = ParseDecimal(field1.samples[j])
+                val2 = ParseDecimal(field2.samples[j])
+                val3 = ParseDecimal(field3.samples[j])
 
-    // ═══ 3. Detect Calculate Relationships (Formula) ═══
+                // Test formula: val1 - val2 ≈ val3
+                IF Abs((val1 - val2) - val3) < 0.01:
+                    samples_match_count++
 
-    // Look for weight fields (TW, GW, NW pattern)
-    weight_fields = fields.Where(f => f.DataType == "Decimal" AND
-                                     (f.Name.Contains("Weight") OR f.Name.Contains("W")))
+            match_rate = samples_match_count / total_samples
 
-    tare = weight_fields.FirstOrDefault(f => f.Name.Contains("Tare") OR f.Name == "TW")
-    gross = weight_fields.FirstOrDefault(f => f.Name.Contains("Gross") OR f.Name == "GW")
-    net = weight_fields.FirstOrDefault(f => f.Name.Contains("Net") OR f.Name == "NW")
+            IF match_rate > 0.95:  // 95%+ samples match formula
 
-    IF tare != null AND gross != null AND net != null:
-        // Verify formula with sample data
-        samples_match = VerifyFormula(gross.SampleValues, tare.SampleValues, net.SampleValues,
-                                     (g, t, n) => Math.Abs((g - t) - n) < 0.01)
-
-        IF samples_match > 0.95:  // 95%+ of samples match formula
-            relationships.Add({
-                Name: "CalculateNetWeight",
-                Type: "Calculate",
-                SourceFields: [gross.Name, tare.Name],
-                TargetField: net.Name + "Calculated",
-                Operation: $"{gross.Name} - {tare.Name}",
-                Description: "Verify: GW - TW should equal NW",
-                Confidence: samples_match
-            })
+                relationships.Add({
+                    type: "Calculate",
+                    source_fields: [field1.name, field2.name],
+                    target_field: field3.name + "_Calculated",
+                    operation: $"{field1.name} - {field2.name}",
+                    confidence: match_rate,
+                    reason: $"Formula holds for {match_rate*100}% of samples"
+                })
 
     RETURN relationships
-
-
-FUNCTION VerifyFormula(gross_samples, tare_samples, net_samples, formula):
-    """
-    Verify formula against sample data
-    Returns: percentage of samples where formula holds true
-    """
-
-    match_count = 0
-    total_count = Min(gross_samples.Count, tare_samples.Count, net_samples.Count)
-
-    FOR i = 0 TO total_count - 1:
-        g = decimal.Parse(gross_samples[i])
-        t = decimal.Parse(tare_samples[i])
-        n = decimal.Parse(net_samples[i])
-
-        IF formula(g, t, n):  // |GW - TW - NW| < 0.01
-            match_count++
-
-    RETURN match_count / total_count
 ```
 
-**JIK6CAB Relationships Output**:
-
-```json
-{
-  "fieldRelationships": [
-    {
-      "name": "CombineDateAndTime",
-      "type": "Combine",
-      "sourceFields": ["Date", "Time"],
-      "targetField": "DateTime",
-      "operation": "Date.Date + Time",
-      "description": "Combine Date (line 2) and Time (line 3) into single DateTime property",
-      "confidence": 1.0
-    },
-    {
-      "name": "SplitTareWeightAndUnit",
-      "type": "Split",
-      "sourceFields": ["Line4Text"],
-      "targetFields": ["TareWeight", "TareUnit"],
-      "operations": [
-        { "field": "TareWeight", "pattern": "\\s*(\\d+\\.\\d+)\\s*" },
-        { "field": "TareUnit", "pattern": "(kg|g)" }
-      ],
-      "description": "Extract TareWeight and TareUnit from line 4",
-      "confidence": 1.0
-    },
-    {
-      "name": "SplitGrossWeightAndUnit",
-      "type": "Split",
-      "sourceFields": ["Line5Text"],
-      "targetFields": ["GrossWeight", "GrossUnit"],
-      "operations": [
-        { "field": "GrossWeight", "pattern": "\\s*(\\d+\\.\\d+)\\s*" },
-        { "field": "GrossUnit", "pattern": "(kg|g)" }
-      ],
-      "description": "Extract GrossWeight and GrossUnit from line 5",
-      "confidence": 1.0
-    },
-    {
-      "name": "SplitNetWeightAndUnit",
-      "type": "Split",
-      "sourceFields": ["Line8Text"],
-      "targetFields": ["NetWeight", "NetUnit"],
-      "operations": [
-        { "field": "NetWeight", "pattern": "\\s*(\\d+\\.\\d+)\\s*" },
-        { "field": "NetUnit", "pattern": "(kg|g)" }
-      ],
-      "description": "Extract NetWeight and NetUnit from line 8",
-      "confidence": 1.0
-    },
-    {
-      "name": "CalculateNetWeight",
-      "type": "Calculate",
-      "sourceFields": ["GrossWeight", "TareWeight"],
-      "targetField": "NetWeightCalculated",
-      "operation": "GrossWeight - TareWeight",
-      "description": "Verify: GW - TW should equal NW",
-      "confidence": 0.98
-    }
-  ]
-}
-```
-
-**Validation Flow Diagram**:
+**Flowchart: Field Relationship Detection Algorithm**
 
 ```mermaid
-flowchart LR
-    A[Parsed Fields] --> B[Field Relationship<br/>Processor]
+flowchart TD
+    Start([Start: List of Fields<br/>with Samples]) --> Step1["<b>STEP 1: Date + Time Combo</b><br/>Find all Date fields<br/>Find all Time fields<br/>Check if adjacent lines"]
 
-    B --> C{Relationship<br/>Type?}
+    Step1 --> D1{"Date & Time<br/>adjacent?<br/>distance = 1"}
 
-    C -->|Combine| D1[Combine<br/>Date + Time]
-    C -->|Split| D2[Split<br/>Value + Unit]
-    C -->|Calculate| D3[Calculate<br/>GW - TW]
+    D1 -->|Yes| R1["➕ Add Relationship:<br/>Type: Combine<br/>Source: Date + Time<br/>Target: DateTime<br/>Confidence: 1.0"]
 
-    D1 --> E1[DateTime Property<br/>2023-11-07 17:19:38]
-    D2 --> E2[TareWeight: 0.00<br/>TareUnit: kg]
-    D3 --> E3[NetWeightCalc: 1.94]
+    D1 -->|No| Step2["<b>STEP 2: Split Fields</b><br/>Find CompoundData fields<br/>Check for sub_fields<br/>e.g., '1.94 kg' → Value + Unit"]
 
-    E1 --> F[Updated Data Object]
-    E2 --> F
-    E3 --> F
+    Step2 --> D2{"Compound field<br/>has sub_fields?<br/>count > 1"}
 
-    style D1 fill:#90EE90
-    style D2 fill:#90EE90
-    style D3 fill:#90EE90
+    D2 -->|Yes| R2["➕ Add Relationship:<br/>Type: Split<br/>Source: CompoundField<br/>Targets: SubFields[]<br/>Confidence: 1.0"]
+
+    D2 -->|No| Step3["<b>STEP 3: Calculated Fields</b><br/>Find all numeric fields<br/>Look for formula patterns<br/>Gross - Tare = Net"]
+
+    Step3 --> D3{"At least 3<br/>numeric fields?"}
+
+    D3 -->|Yes| Loop["For each triple:<br/>Test formula:<br/>field1 - field2 ≈ field3"]
+
+    Loop --> D4{"Formula matches<br/>95%+ samples?"}
+
+    D4 -->|Yes| R3["➕ Add Relationship:<br/>Type: Calculate<br/>Formula: F1 - F2 = F3<br/>Confidence: match_rate"]
+
+    D4 -->|No| Next["Try next triple"]
+    Next --> Loop
+
+    D3 -->|No| End1["No formulas found"]
+
+    R1 --> Return["Return: relationships[]<br/>List of all detected<br/>relationships"]
+    R2 --> Return
+    R3 --> Return
+    End1 --> Return
+
+    Return --> EndNode([End])
+
+    style Start fill:#E1F5FE
+    style D1 fill:#FFF9C4
+    style D2 fill:#FFF9C4
+    style D3 fill:#FFF9C4
+    style D4 fill:#FFF9C4
+    style R1 fill:#BBDEFB
+    style R2 fill:#BBDEFB
+    style R3 fill:#BBDEFB
+    style Return fill:#C8E6C9
+    style EndNode fill:#E1F5FE
 ```
 
 ---
 
-### Stage 6: Apply Validation Rules ⭐ NEW
+### Algorithm 6: Validation Rule Generation
 
-**Purpose**: Generate and document validation rules for data integrity
+**Goal**: Auto-generate validation rules from sample data
 
-**Input**: `List<FieldInfo>`, `List<FieldRelationship>` (from Stages 4 & 5)
-
-**Output**: `List<ValidationRule>`
+**Input**: Fields with sample values, relationships
 
 **Algorithm**:
 
@@ -1715,1053 +1016,574 @@ FUNCTION GenerateValidationRules(fields, relationships):
 
     rules = []
 
-    // ═══ 1. Range Validation (for numeric fields) ═══
+    // ═══ 1. Range Validation for Numeric Fields ═══
 
-    numeric_fields = fields.Where(f => f.DataType IN ["Integer", "Decimal"])
+    numeric_fields = fields.Where(f => f.dataType IN ["Integer", "Decimal"])
 
     FOR each field in numeric_fields:
-        IF field.SampleValues.Count > 0:
-            values = field.SampleValues.Select(v => Parse(v, field.DataType))
+        IF field.sample_values.Count > 0:
 
-            min_value = values.Min()
-            max_value = values.Max()
+            values = field.sample_values.Select(v => ParseNumeric(v))
 
-            // Add buffer (10%)
-            range_min = min_value - (max_value - min_value) * 0.1
-            range_max = max_value + (max_value - min_value) * 0.1
+            min_val = values.Min()
+            max_val = values.Max()
 
-            // Clamp to reasonable values
-            IF field.Name.Contains("Weight"):
+            // Add 10% buffer
+            range_min = min_val - (max_val - min_val) * 0.1
+            range_max = max_val + (max_val - min_val) * 0.1
+
+            // Clamp to reasonable values (0 for weights, etc.)
+            IF field.name.Contains("Weight") OR field.name.Contains("Value"):
                 range_min = Max(0, range_min)
-                range_max = Min(999.99, range_max)
 
             rules.Add({
-                Name: field.Name + "Range",
-                Type: "Range",
-                Field: field.Name,
-                MinValue: range_min,
-                MaxValue: range_max,
-                Severity: "Error",
-                Message: $"{field.Name} must be between {range_min} and {range_max}"
+                name: field.name + "Range",
+                type: "Range",
+                field: field.name,
+                min_value: range_min,
+                max_value: range_max,
+                severity: "Error",
+                message: $"{field.name} must be between {range_min} and {range_max}"
             })
-
 
     // ═══ 2. DateTime Range Validation ═══
 
-    datetime_fields = fields.Where(f => f.DataType == "DateTime")
+    datetime_fields = fields.Where(f => f.field_type.Contains("Date"))
 
     FOR each field in datetime_fields:
         rules.Add({
-            Name: field.Name + "Valid",
-            Type: "DateTimeRange",
-            Field: field.Name,
-            MinDate: "2020-01-01",
-            MaxDate: "2099-12-31",
-            Severity: "Error",
-            Message: $"{field.Name} must be between 2020 and 2099"
+            name: field.name + "Valid",
+            type: "DateTimeRange",
+            field: field.name,
+            min_date: "2020-01-01",
+            max_date: "2099-12-31",
+            severity: "Error",
+            message: $"{field.name} must be between 2020 and 2099"
         })
 
+    // ═══ 3. Formula Validation from Calculate Relationships ═══
 
-    // ═══ 3. Formula Validation (from Calculate relationships) ═══
-
-    calc_relationships = relationships.Where(r => r.Type == "Calculate")
+    calc_relationships = relationships.Where(r => r.type == "Calculate")
 
     FOR each rel in calc_relationships:
         rules.Add({
-            Name: rel.Name + "Validation",
-            Type: "Formula",
-            Formula: rel.Operation + " = " + rel.TargetField,
-            Tolerance: 0.01,  // For decimal precision
-            Severity: "Error",
-            Message: $"Validation failed: {rel.Description}"
+            name: rel.target_field + "Formula",
+            type: "Formula",
+            formula: rel.operation + " = " + rel.target_field,
+            tolerance: 0.01,
+            severity: "Error",
+            message: $"Formula validation: {rel.operation} should equal {rel.target_field}"
         })
 
+    // ═══ 4. Field Relationship Validation ═══
 
-    // ═══ 4. Field Relationship Validation (logical rules) ═══
+    // For weight fields, GrossWeight >= TareWeight
+    weight_fields = fields.Where(f => f.name.Contains("Weight"))
 
-    // Example: GrossWeight >= TareWeight
-    weight_fields = fields.Where(f => f.Name.Contains("Weight"))
-    tare = weight_fields.FirstOrDefault(f => f.Name.Contains("Tare"))
-    gross = weight_fields.FirstOrDefault(f => f.Name.Contains("Gross"))
+    IF weight_fields.Count >= 2:
+        // Assume first is tare, second is gross (or detect from position)
+        tare = weight_fields.FirstOrDefault(f => f.line_number < weight_fields.Max(wf => wf.line_number))
+        gross = weight_fields.FirstOrDefault(f => f.line_number > tare.line_number)
 
-    IF tare != null AND gross != null:
-        rules.Add({
-            Name: "GrossVsTare",
-            Type: "FieldRelationship",
-            Condition: $"{gross.Name} >= {tare.Name}",
-            Severity: "Error",
-            Message: "Gross weight must be greater than or equal to tare weight"
-        })
-
-
-    // ═══ 5. Required Field Validation ═══
-
-    required_fields = fields.Where(f => f.Required == true AND f.Action == "Parse")
-
-    FOR each field in required_fields:
-        rules.Add({
-            Name: field.Name + "Required",
-            Type: "RequiredField",
-            Field: field.Name,
-            Severity: "Error",
-            Message: $"{field.Name} is required"
-        })
+        IF tare != null AND gross != null:
+            rules.Add({
+                name: "GrossVsTare",
+                type: "FieldRelationship",
+                condition: $"{gross.name} >= {tare.name}",
+                severity: "Error",
+                message: "Gross weight must be >= tare weight"
+            })
 
     RETURN rules
 ```
 
-**JIK6CAB Validation Rules Output**:
+---
 
-```json
-{
-  "validationRules": [
-    {
-      "name": "DateTimeValid",
-      "type": "DateTimeRange",
-      "field": "Date",
-      "minDate": "2020-01-01",
-      "maxDate": "2099-12-31",
-      "severity": "Error",
-      "message": "Date must be between 2020 and 2099"
-    },
-    {
-      "name": "TareWeightRange",
-      "type": "Range",
-      "field": "TareWeight",
-      "minValue": 0,
-      "maxValue": 999.99,
-      "severity": "Error",
-      "message": "Tare weight must be between 0 and 999.99 kg"
-    },
-    {
-      "name": "GrossWeightRange",
-      "type": "Range",
-      "field": "GrossWeight",
-      "minValue": 0,
-      "maxValue": 999.99,
-      "severity": "Error",
-      "message": "Gross weight must be between 0 and 999.99 kg"
-    },
-    {
-      "name": "NetWeightRange",
-      "type": "Range",
-      "field": "NetWeight",
-      "minValue": 0,
-      "maxValue": 999.99,
-      "severity": "Error",
-      "message": "Net weight must be between 0 and 999.99 kg"
-    },
-    {
-      "name": "CalculateNetWeightValidation",
-      "type": "Formula",
-      "formula": "GrossWeight - TareWeight = NetWeight",
-      "tolerance": 0.01,
-      "severity": "Error",
-      "message": "Validation failed: Verify: GW - TW should equal NW"
-    },
-    {
-      "name": "GrossVsTare",
-      "type": "FieldRelationship",
-      "condition": "GrossWeight >= TareWeight",
-      "severity": "Error",
-      "message": "Gross weight must be greater than or equal to tare weight"
-    },
-    {
-      "name": "PieceCountNonNegative",
-      "type": "Range",
-      "field": "PieceCount",
-      "minValue": 0,
-      "maxValue": 99999,
-      "severity": "Warning",
-      "message": "Piece count should be non-negative"
-    }
-  ]
-}
+## Parsing Strategy Categories
+
+After pattern detection, the analyzer must select the appropriate parsing strategy. There are **5 distinct strategy types**, each suited to different protocol structures.
+
+### Strategy 1: Delimiter-Based Parsing
+
+**When to Use**: High delimiter frequency detected, consistent field count
+
+**Characteristics**:
+- Fields separated by delimiters (space, comma, tab, etc.)
+- Single-line or simple multi-line messages
+- String split operations
+
+**Example** (CordDEFENDER3000):
+```
+HEX: 2D 20 20 31 2E 36 34 30 20 6B 67 20 20 20 20 4E
+TEXT: -  1.640 kg    N
 ```
 
-**Validation Architecture Diagram**:
+**Detection**:
+- Space delimiter appears consistently
+- Field count = 3 across all messages
+- Confidence: 95%+
+
+**Parsing Algorithm**:
+```
+line.Split(' ', RemoveEmptyEntries)
+→ ["-", "1.640", "kg", "N"]
+```
+
+---
+
+### Strategy 2: Frame-Based Parsing
+
+**When to Use**: Start/end markers detected with fixed line count
+
+**Characteristics**:
+- Start marker begins message
+- End marker terminates message
+- Fixed number of lines per message
+- Line position determines meaning
+
+**Example** (JIK6CAB - Frame structure):
+```
+Line 1:  ^KJIK000     ← Start marker
+Line 2:  2023-11-07   ← Date
+Line 3:  17:19:38     ← Time
+...
+Line 14: ~P1          ← End marker
+```
+
+**Detection**:
+- Start marker pattern: `^\^KJIK\d{3}$`
+- End marker pattern: `^~P1$`
+- Line count between markers: 14 (consistent)
+- Confidence: 100%
+
+**Parsing Algorithm**:
+```
+WHEN line matches start_marker:
+    Reset frame buffer
+    Start accumulating lines
+
+WHEN frame.lineCount < expected_lines:
+    Add line to frame buffer
+
+WHEN line matches end_marker:
+    Process complete frame
+    Parse each line by position
+```
+
+---
+
+### Strategy 3: State Machine Parsing ⭐ CRITICAL
+
+**When to Use**: Frame-based protocol where **line position** determines field identity, NOT content
+
+**Why ContentBased Fails**: When multiple lines have identical or similar content patterns but represent different fields
+
+**Critical Example** (JIK6CAB Weight Lines):
+
+```
+Line 4:  "  0.00 kg"   ← Tare Weight
+Line 5:  "  1.94 kg"   ← Gross Weight
+Line 8:  "  1.94 kg"   ← Net Weight
+```
+
+**Problem**: All three lines contain "kg" - ContentBased parsing **cannot distinguish** between them.
+
+**Solution**: State Machine tracks position in sequence:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+
+    Idle --> Line1 : Detect ^KJIK000
+
+    Line1 --> Line2 : lineNumber = 2
+    Line2 --> Line3 : lineNumber = 3<br/>Parse Date
+    Line3 --> Line4 : lineNumber = 4<br/>Parse Time, Combine with Date
+    Line4 --> Line5 : lineNumber = 5<br/>Parse TareWeight from "kg" line
+    Line5 --> Line6 : lineNumber = 6<br/>Parse GrossWeight from "kg" line
+    Line6 --> Line7 : lineNumber = 7<br/>Skip Reserved
+    Line7 --> Line8 : lineNumber = 8<br/>Skip Reserved
+    Line8 --> Line9 : lineNumber = 9<br/>Parse NetWeight from "kg" line
+    Line9 --> Line10 : lineNumber = 10<br/>Skip Duplicate
+    Line10 --> Line11 : lineNumber = 11<br/>Parse PieceCount
+    Line11 --> Line12 : lineNumber = 12<br/>Skip Empty
+    Line12 --> Line13 : lineNumber = 13<br/>Skip Empty
+    Line13 --> Line14 : lineNumber = 14<br/>Skip Status
+    Line14 --> Validate : Validate ~P1
+
+    Validate --> ApplyRelationships : Marker valid
+    ApplyRelationships --> ApplyValidation : Combine Date+Time
+    ApplyValidation --> FireEvent : GW-TW=NW check
+    FireEvent --> Idle : Complete
+
+    Validate --> Error : Invalid marker
+    Error --> Idle : Reset state
+
+    note right of Line4
+        Position-based:
+        lineNumber = 4 → TareWeight
+        lineNumber = 5 → GrossWeight
+        lineNumber = 8 → NetWeight
+
+        Content is identical ("kg")
+        but position determines meaning!
+    end note
+```
+
+**State Tracking Variables**:
+```csharp
+private int lineNumber = 0;
+private bool parsingInProgress = false;
+private DateTime? date;
+private TimeSpan? time;
+private decimal? tareWeight, grossWeight, netWeight;
+private decimal? pieceCount;
+```
+
+**Parsing Algorithm**:
+```
+FUNCTION ParseLine(line):
+    IF line matches START_MARKER:
+        lineNumber = 0
+        parsingInProgress = true
+        Reset all field variables
+
+    IF parsingInProgress:
+        lineNumber++
+
+        SWITCH lineNumber:
+            CASE 1: Validate start marker
+            CASE 2: date = ParseDate(line)
+            CASE 3: time = ParseTime(line)
+                    date = date.Date + time  // Combine relationship
+            CASE 4: tareWeight = ParseWeight(line, "kg")
+            CASE 5: grossWeight = ParseWeight(line, "kg")
+            CASE 6, 7: Skip  // Reserved fields
+            CASE 8: netWeight = ParseWeight(line, "kg")
+            CASE 9: Skip  // Duplicate display
+            CASE 10: pieceCount = ParsePieceCount(line, "pcs")
+            CASE 11, 12: Skip  // Empty lines
+            CASE 13: Skip  // Status indicator
+            CASE 14:
+                IF line matches END_MARKER:
+                    ApplyValidation()  // GW - TW = NW
+                    FireEvent()
+                    parsingInProgress = false
+                    lineNumber = 0
+                ELSE:
+                    Error: Invalid end marker
+```
+
+**Key Difference from ContentBased**:
+
+| Approach | How it determines field | Works for JIK6CAB? |
+|----------|------------------------|-------------------|
+| **ContentBased** | `if (line.Contains("kg"))` | ❌ **NO** - Can't distinguish TW/GW/NW |
+| **State Machine** | `switch (lineNumber)` | ✅ **YES** - Position determines meaning |
+
+**Detection Algorithm**:
+```
+IF start_marker AND end_marker AND fixed_line_count detected:
+
+    // Check if line position matters more than content
+    FOR each line position in frame:
+        samples = GetAllSamplesAtPosition(position)
+
+        // Check for position-dependent fields
+        IF samples have similar content BUT different semantic meaning:
+            // Example: Lines 4, 5, 8 all contain "kg"
+            strategy = STATE_MACHINE
+            BREAK
+
+    // Alternative: Check if skip lines exist
+    IF some line positions are always empty/reserved:
+        strategy = STATE_MACHINE
+```
+
+**When to Use State Machine vs ContentBased**:
+
+Use **State Machine** when:
+- ✅ Fixed line count per message
+- ✅ Line position determines field identity
+- ✅ Multiple lines have identical content patterns
+- ✅ Some lines must be skipped
+- ✅ Field relationships span multiple lines (Date + Time)
+
+Use **ContentBased** when:
+- ✅ Variable line count per message
+- ✅ Line content uniquely identifies field type
+- ✅ No positional dependencies
+- ✅ Pattern matching can distinguish all fields
+
+---
+
+### Strategy 4: Position-Based Parsing (Fixed-Width)
+
+**When to Use**: Fixed byte positions detected, no delimiters
+
+**Characteristics**:
+- Fields at fixed byte offsets
+- May have header byte indicating message type
+- Binary or text data
+
+**Example** (TFO1 with header byte):
+```
+HEX: 46 20 20 20 20 20 20 30 2E 30
+TEXT: F      0.0
+
+Byte 0: 'F' (header - identifies field type)
+Bytes 1-9: "      0.0" (value at fixed position)
+```
+
+**Detection**:
+- Consistent message length OR
+- First byte has limited set of values (header byte)
+- Low delimiter frequency
+
+**Parsing Algorithm**:
+```
+header = content[0]
+SWITCH header:
+    CASE 'F': value = ParseFixed(content, offset=1, length=9)
+    CASE 'H': value = ParseFixed(content, offset=1, length=9)
+    ...
+```
+
+---
+
+### Strategy 5: Content-Based Parsing
+
+**When to Use**: Variable structure, pattern variance across lines
+
+**Characteristics**:
+- Line content determines field type
+- Variable message length
+- Pattern matching with if/else logic
+
+**Example** (PHMeter):
+```
+Line 1: "3.01pH 25.5°C ATC"  ← Contains "pH" and "°C"
+Line 2: "20-Feb-2023"        ← Contains "-" (date pattern)
+Line 3: "11:11"              ← Contains ":" (time pattern)
+```
+
+**Detection**:
+- No fixed start/end markers
+- Variable line count
+- High pattern variance
+- Content uniquely identifies field
+
+**Parsing Algorithm**:
+```
+IF line.Contains("pH") AND line.Contains("°C"):
+    ParseBothFields(line)
+ELSE IF line.Contains("-"):
+    ParseDate(line)
+ELSE IF line.Contains(":"):
+    ParseTime(line)
+```
+
+**Important**: ContentBased works ONLY when content patterns are unique per field type.
+
+---
+
+### Strategy Selection Decision Tree
 
 ```mermaid
 flowchart TD
-    A[Parsed Data] --> B[Validation Engine]
+    A[Analyze Log File] --> B{Start/End Markers<br/>Detected?}
 
-    B --> C{For Each Rule}
+    B -->|Yes| C{Fixed Line Count<br/>Between Markers?}
+    B -->|No| D{High Delimiter<br/>Frequency?}
 
-    C --> D1[Range Validation<br/>0 <= TW <= 999.99]
-    C --> D2[Formula Validation<br/>GW - TW = NW]
-    C --> D3[DateTime Validation<br/>2020 <= Date <= 2099]
-    C --> D4[Field Relationship<br/>GW >= TW]
+    C -->|Yes| E{Multiple Lines<br/>Same Content Pattern?}
+    C -->|No| F[ContentBased Parsing]
 
-    D1 --> E1{Pass?}
-    D2 --> E2{Pass?}
-    D3 --> E3{Pass?}
-    D4 --> E4{Pass?}
+    E -->|Yes| G[⭐ State Machine Parsing<br/>Position-Based]
+    E -->|No| H[Frame-Based Parsing<br/>Content-Based per Line]
 
-    E1 -->|Yes| F[Continue]
-    E1 -->|No| G1{Severity?}
-    G1 -->|Error| H[Reject Data]
-    G1 -->|Warning| I[Accept with Warning]
+    D -->|Yes| I{Hierarchical<br/>Delimiters?}
+    D -->|No| J{Fixed Message<br/>Length?}
 
-    E2 -->|Yes| F
-    E2 -->|No| G2{Severity?}
-    G2 -->|Error| H
-    G2 -->|Warning| I
+    I -->|Yes| K[Delimiter-Based<br/>Hierarchical Split]
+    I -->|No| L[Delimiter-Based<br/>Simple Split]
 
-    E3 -->|Yes| F
-    E3 -->|No| G3{Severity?}
-    G3 -->|Error| H
-    G3 -->|Warning| I
+    J -->|Yes| M{Header Byte<br/>Pattern?}
+    J -->|No| F
 
-    E4 -->|Yes| F
-    E4 -->|No| G4{Severity?}
-    G4 -->|Error| H
-    G4 -->|Warning| I
+    M -->|Yes| N[Position-Based<br/>Header Switch]
+    M -->|No| O[Position-Based<br/>Fixed-Width]
 
-    F --> J{More Rules?}
-    J -->|Yes| C
-    J -->|No| K[All Passed]
+    style G fill:#FFE4B5
+    style F fill:#90EE90
+```
 
-    K --> L[Accept Data]
-    I --> L
-    H --> M[Return Error]
+---
 
-    style H fill:#FF6B6B
-    style L fill:#90EE90
-    style I fill:#FFE4B5
+## Proposed Parsing Strategy
+
+### 6-Stage Universal Pipeline
+
+```
+Stage 1: Byte Extraction
+│
+├─ Input: Raw log file
+├─ Output: List<LogEntry> with bytes and text
+└─ Algorithm: Parse HEX/Text columns, extract bytes
+    ↓
+Stage 2: Message Boundary Detection
+│
+├─ Input: List<LogEntry>
+├─ Output: List<Message> (grouped entries)
+└─ Algorithm: Marker detection, terminator analysis
+    ↓
+Stage 3: Field Structure Analysis
+│
+├─ Input: List<Message>
+├─ Output: List<FieldInfo> with positions/patterns
+└─ Algorithm: Delimiter detection, position analysis, frame line analysis
+    ↓
+Stage 4: Field Classification
+│
+├─ Input: List<FieldInfo>
+├─ Output: Enhanced FieldInfo with data types
+└─ Algorithm: Pattern matching, data type inference, variance analysis
+    ↓
+Stage 5: Relationship Detection
+│
+├─ Input: List<FieldInfo>
+├─ Output: List<FieldRelationship>
+└─ Algorithm: Date+Time detection, formula verification, split detection
+    ↓
+Stage 6: Validation Generation
+│
+├─ Input: FieldInfo + Relationships
+├─ Output: List<ValidationRule>
+└─ Algorithm: Range calculation, formula rules, relationship rules
+    ↓
+Final Output: JSON Protocol Definition
 ```
 
 ---
 
 ## Implementation Considerations
 
-### 1. State Machine Parser Implementation ⭐ CRITICAL
+### 1. Confidence Scoring
 
-For JIK6CAB and similar sequential line protocols:
-
-```csharp
-public class SequentialLineParser
-{
-    private ParserState state = ParserState.Idle;
-    private int lineCount = 0;
-    private Dictionary<string, object> fieldValues;
-    private LineSequenceConfig config;
-    private DateTime startTime;
-
-    public SequentialLineParser(LineSequenceConfig config)
-    {
-        this.config = config;
-        this.fieldValues = new Dictionary<string, object>();
-    }
-
-    public void ProcessLine(string line)
-    {
-        switch (state)
-        {
-            case ParserState.Idle:
-                if (MatchesStartMarker(line))
-                {
-                    state = ParserState.Parsing;
-                    lineCount = 0;
-                    fieldValues.Clear();
-                    startTime = DateTime.Now;
-                }
-                break;
-
-            case ParserState.Parsing:
-                lineCount++;
-
-                // Check timeout (5 seconds for package)
-                if ((DateTime.Now - startTime).TotalMilliseconds > config.TimeoutMs)
-                {
-                    LogError($"Timeout: Package incomplete after {lineCount} lines");
-                    ResetToIdle();
-                    break;
-                }
-
-                // Get line definition for this position
-                if (lineCount > config.Lines.Count)
-                {
-                    LogError($"Unexpected line count: {lineCount} > {config.Lines.Count}");
-                    ResetToIdle();
-                    break;
-                }
-
-                LineDefinition lineDef = config.Lines[lineCount - 1];
-
-                switch (lineDef.Action)
-                {
-                    case LineAction.Parse:
-                        var value = ExtractValue(line, lineDef);
-                        if (value != null)
-                        {
-                            fieldValues[lineDef.FieldName] = value;
-                        }
-                        else
-                        {
-                            LogWarning($"Failed to parse line {lineCount}: {line}");
-                        }
-                        break;
-
-                    case LineAction.Skip:
-                        // Just advance lineCount, don't parse
-                        break;
-
-                    case LineAction.Validate:
-                        if (!ValidatePattern(line, lineDef.Pattern))
-                        {
-                            LogError($"Validation failed at line {lineCount}: Expected pattern {lineDef.Pattern}, got {line}");
-                            state = ParserState.Error;
-                            ResetToIdle();
-                        }
-                        break;
-
-                    case LineAction.Marker:
-                        if (lineDef.FieldName == "EndMarker")
-                        {
-                            if (MatchesEndMarker(line))
-                            {
-                                state = ParserState.Complete;
-                                OnPackageComplete();
-                            }
-                            else
-                            {
-                                LogError($"Invalid end marker at line {lineCount}: Expected {config.EndMarker}, got {line}");
-                                state = ParserState.Error;
-                                ResetToIdle();
-                            }
-                        }
-                        break;
-                }
-                break;
-
-            case ParserState.Complete:
-                // Apply field relationships
-                ApplyFieldRelationships();
-
-                // Apply validation rules
-                var validationResult = ApplyValidationRules();
-
-                if (validationResult.IsValid)
-                {
-                    FireDataReceivedEvent(fieldValues);
-                }
-                else
-                {
-                    if (validationResult.HasErrors)
-                    {
-                        LogError("Validation failed", validationResult.Errors);
-                    }
-                    if (validationResult.HasWarnings)
-                    {
-                        LogWarning("Validation warnings", validationResult.Warnings);
-                        FireDataReceivedEvent(fieldValues);  // Accept with warnings
-                    }
-                }
-
-                state = ParserState.Idle;
-                break;
-        }
-    }
-
-    private object ExtractValue(string line, LineDefinition lineDef)
-    {
-        if (string.IsNullOrEmpty(lineDef.Pattern))
-            return line.Trim();
-
-        var match = Regex.Match(line, lineDef.Pattern);
-        if (!match.Success)
-            return null;
-
-        string valueStr = match.Groups[1].Value;
-
-        // Convert to data type
-        var field = config.Fields.FirstOrDefault(f => f.Name == lineDef.FieldName);
-        if (field == null)
-            return valueStr;
-
-        switch (field.DataType)
-        {
-            case "Integer":
-                return int.Parse(valueStr);
-            case "Decimal":
-                return decimal.Parse(valueStr);
-            case "DateTime":
-                return DateTime.ParseExact(valueStr, field.Format, CultureInfo.InvariantCulture);
-            case "TimeSpan":
-                return TimeSpan.ParseExact(valueStr, field.Format, CultureInfo.InvariantCulture);
-            default:
-                return valueStr;
-        }
-    }
-
-    private void ApplyFieldRelationships()
-    {
-        foreach (var rel in config.FieldRelationships)
-        {
-            switch (rel.Type)
-            {
-                case RelationshipType.Combine:
-                    // Example: Date + Time → DateTime
-                    if (rel.TargetField == "DateTime" &&
-                        fieldValues.ContainsKey("Date") &&
-                        fieldValues.ContainsKey("Time"))
-                    {
-                        var date = (DateTime)fieldValues["Date"];
-                        var time = (TimeSpan)fieldValues["Time"];
-                        fieldValues["DateTime"] = date.Date + time;
-                    }
-                    break;
-
-                case RelationshipType.Calculate:
-                    // Example: GW - TW → NetWeightCalculated
-                    if (rel.Operation == "GrossWeight - TareWeight")
-                    {
-                        var gw = (decimal)fieldValues["GrossWeight"];
-                        var tw = (decimal)fieldValues["TareWeight"];
-                        fieldValues["NetWeightCalculated"] = gw - tw;
-                    }
-                    break;
-
-                // Split is already handled during parsing
-            }
-        }
-    }
-
-    private ValidationResult ApplyValidationRules()
-    {
-        var result = new ValidationResult { IsValid = true };
-
-        foreach (var rule in config.ValidationRules.Where(r => r.Enabled))
-        {
-            switch (rule.Type)
-            {
-                case ValidationType.Range:
-                    ValidateRange(rule, result);
-                    break;
-
-                case ValidationType.Formula:
-                    ValidateFormula(rule, result);
-                    break;
-
-                case ValidationType.DateTimeRange:
-                    ValidateDateTimeRange(rule, result);
-                    break;
-
-                case ValidationType.FieldRelationship:
-                    ValidateFieldRelationship(rule, result);
-                    break;
-            }
-
-            // Stop on first error
-            if (!result.IsValid && rule.Severity == ValidationSeverity.Error)
-                break;
-        }
-
-        return result;
-    }
-
-    private void ValidateFormula(ValidationRule rule, ValidationResult result)
-    {
-        // Example: "GrossWeight - TareWeight = NetWeight"
-        // Parse formula to extract field names
-
-        if (!fieldValues.ContainsKey("GrossWeight") ||
-            !fieldValues.ContainsKey("TareWeight") ||
-            !fieldValues.ContainsKey("NetWeight"))
-        {
-            result.AddError(ValidationSeverity.Error, "Missing required fields for formula validation");
-            result.IsValid = false;
-            return;
-        }
-
-        var gw = (decimal)fieldValues["GrossWeight"];
-        var tw = (decimal)fieldValues["TareWeight"];
-        var nw = (decimal)fieldValues["NetWeight"];
-
-        var calculated = gw - tw;
-        var diff = Math.Abs(calculated - nw);
-
-        if (diff > (rule.Tolerance ?? 0.001))
-        {
-            result.AddError(rule.Severity,
-                $"{rule.Message}: GW={gw}, TW={tw}, NW={nw}, Calculated={calculated}, Diff={diff}");
-
-            if (rule.Severity == ValidationSeverity.Error)
-                result.IsValid = false;
-        }
-    }
-
-    private void ValidateRange(ValidationRule rule, ValidationResult result)
-    {
-        if (!fieldValues.ContainsKey(rule.Field))
-        {
-            result.AddError(ValidationSeverity.Error, $"Field {rule.Field} not found");
-            result.IsValid = false;
-            return;
-        }
-
-        var value = (decimal)fieldValues[rule.Field];
-        var minValue = (decimal)rule.MinValue;
-        var maxValue = (decimal)rule.MaxValue;
-
-        if (value < minValue || value > maxValue)
-        {
-            result.AddError(rule.Severity,
-                $"{rule.Message}: Value={value}, Min={minValue}, Max={maxValue}");
-
-            if (rule.Severity == ValidationSeverity.Error)
-                result.IsValid = false;
-        }
-    }
-
-    private void ValidateDateTimeRange(ValidationRule rule, ValidationResult result)
-    {
-        if (!fieldValues.ContainsKey(rule.Field))
-        {
-            result.AddError(ValidationSeverity.Error, $"Field {rule.Field} not found");
-            result.IsValid = false;
-            return;
-        }
-
-        var value = (DateTime)fieldValues[rule.Field];
-        var minDate = DateTime.Parse(rule.MinDate);
-        var maxDate = DateTime.Parse(rule.MaxDate);
-
-        if (value < minDate || value > maxDate)
-        {
-            result.AddError(rule.Severity,
-                $"{rule.Message}: Value={value:yyyy-MM-dd}, Min={minDate:yyyy-MM-dd}, Max={maxDate:yyyy-MM-dd}");
-
-            if (rule.Severity == ValidationSeverity.Error)
-                result.IsValid = false;
-        }
-    }
-
-    private void ValidateFieldRelationship(ValidationRule rule, ValidationResult result)
-    {
-        // Example: "GrossWeight >= TareWeight"
-        if (!fieldValues.ContainsKey("GrossWeight") ||
-            !fieldValues.ContainsKey("TareWeight"))
-            return;
-
-        var gw = (decimal)fieldValues["GrossWeight"];
-        var tw = (decimal)fieldValues["TareWeight"];
-
-        if (gw < tw)
-        {
-            result.AddError(rule.Severity,
-                $"{rule.Message}: GW={gw}, TW={tw}");
-
-            if (rule.Severity == ValidationSeverity.Error)
-                result.IsValid = false;
-        }
-    }
-
-    private bool MatchesStartMarker(string line)
-    {
-        return Regex.IsMatch(line, config.StartMarker);
-    }
-
-    private bool MatchesEndMarker(string line)
-    {
-        return Regex.IsMatch(line, config.EndMarker);
-    }
-
-    private bool ValidatePattern(string line, string pattern)
-    {
-        return Regex.IsMatch(line, pattern);
-    }
-
-    private void ResetToIdle()
-    {
-        state = ParserState.Idle;
-        lineCount = 0;
-        fieldValues.Clear();
-    }
-
-    private void FireDataReceivedEvent(Dictionary<string, object> data)
-    {
-        // Convert dictionary to data object and fire event
-        OnDataReceived?.Invoke(this, new DataReceivedEventArgs(data));
-    }
-
-    public event EventHandler<DataReceivedEventArgs> OnDataReceived;
-}
-
-public enum ParserState
-{
-    Idle,
-    Parsing,
-    Complete,
-    Error
-}
-
-public class ValidationResult
-{
-    public bool IsValid { get; set; }
-    public List<ValidationError> Errors { get; set; } = new List<ValidationError>();
-    public List<ValidationError> Warnings { get; set; } = new List<ValidationError>();
-
-    public bool HasErrors => Errors.Count > 0;
-    public bool HasWarnings => Warnings.Count > 0;
-
-    public void AddError(ValidationSeverity severity, string message)
-    {
-        var error = new ValidationError { Severity = severity, Message = message };
-
-        if (severity == ValidationSeverity.Error)
-            Errors.Add(error);
-        else
-            Warnings.Add(error);
-    }
-}
-
-public class ValidationError
-{
-    public ValidationSeverity Severity { get; set; }
-    public string Message { get; set; }
-}
-```
-
-### 2. Configuration Generation
-
-Auto-generate `LineSequenceConfig` from analysis results:
+Every detection should return a confidence score (0-1):
 
 ```csharp
-public LineSequenceConfig GenerateSequenceConfig(AnalysisResult analysis)
+public class DetectionResult
 {
-    var config = new LineSequenceConfig
-    {
-        Name = analysis.DeviceName,
-        StartMarker = analysis.MessagePatterns
-            .FirstOrDefault(p => p.Position == PatternPosition.Start)?.Pattern,
-        EndMarker = analysis.MessagePatterns
-            .FirstOrDefault(p => p.Position == PatternPosition.End)?.Pattern,
-        ExpectedLineCount = analysis.AverageLineCount,
-        TimeoutMs = 5000,
-        Lines = new List<LineDefinition>(),
-        FieldRelationships = analysis.FieldRelationships,
-        ValidationRules = analysis.ValidationRules
-    };
-
-    // Generate line definitions from field analysis
-    var groupedByLine = analysis.Fields.GroupBy(f => f.LineNumber).OrderBy(g => g.Key);
-
-    foreach (var lineGroup in groupedByLine)
-    {
-        int lineNumber = lineGroup.Key;
-        var fields = lineGroup.ToList();
-
-        // Determine primary field for this line
-        var primaryField = fields.FirstOrDefault(f => f.Action == LineAction.Parse) ??
-                          fields.FirstOrDefault();
-
-        var lineDef = new LineDefinition
-        {
-            LineNumber = lineNumber,
-            FieldName = primaryField?.Name,
-            Pattern = primaryField?.ParseInfo.Pattern,
-            Required = primaryField?.Required ?? true,
-            Description = $"Line {lineNumber}: {primaryField?.Description}"
-        };
-
-        // Determine action
-        if (primaryField?.Name.Contains("Marker") == true)
-            lineDef.Action = LineAction.Marker;
-        else if (primaryField?.Name.Contains("Empty") == true ||
-                 primaryField?.Name.Contains("Reserved") == true)
-            lineDef.Action = LineAction.Skip;
-        else if (primaryField?.Action == LineAction.Validate)
-            lineDef.Action = LineAction.Validate;
-        else
-            lineDef.Action = LineAction.Parse;
-
-        config.Lines.Add(lineDef);
-    }
-
-    return config;
+    public string DetectedPattern { get; set; }
+    public double Confidence { get; set; }  // 0.0 - 1.0
+    public string Reason { get; set; }
 }
 ```
 
-### 3. UI Considerations
+**Confidence Thresholds**:
+- **>= 0.95**: High confidence - auto-apply
+- **0.80 - 0.94**: Medium confidence - apply with user confirmation
+- **< 0.80**: Low confidence - show to user for manual decision
 
-**Line Sequence Editor** (for state machine protocols):
+### 2. Multi-Strategy Support
 
-```
-┌─ Line Sequence Editor - JIK6CAB ────────────────────────────┐
-│                                                               │
-│ Package Structure:                                           │
-│ ├─ Start Marker: ^KJIK000                                   │
-│ ├─ Expected Lines: 14                                       │
-│ └─ End Marker: ~P1                                          │
-│                                                               │
-│ Line-by-Line Configuration:                                  │
-│                                                               │
-│ Line │ Action   │ Field Name      │ Pattern        │ Sample  │
-│ ─────┼──────────┼─────────────────┼────────────────┼─────────│
-│  1   │ Validate │ StartMarker     │ ^\^KJIK\d{3}$  │ ^KJIK000│
-│  2   │ Parse    │ Date            │ \d{4}-\d{2}... │ 2023-... │
-│  3   │ Parse    │ Time            │ \d{2}:\d{2}... │ 17:19:38│
-│  4   │ Parse    │ TareWeight      │ \d+\.\d+       │ 0.00 kg │
-│  5   │ Parse    │ GrossWeight     │ \d+\.\d+       │ 1.94 kg │
-│  6   │ Skip     │ Reserved1       │ \d+            │ 0       │
-│  7   │ Skip     │ Reserved2       │ \d+            │ 0       │
-│  8   │ Parse    │ NetWeight       │ \d+\.\d+       │ 1.94 kg │
-│  9   │ Skip     │ DisplayWeight   │ \d+\.\d+       │ 1.94 kg │
-│  10  │ Parse    │ PieceCount      │ \d+\s*pcs      │ 0 pcs   │
-│  11  │ Skip     │ Empty1          │ \s*            │         │
-│  12  │ Skip     │ Empty2          │ \s*            │         │
-│  13  │ Skip     │ StatusIndicator │ [A-Z]          │ E       │
-│  14  │ Validate │ EndMarker       │ ^~P1$          │ ~P1     │
-│                                                               │
-│ [Preview] [Validate] [Generate JSON]                        │
-└───────────────────────────────────────────────────────────────┘
+Some protocols may use multiple strategies:
+
+```csharp
+public class ProtocolStrategy
+{
+    public List<Strategy> Strategies { get; set; }
+}
+
+public class Strategy
+{
+    public StrategyType Type { get; set; }  // Delimiter, Frame, Position, Hybrid
+    public double Confidence { get; set; }
+    public Dictionary<string, object> Parameters { get; set; }
+}
 ```
 
-**Field Relationship Editor**:
+### 3. User Feedback Loop
+
+If confidence is low, ask user:
 
 ```
-┌─ Field Relationships - JIK6CAB ────────────────────────────┐
-│                                                             │
-│ Detected Relationships:                                     │
-│                                                             │
-│ 1. Combine Date + Time → DateTime                          │
-│    Source: Date (line 2) + Time (line 3)                   │
-│    Target: DateTime                                         │
-│    Operation: Date.Date + Time                              │
-│    [Edit] [Remove]                                          │
-│                                                             │
-│ 2. Calculate NetWeight (Validation)                        │
-│    Formula: GrossWeight - TareWeight = NetWeight            │
-│    Tolerance: 0.01                                          │
-│    [Edit] [Remove]                                          │
-│                                                             │
-│ 3. Split TareWeight + TareUnit                             │
-│    Source: Line 4 text ("  0.00 kg")                       │
-│    Targets: TareWeight (0.00) + TareUnit ("kg")            │
-│    [Edit] [Remove]                                          │
-│                                                             │
-│ [Add Relationship]                                          │
-└─────────────────────────────────────────────────────────────┘
+┌─ Pattern Detection Results ─────────────────────────┐
+│                                                       │
+│ Detected: Frame-Based Protocol                      │
+│ Confidence: 87%                                      │
+│                                                       │
+│ Start Marker: "^KJIK000" (found at lines 1, 15, 29) │
+│ End Marker: "~P1" (found at lines 14, 28, 42)       │
+│ Lines per frame: 14                                  │
+│                                                       │
+│ Does this look correct?                              │
+│ [ Yes, apply ] [ No, manual edit ] [ Show samples ] │
+└───────────────────────────────────────────────────────┘
 ```
 
-**Validation Rule Editor**:
+### 4. Sample Size Requirements
 
-```
-┌─ Validation Rules - JIK6CAB ──────────────────────────────┐
-│                                                             │
-│ Rule 1: Weight Calculation                                 │
-│ ├─ Type: Formula                                           │
-│ ├─ Formula: GrossWeight - TareWeight = NetWeight           │
-│ ├─ Tolerance: [0.01]                                       │
-│ ├─ Severity: ○ Info ○ Warning ● Error                     │
-│ └─ Message: [Net weight calculation mismatch...]          │
-│    [Edit] [Remove] [Test Against Samples]                 │
-│                                                             │
-│ Rule 2: Date Range                                         │
-│ ├─ Type: DateTimeRange                                    │
-│ ├─ Field: Date                                             │
-│ ├─ Min Date: [2020-01-01]                                 │
-│ ├─ Max Date: [2099-12-31]                                 │
-│ ├─ Severity: ○ Info ○ Warning ● Error                     │
-│ └─ Message: [Date must be between 2020 and 2099]          │
-│    [Edit] [Remove]                                         │
-│                                                             │
-│ [Add Validation Rule]                                      │
-│                                                             │
-│ Test Results: 15/15 samples passed all rules ✓            │
-└─────────────────────────────────────────────────────────────┘
-```
+Minimum samples needed for confidence:
 
-### 4. Performance Considerations
-
-**Large Files** (>1000 messages):
-- Stream processing for files > 100MB
-- Process in batches of 100 messages
-- Sample-based analysis (analyze first 100-200 messages, validate on rest)
-- Progress reporting every 100 messages
-- Memory-efficient: Don't keep all raw data in memory
-
-**State Machine**:
-- Timeout handling (5 seconds default per package)
-- Error recovery (reset to Idle on any error, continue with next package)
-- Memory management (clear fieldValues dictionary after each package)
-- Thread safety (if multi-threaded, use locks on state variables)
-
-**Algorithm Optimization**:
-- Regex compilation for repeated patterns
-- Field lookup by dictionary instead of linear search
-- Lazy evaluation where possible
+| Analysis Type | Min Samples | Recommended |
+|--------------|-------------|-------------|
+| Message boundary | 5 messages | 20+ messages |
+| Delimiter detection | 10 messages | 50+ messages |
+| Field pattern | 20 samples | 100+ samples |
+| Formula validation | 10 samples | 50+ samples |
 
 ### 5. Error Handling
 
-**Invalid Packages**:
-
 ```csharp
-try
+public class AnalysisResult
 {
-    ProcessLine(line);
+    public bool Success { get; set; }
+    public List<DetectionResult> Detections { get; set; }
+    public List<AnalysisWarning> Warnings { get; set; }
+    public List<AnalysisError> Errors { get; set; }
 }
-catch (Exception ex)
-{
-    LogError($"Error processing line {lineCount} in package starting at line {packageStartLine}", ex);
 
-    if (state == ParserState.Parsing)
-    {
-        ResetToIdle();  // Abandon current package
-        // Continue processing - next start marker will begin new package
-    }
+public class AnalysisWarning
+{
+    public string Message { get; set; }
+    public double AffectedConfidence { get; set; }
 }
 ```
-
-**Validation Failures**:
-
-```csharp
-var validationResult = ApplyValidationRules();
-
-if (validationResult.HasErrors)
-{
-    // Severity = Error: Reject data
-    LogError("Data validation failed", validationResult.Errors);
-    OnDataRejected?.Invoke(this, new DataRejectedEventArgs(fieldValues, validationResult));
-}
-else if (validationResult.HasWarnings)
-{
-    // Severity = Warning: Accept with warnings
-    LogWarning("Data validation warnings", validationResult.Warnings);
-    FireDataReceivedEvent(fieldValues);
-}
-else
-{
-    // All passed
-    FireDataReceivedEvent(fieldValues);
-}
-```
-
-**Timeout Handling**:
-
-```csharp
-// In ProcessLine method, during Parsing state
-if ((DateTime.Now - startTime).TotalMilliseconds > config.TimeoutMs)
-{
-    LogError($"Timeout: Package incomplete after {lineCount} lines. " +
-             $"Expected {config.ExpectedLineCount} lines. " +
-             $"Started at file line {packageStartLine}.");
-
-    ResetToIdle();
-    break;
-}
-```
-
----
-
-## Detailed Strategy Patterns
-
-### Pattern 1: Single-Line Parser
-
-**Used By**: CordDEFENDER3000, WeightQA
-
-**Implementation**:
-
-```csharp
-public class SingleLineParser
-{
-    public T Parse<T>(string line, ProtocolDefinition definition) where T : new()
-    {
-        var data = new T();
-        string[] parts;
-
-        // Split by delimiter
-        if (definition.DelimiterType == DelimiterType.Space)
-            parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        else if (definition.DelimiterType == DelimiterType.Slash)
-            parts = line.Split('/');
-        else if (definition.DelimiterType == DelimiterType.Comma)
-            parts = line.Split(',');
-
-        // Extract fields
-        for (int i = 0; i < definition.Fields.Count; i++)
-        {
-            var field = definition.Fields[i];
-
-            if (field.Parse.Index >= parts.Length)
-                continue;  // Field missing
-
-            var value = parts[field.Parse.Index];
-
-            if (field.Parse.Trim)
-                value = value.Trim();
-
-            SetPropertyValue(data, field.Name, value, field.DataType);
-        }
-
-        return data;
-    }
-}
-```
-
----
-
-### Pattern 2: Header-Byte Parser
-
-**Used By**: TFO1
-
-**Implementation**:
-
-```csharp
-public class HeaderByteParser
-{
-    public void ProcessFrame<T>(byte[] frame, T data, ProtocolDefinition definition)
-    {
-        if (frame.Length == 0)
-            return;
-
-        char header = (char)frame[0];
-
-        // Find field definition for this header byte
-        var field = definition.Fields.FirstOrDefault(f => f.HeaderByte == header);
-        if (field == null)
-        {
-            LogWarning($"Unknown header byte: {header} (0x{frame[0]:X2})");
-            return;
-        }
-
-        // Extract value based on parse method
-        switch (field.Parse.Method)
-        {
-            case ParseMethod.FixedPosition:
-                if (frame.Length >= field.Parse.Offset + field.Parse.Length)
-                {
-                    var text = Encoding.ASCII.GetString(frame,
-                        field.Parse.Offset,
-                        field.Parse.Length);
-
-                    SetPropertyValue(data, field.Name, text.Trim(), field.DataType);
-                }
-                break;
-
-            case ParseMethod.Binary:
-                if (frame.Length >= field.Parse.Offset + field.Parse.Length)
-                {
-                    var bytes = new byte[field.Parse.Length];
-                    Array.Copy(frame, field.Parse.Offset, bytes, 0, field.Parse.Length);
-                    SetPropertyValue(data, field.Name, bytes, field.DataType);
-                }
-                break;
-
-            case ParseMethod.Regex:
-                var lineText = Encoding.ASCII.GetString(frame);
-                var match = Regex.Match(lineText, field.Parse.Pattern);
-                if (match.Success)
-                {
-                    var value = match.Groups[field.Parse.Group].Value;
-                    SetPropertyValue(data, field.Name, value, field.DataType);
-                }
-                break;
-        }
-    }
-}
-```
-
----
-
-### Pattern 3: Content-Based Parser
-
-**Used By**: PHMeter
-
-**Implementation**:
-
-```csharp
-public class ContentBasedParser
-{
-    public void ProcessLine<T>(string line, T data, ProtocolDefinition definition)
-    {
-        // Try each field pattern until one matches
-        foreach (var field in definition.Fields)
-        {
-            // Check if this field has a content pattern
-            if (!string.IsNullOrEmpty(field.Parse.ContentPattern))
-            {
-                if (!line.Contains(field.Parse.ContentPattern))
-                    continue;  // This field doesn't apply to this line
-            }
-
-            // Try to extract value with regex
-            if (!string.IsNullOrEmpty(field.Parse.Pattern))
-            {
-                var match = Regex.Match(line, field.Parse.Pattern);
-                if (match.Success)
-                {
-                    var value = match.Groups[field.Parse.Group].Value;
-                    SetPropertyValue(data, field.Name, value, field.DataType);
-                    return;  // Found match, done with this line
-                }
-            }
-        }
-    }
-}
-```
-
----
-
-### Pattern 4: State Machine Parser ⭐
-
-**Used By**: JIK6CAB
-
-**Complete Implementation**: See [Implementation Considerations](#1-state-machine-parser-implementation--critical) section above for full code.
 
 ---
 
 ## Summary
 
-### Parsing Strategy Comparison
+### Universal Detection Principles
 
-| Strategy | Complexity | Auto-Detection | Key Algorithm | Example Device |
-|----------|-----------|---------------|---------------|----------------|
-| **Single-Line** | ⭐ Low | Delimiter frequency >80% | `String.Split()` | CordDEFENDER3000 |
-| **Nested Delimiter** | ⭐⭐ Medium | Multiple delimiter types | Hierarchical split | WeightQA |
-| **Header-Byte** | ⭐⭐ Medium | First byte pattern | `switch (header)` | TFO1 |
-| **Content-Based** | ⭐⭐ Medium | Pattern variance | `if Contains()` | PHMeter |
-| **State Machine** ⭐ | **⭐⭐⭐ High** | **Start/end markers + fixed line count** | **Position-based switch** | **JIK6CAB** |
-
-### New Capabilities in v3.0
-
-1. ✅ **Fully Integrated State Machine**: Not a separate section - integrated throughout all stages
-2. ✅ **6-Stage Pipeline**: Enhanced with field relationships and validation
-3. ✅ **JIK6CAB as Challenge Category**: Properly positioned as most complex device
-4. ✅ **Core Problems Updated**: 5 problems identified including state tracking
-5. ✅ **Complete Algorithms**: Pseudocode for all 6 stages
-6. ✅ **Implementation Code**: Full C# implementation with error handling
-7. ✅ **8 Mermaid Diagrams**: State machine, flow, validation, relationships
-8. ✅ **4 Strategy Patterns**: Detailed implementation for each pattern
+1. **No Device Knowledge Required**: All strategies derived from statistical analysis
+2. **Pattern-First Approach**: Detect patterns, then infer structure
+3. **Confidence Scoring**: Every decision has measurable confidence
+4. **User Validation**: Low confidence requires user confirmation
+5. **Algorithm-Based**: Pure data structure and pattern matching
 
 ### Success Criteria
 
-The Protocol Analyzer must achieve:
-- ✅ **95%+ message boundary detection** accuracy (including state machine)
-- ✅ **95%+ field structure identification** accuracy (position-based for state machine)
-- ✅ **95%+ parsing strategy selection** accuracy (detect state machine vs others)
-- ✅ **Support all devices** including JIK6CAB (most complex)
-- ✅ **Generate valid JSON** definitions for all strategies
-- ✅ **Bidirectional support** (parse and serialize)
-- ✅ **Validation** (formula, range, datetime, relationships)
+- ✅ **95%+ accuracy** on known log files (validation)
+- ✅ **Works on unknown devices** without prior knowledge
+- ✅ **Generates valid JSON** definitions automatically
+- ✅ **Confidence scores** for all detections
+- ✅ **User feedback** when confidence is low
 
 ---
 
-**Document Version**: 3.0
+**Document Version**: 5.0
 **Last Updated**: 2025-10-21
-**Status**: Complete - Fully Integrated Design
+**Status**: Universal Algorithm Design + State Machine Strategy
 **Changes**:
-- v1.0: Initial parsing strategy with production code examples
-- v1.1: Added production code parsing examples and insights
-- v2.0: Added state machine parsing, validation rules, field relationships
-- v2.1: Added comprehensive Mermaid diagrams (8 diagrams)
-- v3.0: **MAJOR RESTRUCTURE** - Complete integration:
-  - JIK6CAB as Challenge Category #5 (most complex)
-  - State machine in Core Problems section
-  - All 6 parsing stages handle state machine
-  - Complete implementation code with error handling
-  - Detailed algorithms with pseudocode
-  - 4 strategy patterns documented
-  - Table of contents for navigation
-  - ~2,800 lines of comprehensive documentation
+- v1.0-2.1: Production code based (WRONG APPROACH)
+- v3.0: Production code integrated (STILL WRONG)
+- v4.0: **COMPLETE REDESIGN** - Universal algorithm approach, no device assumptions
+- v5.0: **CRITICAL UPDATE** - Added explicit State Machine Parser strategy section with:
+  - Clear explanation of why ContentBased fails for position-dependent protocols
+  - State diagram for JIK6CAB protocol
+  - 5 distinct parsing strategy categories
+  - Strategy selection decision tree
+  - HEX/Text format examples
