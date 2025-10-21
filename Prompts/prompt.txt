@@ -26,15 +26,20 @@ The TabControl-based layout was selected per user feedback: "You use too much pa
 
 ### Completed Design Sections
 
+**✅ UI SIMPLIFIED - NO TOOLBAR**
+
 1. **Main Application Window Layout**
-   - Toolbar with New, Open, Save, Export buttons
-   - TabControl with 4 main tabs
-   - Status bar showing message count, confidence, validation status
+   - ❌ REMOVED: Toolbar (was: [New] [Open Log] [Import] [Save] [Export] [Settings] [Help] [About])
+   - ✅ TabControl with 4 main tabs (primary navigation)
+   - ✅ Status bar showing message count, confidence, validation status
+   - Minimal, clean UI focused on workflow tabs
 
 2. **Input Tab (with sub-modes)**
    - Serial Port Mode: Port/Baud settings, connection status, live capture display
-   - Log File Mode: File browser, format detection, preview panel
-   - Navigation buttons between tabs
+   - Log File Mode: File browser with [Browse...] button, format detection, preview panel
+   - ❌ REMOVED: Separate toolbar [Open Log] button (moved to Input Tab)
+   - ❌ REMOVED: [Import] from toolbar (will add button only to Log File mode if needed later)
+   - Navigation buttons: [◀ Back] [▶ Next: Analyze]
 
 3. **Analysis Tab**
    - Protocol type detection (Single-line, Multi-line, Command-response)
@@ -42,18 +47,29 @@ The TabControl-based layout was selected per user feedback: "You use too much pa
    - Delimiter analysis with frequency table
    - Fields detected list
    - Overall confidence score
+   - Navigation buttons: [◀ Back] [▶ Next: Edit Fields]
 
 4. **Field Editor Tab**
    - Editable data grid (Pos, Current Name, New Name, Type, Sample)
    - Selected field details panel
    - Live JSON definition preview
    - Validation buttons (Suggest Names, Validate, Undo, Redo)
+   - Navigation buttons: [◀ Back] [▶ Next: Export]
 
 5. **Export Tab**
    - Validation status with checkmarks
    - Export configuration (device name, output folder)
    - Format selection (JSON, YAML, Analysis Report, Test Cases)
-   - Export/Save/Exit buttons
+   - Export buttons: [◀ Back] [▶ Export] [Save Draft] [Exit]
+   - ❌ REMOVED: Redundant toolbar [Export] button (moved to Export Tab)
+
+### Settings & Configuration
+
+- ❌ NO Settings dialog - settings configured manually each time
+- ❌ NO Help or About dialogs
+- ❌ NO Save Settings persistence
+- Serial port settings configured in Input Tab each session
+- Export folder selected manually in Export Tab each session
 
 ### Next Session TODO
 
@@ -81,11 +97,14 @@ The TabControl-based layout was selected per user feedback: "You use too much pa
 
 ### Key Architecture Decisions
 
-- **TabControl** for workflow stages (not separate panels)
+- **NO Toolbar** - Minimal UI, all functions through TabControl tabs and in-tab buttons
+- **TabControl** for workflow stages (Input → Analysis → Field Editor → Export)
 - **Observable pattern** for real-time data binding
 - **Shared data model** (LogData, AnalysisResult, ProtocolDefinition) across all tabs
 - **Validation before export** ensures data integrity
 - **Live preview** of field definitions as user edits
+- **Manual configuration** - No persistent settings, users configure ports/paths each session
+- **Tab navigation** via [◀ Back] [▶ Next] buttons (no toolbar navigation)
 
 ### Technical Notes
 
