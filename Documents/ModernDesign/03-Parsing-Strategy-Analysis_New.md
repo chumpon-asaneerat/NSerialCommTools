@@ -279,6 +279,36 @@ FUNCTION DetectMessageBoundaries(lines):
 | Log 2 | FrameBased | 1.0 | "^KJIK000" at line 1, 15, 29... Gap=14, End="~P1" |
 | Log 3 | SingleLine | 1.0 | Every line ends with CRLF, no markers |
 
+**Flowchart: Message Boundary Detection Algorithm**
+
+```mermaid
+flowchart TD
+    Start([Start: List of Lines]) --> Step1["<b>STEP 1: Analyze Terminators</b><br/>Extract last 4 bytes from each line<br/>Find most common terminator pattern"]
+
+    Step1 --> Step2["<b>STEP 2: Detect Start/End Markers</b><br/>Look for special chars at start<br/>^, ~, <, >, @, #, $<br/>Track pattern, count, positions"]
+
+    Step2 --> Step3["<b>STEP 3: Analyze Marker Positions</b><br/>Calculate gaps between occurrences<br/>Check gap consistency<br/>Look for end markers"]
+
+    Step3 --> Decide{"Decision Tree:<br/>What's the<br/>Terminator Freq & <br/>Marker Confidence?"}
+
+    Decide -->|High confidence marker<br/>Consistent gaps| Return1["<b>RETURN FrameBased</b><br/>✓ Multi-line frames detected<br/>✓ Start/end markers found<br/>✓ Consistent line count"]
+
+    Decide -->|No markers<br/>High terminator freq| Return2["<b>RETURN SingleLine</b><br/>✓ Every line ends with<br/>same terminator<br/>✓ One message per line"]
+
+    Decide -->|Uncertain patterns| Return3["<b>RETURN ContentBased</b><br/>✓ Low confidence<br/>✓ Needs content analysis"]
+
+    Return1 --> End([End])
+    Return2 --> End
+    Return3 --> End
+
+    style Start fill:#E1F5FE
+    style Decide fill:#FFF9C4
+    style Return1 fill:#C8E6C9
+    style Return2 fill:#C8E6C9
+    style Return3 fill:#FFCCBC
+    style End fill:#E1F5FE
+```
+
 ---
 
 ### Algorithm 2: Delimiter Detection
@@ -367,6 +397,36 @@ FUNCTION DetectDelimiters(messages):
 | Log 1 | Space (multiple) | None | Simple | 0.95 |
 | Log 2 | None detected | None | None | 0 |
 | Log 3 | "/" (1 per line) | Space (2 per line) | Hierarchical | 1.0 |
+
+**Flowchart: Delimiter Detection Algorithm**
+
+```mermaid
+flowchart TD
+    Start([Start: List of Messages]) --> Step1["<b>STEP 1: Count Occurrences</b><br/>For each candidate delimiter:<br/>Space, Tab, Comma, Semicolon<br/>Colon, Slash, Pipe<br/>Count total appearances"]
+
+    Step1 --> Step2["<b>STEP 2: Calculate Consistency</b><br/>For each delimiter:<br/>Count occurrences per message<br/>Calculate average & std deviation<br/>Consistency = 1 - stddev/avg"]
+
+    Step2 --> Step3["<b>STEP 3: Detect Hierarchical</b><br/>Find all delimiters with<br/>consistency > 0.8 AND frequency > 0<br/>Order by frequency"]
+
+    Step3 --> Check{"How many<br/>high-consistency<br/>delimiters found?"}
+
+    Check -->|2 or more| Return1["<b>RETURN Hierarchical</b><br/>Primary: highest frequency<br/>Secondary: second highest<br/>Multi-level structure detected"]
+
+    Check -->|Exactly 1| Return2["<b>RETURN Simple</b><br/>Single delimiter found<br/>Fields separated by one char"]
+
+    Check -->|None| Return3["<b>RETURN None</b><br/>No consistent delimiters<br/>Fixed position or complex"]
+
+    Return1 --> End([End])
+    Return2 --> End
+    Return3 --> End
+
+    style Start fill:#E1F5FE
+    style Check fill:#FFF9C4
+    style Return1 fill:#C8E6C9
+    style Return2 fill:#C8E6C9
+    style Return3 fill:#FFCCBC
+    style End fill:#E1F5FE
+```
 
 ---
 
