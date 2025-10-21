@@ -1217,7 +1217,7 @@ Line 8:  "  1.94 kg"   ← Net Weight
 stateDiagram-v2
     [*] --> Idle
 
-    Idle --> Line1 : Start: ^KJIK000
+    Idle --> Line1 : Start marker detected
 
     Line1 --> Line2 : Line 2
     Line2 --> Line3 : Line 3 - Parse Date
@@ -1232,7 +1232,7 @@ stateDiagram-v2
     Line11 --> Line12 : Line 12 - Empty
     Line12 --> Line13 : Line 13 - Empty
     Line13 --> Line14 : Line 14 - Status
-    Line14 --> Validate : End: ~P1
+    Line14 --> Validate : End marker found
 
     Validate --> ApplyRules : Valid
     ApplyRules --> Complete : All rules applied
@@ -1242,12 +1242,14 @@ stateDiagram-v2
     Error --> Idle : Reset
 
     note right of Line4
-        ⭐ Position-Based Strategy
+        Position-Based Strategy
         lineNumber determines field meaning:
-        4 → TareWeight | 5 → GrossWeight
-        8 → NetWeight | 11 → PieceCount
+        Line 4: TareWeight
+        Line 5: GrossWeight
+        Line 8: NetWeight
+        Line 11: PieceCount
 
-        All weight lines contain "kg"
+        All weight lines contain kg text
         but POSITION distinguishes them!
     end note
 ```
