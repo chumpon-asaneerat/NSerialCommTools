@@ -508,7 +508,59 @@ FUNCTION AnalyzeFixedPositions(messages):
         strategy: "Unknown",
         confidence: 0
     }
+```
 
+**Decision Tree: Field Position Analysis Algorithm**
+
+```mermaid
+flowchart TD
+    Start([Start: Messages<br/>+ Delimiter Info]) --> Q1{"Are delimiters<br/>detected?<br/>delimiter_info.type != 'None'"}
+
+    Q1 -->|Yes, Delimiters Found| DelimPath["<b>Path: DELIMITER-BASED</b><br/>Split messages by delimiter<br/>Analyze token positions"]
+
+    Q1 -->|No Delimiters| FixedPath["<b>Path: FIXED POSITIONS</b><br/>Check first-byte patterns<br/>Check fixed-width fields"]
+
+    DelimPath --> D1{"Limited set of<br/>first bytes?<br/>1-10 unique bytes"}
+
+    D1 -->|Yes| HeaderByte["<b>HeaderByte Strategy</b><br/>Different message types<br/>Different first byte = type<br/>Consistent length per type"]
+
+    D1 -->|No| FixedWidth["<b>FixedWidth Strategy</b><br/>All messages same length<br/>Fields at fixed positions<br/>Consistency = 1.0"]
+
+    D1 -->|No, Many Bytes| D2{"Are messages<br/>all same length?"}
+
+    D2 -->|Yes| FW["<b>FixedWidth</b>"]
+
+    D2 -->|No| DelimResult["<b>DelimiterBased Strategy</b><br/>Avg field count<br/>Consistency score<br/>Hierarchical support"]
+
+    FixedPath --> F1{"Limited set<br/>first bytes?"}
+
+    F1 -->|Yes, 1-10| HeaderByte
+
+    F1 -->|No| F2{"All messages<br/>same length?"}
+
+    F2 -->|Yes| FixedWidthResult["<b>FixedWidth Strategy</b><br/>Position-based parsing<br/>Field starts at byte N"]
+
+    F2 -->|No| UnknownResult["<b>Unknown Strategy</b><br/>Need content analysis"]
+
+    HeaderByte --> End1([End: HeaderByte])
+    FixedWidth --> End2([End: FixedWidth])
+    DelimResult --> End3([End: DelimiterBased])
+    FW --> End4([End: FixedWidth])
+    FixedWidthResult --> End5([End: FixedWidth])
+    UnknownResult --> End6([End: Unknown])
+
+    style Start fill:#E1F5FE
+    style Q1 fill:#FFF9C4
+    style F1 fill:#FFF9C4
+    style F2 fill:#FFF9C4
+    style D1 fill:#FFF9C4
+    style D2 fill:#FFF9C4
+    style HeaderByte fill:#C8E6C9
+    style FixedWidth fill:#C8E6C9
+    style DelimResult fill:#C8E6C9
+    style FixedWidthResult fill:#C8E6C9
+    style UnknownResult fill:#FFCCBC
+```
 
 FUNCTION AnalyzeDelimiterBased(messages, delimiter_info):
 
