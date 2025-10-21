@@ -951,6 +951,56 @@ FUNCTION DetectFieldRelationships(fields):
     RETURN relationships
 ```
 
+**Flowchart: Field Relationship Detection Algorithm**
+
+```mermaid
+flowchart TD
+    Start([Start: List of Fields<br/>with Samples]) --> Step1["<b>STEP 1: Date + Time Combo</b><br/>Find all Date fields<br/>Find all Time fields<br/>Check if adjacent lines"]
+
+    Step1 --> D1{"Date & Time<br/>adjacent?<br/>distance = 1"}
+
+    D1 -->|Yes| R1["➕ Add Relationship:<br/>Type: Combine<br/>Source: Date + Time<br/>Target: DateTime<br/>Confidence: 1.0"]
+
+    D1 -->|No| Step2["<b>STEP 2: Split Fields</b><br/>Find CompoundData fields<br/>Check for sub_fields<br/>e.g., '1.94 kg' → Value + Unit"]
+
+    Step2 --> D2{"Compound field<br/>has sub_fields?<br/>count > 1"}
+
+    D2 -->|Yes| R2["➕ Add Relationship:<br/>Type: Split<br/>Source: CompoundField<br/>Targets: SubFields[]<br/>Confidence: 1.0"]
+
+    D2 -->|No| Step3["<b>STEP 3: Calculated Fields</b><br/>Find all numeric fields<br/>Look for formula patterns<br/>Gross - Tare = Net"]
+
+    Step3 --> D3{"At least 3<br/>numeric fields?"}
+
+    D3 -->|Yes| Loop["For each triple:<br/>Test formula:<br/>field1 - field2 ≈ field3"]
+
+    Loop --> D4{"Formula matches<br/>95%+ samples?"}
+
+    D4 -->|Yes| R3["➕ Add Relationship:<br/>Type: Calculate<br/>Formula: F1 - F2 = F3<br/>Confidence: match_rate"]
+
+    D4 -->|No| Next["Try next triple"]
+    Next --> Loop
+
+    D3 -->|No| End1["No formulas found"]
+
+    R1 --> Return["Return: relationships[]<br/>List of all detected<br/>relationships"]
+    R2 --> Return
+    R3 --> Return
+    End1 --> Return
+
+    Return --> EndNode([End])
+
+    style Start fill:#E1F5FE
+    style D1 fill:#FFF9C4
+    style D2 fill:#FFF9C4
+    style D3 fill:#FFF9C4
+    style D4 fill:#FFF9C4
+    style R1 fill:#BBDEFB
+    style R2 fill:#BBDEFB
+    style R3 fill:#BBDEFB
+    style Return fill:#C8E6C9
+    style EndNode fill:#E1F5FE
+```
+
 ---
 
 ### Algorithm 6: Validation Rule Generation
