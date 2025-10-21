@@ -97,7 +97,18 @@
 - Algorithm 5: Field Relationship Detection → Flowchart
 - Algorithm 6: Validation Rule Generation → Flowchart
 
-**Status**: ⏳ Pending
+**Status**: ⏳ PARTIAL - 2 of 7 diagrams added
+
+**Diagrams Added**:
+1. ✅ State Machine Parser - Complete state diagram (Strategy 3)
+2. ✅ Strategy Selection Decision Tree - Flowchart showing all strategy choices
+
+**Diagrams Still Needed** (for Pattern Detection Algorithms section):
+1. ⏳ Algorithm 1: Message Boundary Detection
+2. ⏳ Algorithm 2: Delimiter Detection
+3. ⏳ Algorithm 3: Field Position Analysis
+4. ⏳ Algorithm 4: Multi-Line Frame Field Extraction
+5. ⏳ Algorithm 5: Field Relationship Detection
 
 ---
 
