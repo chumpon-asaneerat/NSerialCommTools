@@ -49,8 +49,13 @@ flowchart TD
     D --> E3[Pattern: Fixed Byte Positions<br/>→ Position-Based Strategy]
     D --> E4[Pattern: Line Content Variance<br/>→ Content-Based Strategy]
 
+    E2 --> E2A{Position-Dependent<br/>Fields?}
+    E2A -->|Yes| E2B[⭐ State Machine Strategy<br/>Position determines meaning]
+    E2A -->|No| E2C[Frame-Based Strategy<br/>Content determines meaning]
+
     E1 --> F[Stage 3:<br/>Field Detection]
-    E2 --> F
+    E2B --> F
+    E2C --> F
     E3 --> F
     E4 --> F
 
@@ -61,6 +66,8 @@ flowchart TD
     H --> I[Stage 6:<br/>Validation Generation]
 
     I --> J[Output:<br/>JSON Protocol Definition]
+
+    style E2B fill:#FFE4B5
 ```
 
 ### Key Insight
@@ -77,41 +84,84 @@ Parsing strategies are detected through:
 
 ### Sample Log Files (Unknown Devices)
 
-We have log files but **don't know** what devices they're from:
+We have log files but **don't know** what devices they're from. All logs are in HEX/Text format:
 
-**Log File 1** (Unknown Device A):
+**Log File 1** (Unknown Device A - Weight Scale):
 ```
--  1.640 kg    N
--  1.642 kg    N
--  1.638 kg    N
-```
+HEX: 2D 20 20 31 2E 36 34 30 20 6B 67 20 20 20 20 4E 0D 0A
+TEXT: -  1.640 kg    N\r\n
 
-**Log File 2** (Unknown Device B):
-```
-^KJIK000
-2023-11-07
-17:19:38
-  0.00 kg
-  1.94 kg
-0
-0
-  1.94 kg
-  1.94 kg
-    0 pcs
+HEX: 2D 20 20 31 2E 36 34 32 20 6B 67 20 20 20 20 4E 0D 0A
+TEXT: -  1.642 kg    N\r\n
 
-
-E
-~P1
+HEX: 2D 20 20 31 2E 36 33 38 20 6B 67 20 20 20 20 4E 0D 0A
+TEXT: -  1.638 kg    N\r\n
 ```
 
-**Log File 3** (Unknown Device C):
+**Log File 2** (Unknown Device B - Multi-Line Frame Scale):
 ```
-+007.12/3 G S
-+008.15/2 G S
-+009.20/1 G S
+HEX: 5E 4B 4A 49 4B 30 30 30 0D 0A
+TEXT: ^KJIK000\r\n
+
+HEX: 32 30 32 33 2D 31 31 2D 30 37 0D 0A
+TEXT: 2023-11-07\r\n
+
+HEX: 31 37 3A 31 39 3A 33 38 0D 0A
+TEXT: 17:19:38\r\n
+
+HEX: 20 20 30 2E 30 30 20 6B 67 0D 0A
+TEXT:   0.00 kg\r\n
+
+HEX: 20 20 31 2E 39 34 20 6B 67 0D 0A
+TEXT:   1.94 kg\r\n
+
+HEX: 30 0D 0A
+TEXT: 0\r\n
+
+HEX: 30 0D 0A
+TEXT: 0\r\n
+
+HEX: 20 20 31 2E 39 34 20 6B 67 0D 0A
+TEXT:   1.94 kg\r\n
+
+HEX: 20 20 31 2E 39 34 20 6B 67 0D 0A
+TEXT:   1.94 kg\r\n
+
+HEX: 20 20 20 20 30 20 70 63 73 0D 0A
+TEXT:     0 pcs\r\n
+
+HEX: 0D 0A
+TEXT: \r\n
+
+HEX: 0D 0A
+TEXT: \r\n
+
+HEX: 45 0D 0A
+TEXT: E\r\n
+
+HEX: 7E 50 31 0D 0A
+TEXT: ~P1\r\n
+```
+
+**Log File 3** (Unknown Device C - Compound Delimiter):
+```
+HEX: 2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A
+TEXT: +007.12/3 G S\r\n
+
+HEX: 2B 30 30 38 2E 31 35 2F 32 20 47 20 53 0D 0A
+TEXT: +008.15/2 G S\r\n
+
+HEX: 2B 30 30 39 2E 32 30 2F 31 20 47 20 53 0D 0A
+TEXT: +009.20/1 G S\r\n
 ```
 
 **Question**: How do we automatically detect the parsing strategy for each?
+
+**Note**: The HEX format is critical because:
+- Binary terminators (0x0D, 0x0A) are visible
+- Special markers (0x5E for ^, 0x7E for ~) are clearly shown
+- Delimiters (0x20 for space, 0x2F for /) are identifiable
+- Non-printable bytes can be detected
 
 ---
 
@@ -836,6 +886,327 @@ FUNCTION GenerateValidationRules(fields, relationships):
 
 ---
 
+## Parsing Strategy Categories
+
+After pattern detection, the analyzer must select the appropriate parsing strategy. There are **5 distinct strategy types**, each suited to different protocol structures.
+
+### Strategy 1: Delimiter-Based Parsing
+
+**When to Use**: High delimiter frequency detected, consistent field count
+
+**Characteristics**:
+- Fields separated by delimiters (space, comma, tab, etc.)
+- Single-line or simple multi-line messages
+- String split operations
+
+**Example** (CordDEFENDER3000):
+```
+HEX: 2D 20 20 31 2E 36 34 30 20 6B 67 20 20 20 20 4E
+TEXT: -  1.640 kg    N
+```
+
+**Detection**:
+- Space delimiter appears consistently
+- Field count = 3 across all messages
+- Confidence: 95%+
+
+**Parsing Algorithm**:
+```
+line.Split(' ', RemoveEmptyEntries)
+→ ["-", "1.640", "kg", "N"]
+```
+
+---
+
+### Strategy 2: Frame-Based Parsing
+
+**When to Use**: Start/end markers detected with fixed line count
+
+**Characteristics**:
+- Start marker begins message
+- End marker terminates message
+- Fixed number of lines per message
+- Line position determines meaning
+
+**Example** (JIK6CAB - Frame structure):
+```
+Line 1:  ^KJIK000     ← Start marker
+Line 2:  2023-11-07   ← Date
+Line 3:  17:19:38     ← Time
+...
+Line 14: ~P1          ← End marker
+```
+
+**Detection**:
+- Start marker pattern: `^\^KJIK\d{3}$`
+- End marker pattern: `^~P1$`
+- Line count between markers: 14 (consistent)
+- Confidence: 100%
+
+**Parsing Algorithm**:
+```
+WHEN line matches start_marker:
+    Reset frame buffer
+    Start accumulating lines
+
+WHEN frame.lineCount < expected_lines:
+    Add line to frame buffer
+
+WHEN line matches end_marker:
+    Process complete frame
+    Parse each line by position
+```
+
+---
+
+### Strategy 3: State Machine Parsing ⭐ CRITICAL
+
+**When to Use**: Frame-based protocol where **line position** determines field identity, NOT content
+
+**Why ContentBased Fails**: When multiple lines have identical or similar content patterns but represent different fields
+
+**Critical Example** (JIK6CAB Weight Lines):
+
+```
+Line 4:  "  0.00 kg"   ← Tare Weight
+Line 5:  "  1.94 kg"   ← Gross Weight
+Line 8:  "  1.94 kg"   ← Net Weight
+```
+
+**Problem**: All three lines contain "kg" - ContentBased parsing **cannot distinguish** between them.
+
+**Solution**: State Machine tracks position in sequence:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+
+    Idle --> Line1 : Detect ^KJIK000
+
+    Line1 --> Line2 : lineNumber = 2
+    Line2 --> Line3 : lineNumber = 3<br/>Parse Date
+    Line3 --> Line4 : lineNumber = 4<br/>Parse Time, Combine with Date
+    Line4 --> Line5 : lineNumber = 5<br/>Parse TareWeight from "kg" line
+    Line5 --> Line6 : lineNumber = 6<br/>Parse GrossWeight from "kg" line
+    Line6 --> Line7 : lineNumber = 7<br/>Skip Reserved
+    Line7 --> Line8 : lineNumber = 8<br/>Skip Reserved
+    Line8 --> Line9 : lineNumber = 9<br/>Parse NetWeight from "kg" line
+    Line9 --> Line10 : lineNumber = 10<br/>Skip Duplicate
+    Line10 --> Line11 : lineNumber = 11<br/>Parse PieceCount
+    Line11 --> Line12 : lineNumber = 12<br/>Skip Empty
+    Line12 --> Line13 : lineNumber = 13<br/>Skip Empty
+    Line13 --> Line14 : lineNumber = 14<br/>Skip Status
+    Line14 --> Validate : Validate ~P1
+
+    Validate --> ApplyRelationships : Marker valid
+    ApplyRelationships --> ApplyValidation : Combine Date+Time
+    ApplyValidation --> FireEvent : GW-TW=NW check
+    FireEvent --> Idle : Complete
+
+    Validate --> Error : Invalid marker
+    Error --> Idle : Reset state
+
+    note right of Line4
+        Position-based:
+        lineNumber = 4 → TareWeight
+        lineNumber = 5 → GrossWeight
+        lineNumber = 8 → NetWeight
+
+        Content is identical ("kg")
+        but position determines meaning!
+    end note
+```
+
+**State Tracking Variables**:
+```csharp
+private int lineNumber = 0;
+private bool parsingInProgress = false;
+private DateTime? date;
+private TimeSpan? time;
+private decimal? tareWeight, grossWeight, netWeight;
+private decimal? pieceCount;
+```
+
+**Parsing Algorithm**:
+```
+FUNCTION ParseLine(line):
+    IF line matches START_MARKER:
+        lineNumber = 0
+        parsingInProgress = true
+        Reset all field variables
+
+    IF parsingInProgress:
+        lineNumber++
+
+        SWITCH lineNumber:
+            CASE 1: Validate start marker
+            CASE 2: date = ParseDate(line)
+            CASE 3: time = ParseTime(line)
+                    date = date.Date + time  // Combine relationship
+            CASE 4: tareWeight = ParseWeight(line, "kg")
+            CASE 5: grossWeight = ParseWeight(line, "kg")
+            CASE 6, 7: Skip  // Reserved fields
+            CASE 8: netWeight = ParseWeight(line, "kg")
+            CASE 9: Skip  // Duplicate display
+            CASE 10: pieceCount = ParsePieceCount(line, "pcs")
+            CASE 11, 12: Skip  // Empty lines
+            CASE 13: Skip  // Status indicator
+            CASE 14:
+                IF line matches END_MARKER:
+                    ApplyValidation()  // GW - TW = NW
+                    FireEvent()
+                    parsingInProgress = false
+                    lineNumber = 0
+                ELSE:
+                    Error: Invalid end marker
+```
+
+**Key Difference from ContentBased**:
+
+| Approach | How it determines field | Works for JIK6CAB? |
+|----------|------------------------|-------------------|
+| **ContentBased** | `if (line.Contains("kg"))` | ❌ **NO** - Can't distinguish TW/GW/NW |
+| **State Machine** | `switch (lineNumber)` | ✅ **YES** - Position determines meaning |
+
+**Detection Algorithm**:
+```
+IF start_marker AND end_marker AND fixed_line_count detected:
+
+    // Check if line position matters more than content
+    FOR each line position in frame:
+        samples = GetAllSamplesAtPosition(position)
+
+        // Check for position-dependent fields
+        IF samples have similar content BUT different semantic meaning:
+            // Example: Lines 4, 5, 8 all contain "kg"
+            strategy = STATE_MACHINE
+            BREAK
+
+    // Alternative: Check if skip lines exist
+    IF some line positions are always empty/reserved:
+        strategy = STATE_MACHINE
+```
+
+**When to Use State Machine vs ContentBased**:
+
+Use **State Machine** when:
+- ✅ Fixed line count per message
+- ✅ Line position determines field identity
+- ✅ Multiple lines have identical content patterns
+- ✅ Some lines must be skipped
+- ✅ Field relationships span multiple lines (Date + Time)
+
+Use **ContentBased** when:
+- ✅ Variable line count per message
+- ✅ Line content uniquely identifies field type
+- ✅ No positional dependencies
+- ✅ Pattern matching can distinguish all fields
+
+---
+
+### Strategy 4: Position-Based Parsing (Fixed-Width)
+
+**When to Use**: Fixed byte positions detected, no delimiters
+
+**Characteristics**:
+- Fields at fixed byte offsets
+- May have header byte indicating message type
+- Binary or text data
+
+**Example** (TFO1 with header byte):
+```
+HEX: 46 20 20 20 20 20 20 30 2E 30
+TEXT: F      0.0
+
+Byte 0: 'F' (header - identifies field type)
+Bytes 1-9: "      0.0" (value at fixed position)
+```
+
+**Detection**:
+- Consistent message length OR
+- First byte has limited set of values (header byte)
+- Low delimiter frequency
+
+**Parsing Algorithm**:
+```
+header = content[0]
+SWITCH header:
+    CASE 'F': value = ParseFixed(content, offset=1, length=9)
+    CASE 'H': value = ParseFixed(content, offset=1, length=9)
+    ...
+```
+
+---
+
+### Strategy 5: Content-Based Parsing
+
+**When to Use**: Variable structure, pattern variance across lines
+
+**Characteristics**:
+- Line content determines field type
+- Variable message length
+- Pattern matching with if/else logic
+
+**Example** (PHMeter):
+```
+Line 1: "3.01pH 25.5°C ATC"  ← Contains "pH" and "°C"
+Line 2: "20-Feb-2023"        ← Contains "-" (date pattern)
+Line 3: "11:11"              ← Contains ":" (time pattern)
+```
+
+**Detection**:
+- No fixed start/end markers
+- Variable line count
+- High pattern variance
+- Content uniquely identifies field
+
+**Parsing Algorithm**:
+```
+IF line.Contains("pH") AND line.Contains("°C"):
+    ParseBothFields(line)
+ELSE IF line.Contains("-"):
+    ParseDate(line)
+ELSE IF line.Contains(":"):
+    ParseTime(line)
+```
+
+**Important**: ContentBased works ONLY when content patterns are unique per field type.
+
+---
+
+### Strategy Selection Decision Tree
+
+```mermaid
+flowchart TD
+    A[Analyze Log File] --> B{Start/End Markers<br/>Detected?}
+
+    B -->|Yes| C{Fixed Line Count<br/>Between Markers?}
+    B -->|No| D{High Delimiter<br/>Frequency?}
+
+    C -->|Yes| E{Multiple Lines<br/>Same Content Pattern?}
+    C -->|No| F[ContentBased Parsing]
+
+    E -->|Yes| G[⭐ State Machine Parsing<br/>Position-Based]
+    E -->|No| H[Frame-Based Parsing<br/>Content-Based per Line]
+
+    D -->|Yes| I{Hierarchical<br/>Delimiters?}
+    D -->|No| J{Fixed Message<br/>Length?}
+
+    I -->|Yes| K[Delimiter-Based<br/>Hierarchical Split]
+    I -->|No| L[Delimiter-Based<br/>Simple Split]
+
+    J -->|Yes| M{Header Byte<br/>Pattern?}
+    J -->|No| F
+
+    M -->|Yes| N[Position-Based<br/>Header Switch]
+    M -->|No| O[Position-Based<br/>Fixed-Width]
+
+    style G fill:#FFE4B5
+    style F fill:#90EE90
+```
+
+---
+
 ## Proposed Parsing Strategy
 
 ### 6-Stage Universal Pipeline
@@ -990,10 +1361,16 @@ public class AnalysisWarning
 
 ---
 
-**Document Version**: 4.0
+**Document Version**: 5.0
 **Last Updated**: 2025-10-21
-**Status**: Universal Algorithm Design
+**Status**: Universal Algorithm Design + State Machine Strategy
 **Changes**:
 - v1.0-2.1: Production code based (WRONG APPROACH)
 - v3.0: Production code integrated (STILL WRONG)
 - v4.0: **COMPLETE REDESIGN** - Universal algorithm approach, no device assumptions
+- v5.0: **CRITICAL UPDATE** - Added explicit State Machine Parser strategy section with:
+  - Clear explanation of why ContentBased fails for position-dependent protocols
+  - State diagram for JIK6CAB protocol
+  - 5 distinct parsing strategy categories
+  - Strategy selection decision tree
+  - HEX/Text format examples
