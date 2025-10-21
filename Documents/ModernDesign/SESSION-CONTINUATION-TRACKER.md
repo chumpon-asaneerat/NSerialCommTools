@@ -68,7 +68,22 @@
 - Include state diagrams from old document
 - Explain position-based vs content-based distinction
 
-**Status**: ⏳ Pending
+**Status**: ✅ COMPLETED
+
+**What Was Added**:
+1. **New Section**: "Parsing Strategy Categories" (5 strategies)
+2. **Strategy 3: State Machine Parsing** - Full detailed section including:
+   - Clear explanation of when to use it
+   - Why ContentBased fails for JIK6CAB
+   - Complete state diagram (Mermaid format)
+   - State tracking variables
+   - Parsing algorithm pseudocode
+   - Comparison table: State Machine vs ContentBased
+   - Detection algorithm
+   - When to use guidelines
+3. **Strategy Selection Decision Tree** - Mermaid flowchart
+4. **Updated main overview diagram** - Now includes State Machine branch
+5. **Document version updated to 5.0**
 
 ---
 
