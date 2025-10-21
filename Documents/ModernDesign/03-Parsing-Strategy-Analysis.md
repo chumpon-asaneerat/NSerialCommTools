@@ -810,50 +810,48 @@ FUNCTION ExtractCompoundFields(samples, pattern):
 ```mermaid
 sequenceDiagram
     actor Analyzer
-    participant Frames as Frame Data<br/>Buffer
-    participant LinePos as Line Position<br/>Tracker
-    participant Samples as Sample<br/>Collection
-    participant Analysis as Pattern<br/>Analyzer
-    participant Results as Results<br/>Output
+    participant Frames as Frame Buffer
+    participant LinePos as Line Tracker
+    participant Samples as Sample Collector
+    participant Analysis as Pattern Analyzer
+    participant Results as Results Output
 
-    Analyzer->>Frames: Input: List of Frames<br/>(start marker to end marker)
+    Analyzer->>Frames: Input: List of Frames
     Note over Analyzer,Results: STEP 1: Collect Samples for Each Line Position
 
-    loop For each Frame in Frames
-        Analyzer->>LinePos: Get frame.lines.Count
-        LinePos->>Samples: Create list for each line position<br/>lines_by_pos[1..N]
+    loop For each Frame in list
+        Analyzer->>LinePos: Get frame.lines.Count (N lines)
+        LinePos->>Samples: Initialize lines_by_pos[1] to [N]
 
         loop For each line in frame
-            Analyzer->>Samples: Add line_text to<br/>lines_by_pos[line_number]
+            Analyzer->>Samples: Add line text to position list
         end
     end
 
     Note over Analyzer,Results: STEP 2: Analyze Each Line Position
 
-    loop For each Line Position (1 to N)
-        Analyzer->>Samples: Get all samples for this position
+    loop For each position 1 to N
+        Analyzer->>Samples: Request all samples at position
         Samples->>Analysis: Pass samples array
 
-        alt Line is Position 1
-            Analysis->>Analysis: Detect: StartMarker
-            Analysis->>Results: pattern + variance
-        else Check if EndMarker
-            Analysis->>Analysis: Count unique samples
-            alt Low variance, short length
-                Analysis->>Results: Type: EndMarker
-            else Check for Empty
-                Analysis->>Analysis: All whitespace?
-                alt Yes
-                    Analysis->>Results: Type: Empty
-                else Try Patterns
-                    Analysis->>Analysis: Test regex patterns<br/>Date, Time, Decimal, etc.
-                    Analysis->>Results: Type: Matched Pattern
-                end
+        alt Position == 1
+            Analysis->>Analysis: Detect StartMarker type
+            Analysis->>Results: Report: StartMarker + variance
+        else Position == N
+            Analysis->>Analysis: Check if EndMarker (short, low variance)
+            alt Is EndMarker
+                Analysis->>Results: Report: EndMarker type
+            else Not EndMarker
+                Analysis->>Analysis: Check if empty/whitespace
+                Analysis->>Results: Report: Empty or test regex patterns
             end
+        else Mid-position line
+            Analysis->>Analysis: Try: Date, Time, Decimal, Compound patterns
+            Analysis->>Results: Report: Matched pattern or Unknown
         end
     end
 
-    Results->>Analyzer: Return: Array of<br/>line_patterns[] with<br/>all line metadata
+    Results->>Analyzer: Return: Complete line_patterns array with all metadata
 ```
 
 ---
