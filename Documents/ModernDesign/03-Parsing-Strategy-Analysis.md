@@ -562,6 +562,7 @@ flowchart TD
     style UnknownResult fill:#FFCCBC
 ```
 
+```
 FUNCTION AnalyzeDelimiterBased(messages, delimiter_info):
 
     delimiter = delimiter_info.delimiter
@@ -618,7 +619,11 @@ FUNCTION AnalyzeDelimiterBased(messages, delimiter_info):
 
 **Input**: Framed messages (start marker to end marker)
 
-**Algorithm**:
+**Overview**:
+
+This algorithm processes multi-line frame data by collecting samples at each line position and analyzing them for patterns. The key insight is that **each line position is analyzed independently** - all samples from line 1 are grouped together, all samples from line 2 are grouped together, etc. Then each group is analyzed for data type patterns.
+
+**Step 1: Main Extraction Function**
 
 ```
 FUNCTION ExtractFieldsFromFrame(frames, start_marker, end_marker, lines_per_frame):
@@ -647,8 +652,17 @@ FUNCTION ExtractFieldsFromFrame(frames, start_marker, end_marker, lines_per_fram
         line_patterns.Add(pattern)
 
     RETURN line_patterns
+```
 
+**Step 2: Line Pattern Analysis Function**
 
+The `AnalyzeLinePattern` function examines samples from a single line position and determines the field type. It checks for:
+1. **Marker lines** (start/end markers)
+2. **Empty/whitespace** lines to skip
+3. **Data patterns** (dates, times, decimals, etc.)
+4. **Variance** to detect constants vs. variables
+
+```
 FUNCTION AnalyzeLinePattern(line_number, samples):
 
     // ═══ Check for Marker Lines ═══
@@ -752,8 +766,17 @@ FUNCTION AnalyzeLinePattern(line_number, samples):
             variance: variance,
             sample_values: samples.Take(5).ToList()
         }
+```
 
+**Step 3: Helper Functions**
 
+The algorithm uses three helper functions to support pattern analysis:
+
+- **CalculateVariance**: Measures how much variation exists in a set of samples (0.0 = all identical, 1.0 = all unique)
+- **ExtractCompoundFields**: Splits compound fields like "1.94 kg" into numeric value and unit
+- **DetectRegexPattern**: Generates regex patterns from sample data
+
+```
 FUNCTION CalculateVariance(samples):
     """
     Calculate how much variation exists in samples
@@ -805,13 +828,24 @@ FUNCTION ExtractCompoundFields(samples, pattern):
     ]
 ```
 
+**Summary**:
+
+This algorithm outputs a **line_patterns array** where each element describes what type of field is at each line position:
+- **StartMarker/EndMarker**: Validation boundaries for the frame
+- **Date/Time**: Temporal data that can be combined
+- **Decimal/Integer**: Numeric data with optional units
+- **Compound**: Fields that need to be split (e.g., value + unit)
+- **Empty/Reserved**: Lines to skip or ignore
+- **Unknown**: Data that doesn't match known patterns
+
+The detector can then use these patterns to extract and validate data from subsequent frames.
+
 **Sequence Diagram: Multi-Line Frame Field Extraction Algorithm**
 
 ```mermaid
 sequenceDiagram
     actor Analyzer
     participant Frames as Frame Buffer
-    participant LinePos as Line Tracker
     participant Samples as Sample Collector
     participant Analysis as Pattern Analyzer
     participant Results as Results Output
@@ -819,39 +853,30 @@ sequenceDiagram
     Analyzer->>Frames: Input: List of Frames
     Note over Analyzer,Results: STEP 1: Collect Samples for Each Line Position
 
-    loop For each Frame in list
-        Analyzer->>LinePos: Get frame.lines.Count (N lines)
-        LinePos->>Samples: Initialize lines_by_pos[1] to [N]
-
-        loop For each line in frame
-            Analyzer->>Samples: Add line text to position list
-        end
+    loop For each Frame
+        Analyzer->>Samples: Collect all lines from frame
+        Samples->>Samples: Organize by line position [1..N]
     end
 
     Note over Analyzer,Results: STEP 2: Analyze Each Line Position
 
     loop For each position 1 to N
-        Analyzer->>Samples: Request all samples at position
+        Analyzer->>Samples: Get all samples at this position
         Samples->>Analysis: Pass samples array
 
-        alt Position == 1
-            Analysis->>Analysis: Detect StartMarker type
-            Analysis->>Results: Report: StartMarker + variance
-        else Position == N
-            Analysis->>Analysis: Check if EndMarker (short, low variance)
-            alt Is EndMarker
-                Analysis->>Results: Report: EndMarker type
-            else Not EndMarker
-                Analysis->>Analysis: Check if empty/whitespace
-                Analysis->>Results: Report: Empty or test regex patterns
-            end
-        else Mid-position line
-            Analysis->>Analysis: Try: Date, Time, Decimal, Compound patterns
-            Analysis->>Results: Report: Matched pattern or Unknown
+        alt Position is 1 (StartMarker)
+            Analysis->>Analysis: Detect: StartMarker pattern
+            Analysis->>Results: Report: type=StartMarker, variance
+        else Position is N (EndMarker or Marker)
+            Analysis->>Analysis: Check: low variance + short length
+            Analysis->>Results: Report: type=EndMarker or Marker or Empty
+        else Mid-positions (Data Fields)
+            Analysis->>Analysis: Try: Date, Time, Decimal, Compound
+            Analysis->>Results: Report: type=MatchedPattern or Unknown
         end
     end
 
-    Results->>Analyzer: Return: Complete line_patterns array with all metadata
+    Results->>Analyzer: Return: line_patterns[] with metadata for all positions
 ```
 
 ---
@@ -1192,39 +1217,38 @@ Line 8:  "  1.94 kg"   ← Net Weight
 stateDiagram-v2
     [*] --> Idle
 
-    Idle --> Line1 : Detect ^KJIK000
+    Idle --> Line1 : Start: ^KJIK000
 
-    Line1 --> Line2 : lineNumber = 2
-    Line2 --> Line3 : lineNumber = 3<br/>Parse Date
-    Line3 --> Line4 : lineNumber = 4<br/>Parse Time, Combine with Date
-    Line4 --> Line5 : lineNumber = 5<br/>Parse TareWeight from "kg" line
-    Line5 --> Line6 : lineNumber = 6<br/>Parse GrossWeight from "kg" line
-    Line6 --> Line7 : lineNumber = 7<br/>Skip Reserved
-    Line7 --> Line8 : lineNumber = 8<br/>Skip Reserved
-    Line8 --> Line9 : lineNumber = 9<br/>Parse NetWeight from "kg" line
-    Line9 --> Line10 : lineNumber = 10<br/>Skip Duplicate
-    Line10 --> Line11 : lineNumber = 11<br/>Parse PieceCount
-    Line11 --> Line12 : lineNumber = 12<br/>Skip Empty
-    Line12 --> Line13 : lineNumber = 13<br/>Skip Empty
-    Line13 --> Line14 : lineNumber = 14<br/>Skip Status
-    Line14 --> Validate : Validate ~P1
+    Line1 --> Line2 : Line 2
+    Line2 --> Line3 : Line 3 - Parse Date
+    Line3 --> Line4 : Line 4 - Parse Time
+    Line4 --> Line5 : Line 5 - TareWeight
+    Line5 --> Line6 : Line 6 - GrossWeight
+    Line6 --> Line7 : Line 7 - Reserved
+    Line7 --> Line8 : Line 8 - Reserved
+    Line8 --> Line9 : Line 9 - NetWeight
+    Line9 --> Line10 : Line 10 - Duplicate
+    Line10 --> Line11 : Line 11 - PieceCount
+    Line11 --> Line12 : Line 12 - Empty
+    Line12 --> Line13 : Line 13 - Empty
+    Line13 --> Line14 : Line 14 - Status
+    Line14 --> Validate : End: ~P1
 
-    Validate --> ApplyRelationships : Marker valid
-    ApplyRelationships --> ApplyValidation : Combine Date+Time
-    ApplyValidation --> FireEvent : GW-TW=NW check
-    FireEvent --> Idle : Complete
+    Validate --> ApplyRules : Valid
+    ApplyRules --> Complete : All rules applied
+    Complete --> Idle : Done
 
-    Validate --> Error : Invalid marker
-    Error --> Idle : Reset state
+    Validate --> Error : Invalid
+    Error --> Idle : Reset
 
     note right of Line4
-        Position-based:
-        lineNumber = 4 → TareWeight
-        lineNumber = 5 → GrossWeight
-        lineNumber = 8 → NetWeight
+        ⭐ Position-Based Strategy
+        lineNumber determines field meaning:
+        4 → TareWeight | 5 → GrossWeight
+        8 → NetWeight | 11 → PieceCount
 
-        Content is identical ("kg")
-        but position determines meaning!
+        All weight lines contain "kg"
+        but POSITION distinguishes them!
     end note
 ```
 
