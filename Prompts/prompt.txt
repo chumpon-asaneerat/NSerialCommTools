@@ -8,7 +8,7 @@
 - All UI components documented with C# implementation code
 - SerialPortReader class implementation for real-time capture
 - Field Editor with validation for C# identifiers
-- Export functionality with JSON, YAML, Report, and Test Cases support
+- Export functionality: JSON ONLY (Protocol Definition, Analysis Report, Test Cases)
 - Complete data models and workflow diagram (Mermaid flowchart)
 - MainWindow integration showing event handlers and data flow
 
@@ -59,7 +59,11 @@ The TabControl-based layout was selected per user feedback: "You use too much pa
 5. **Export Tab**
    - Validation status with checkmarks
    - Export configuration (device name, output folder)
-   - Format selection (JSON, YAML, Analysis Report, Test Cases)
+   - ✅ Export Formats: JSON ONLY
+     - ✅ JSON Protocol Definition (*.json)
+     - ✅ Analysis Report (*.txt)
+     - ✅ Test Cases (*.json)
+   - ❌ REMOVED: YAML export format (not using)
    - Export buttons: [◀ Back] [▶ Export] [Save Draft] [Exit]
    - ❌ REMOVED: Redundant toolbar [Export] button (moved to Export Tab)
 
@@ -90,10 +94,10 @@ The TabControl-based layout was selected per user feedback: "You use too much pa
    - Validate analysis results match expected protocols
 
 4. **Create Protocol Definition Exporter**
-   - JSON export (ProtocolDefinition object)
-   - YAML export
-   - Analysis report (TXT format)
-   - Test cases (JSON format)
+   - ✅ JSON export (ProtocolDefinition object)
+   - ✅ Analysis report (TXT format - human-readable summary)
+   - ✅ Test cases (JSON format - for validation)
+   - ❌ NO YAML export (using JSON only)
 
 ### Key Architecture Decisions
 
@@ -108,10 +112,19 @@ The TabControl-based layout was selected per user feedback: "You use too much pa
 
 ### Technical Notes
 
+**JSON Export (Using System.Text.Json)**
+- ✅ System.Text.Json v9.0.0.0 already in project
+- ✅ NO additional NuGet packages needed (JSON-only approach)
+- ✅ Exports 3 formats:
+  1. Protocol Definition (*.json) - Structure with fields, types, validation rules
+  2. Analysis Report (*.txt) - Human-readable summary of detection results
+  3. Test Cases (*.json) - Sample data for protocol validation
+
+**Other Notes**
 - SerialPort class supports connection pooling via USB-to-Serial adapters
 - Field validation checks for C# identifier rules (no keywords, unique names, valid chars)
 - Confidence scoring (0-1) for all detections
-- Export supports multiple formats for different use cases
+- ❌ YAML parser (YamlDotNet) NOT needed - JSON only
 
 ### Related Documents
 
