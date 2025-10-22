@@ -129,9 +129,9 @@
                         <GroupBox Header="Fields Detected" Margin="0,0,0,10">
                             <DataGrid Name="dgFieldsDetected" Height="200" AutoGenerateColumns="False" IsReadOnly="True">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Position" Binding="{Binding Position}" Width="60"/>
+                                    <DataGridTextColumn Header="Position" Binding="{Binding Order}" Width="60"/>
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="100"/>
-                                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="80"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding DataType}" Width="80"/>
                                     <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence, StringFormat=P0}" Width="80"/>
                                     <DataGridTextColumn Header="Sample Values" Binding="{Binding SampleValuesDisplay}" Width="*"/>
                                 </DataGrid.Columns>
@@ -158,9 +158,9 @@
 
                     <DataGrid Name="dgFields" Grid.Row="1" Margin="10" AutoGenerateColumns="False" CanUserAddRows="False">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Pos" Binding="{Binding Position}" Width="50" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Pos" Binding="{Binding Order}" Width="50" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150"/>
-                            <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Type" Binding="{Binding DataType}" Width="80" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Sample Values" Binding="{Binding SampleValuesDisplay}" Width="*" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>

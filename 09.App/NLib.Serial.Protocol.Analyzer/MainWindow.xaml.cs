@@ -462,7 +462,7 @@ namespace NLib
                     IncludeInDefinition = f.IncludeInDefinition
                 }).ToList(),
                 Relationships = new List<FieldRelationship>(),
-                ValidationRules = new List<ValidationRule>()
+                ValidationRules = new List<NLib.Serial.ProtocolAnalyzer.Models.ValidationRule>()
             };
 
             return definition;
