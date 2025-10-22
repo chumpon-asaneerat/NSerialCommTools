@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NLib.Serial.ProtocolAnalyzer.Models;
 
 #endregion
@@ -56,15 +57,17 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         private double DetectDelimiterBasedStrategy(LogData logData)
         {
             // Look for consistent delimiters
-            var delimiterCandidates = new[] { ',', '\t', ';', '|', '/' };
+            var delimiterCandidates = new[] { (byte)',', (byte)'\t', (byte)';', (byte)'|', (byte)'/' };
 
             foreach (var delimiter in delimiterCandidates)
             {
                 var counts = new List<int>();
 
-                foreach (var message in logData.Messages)
+                foreach (var messageBytes in logData.Messages)
                 {
-                    int count = message.Count(c => c == delimiter);
+                    if (messageBytes == null || messageBytes.Length == 0) continue;
+
+                    int count = messageBytes.Count(b => b == delimiter);
                     counts.Add(count);
                 }
 
@@ -75,7 +78,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 if (avg > 0)
                 {
                     double stddev = CalculateStandardDeviation(counts);
-                    double consistency = 1.0 - (stddev / avg);
+                    double consistency = 1.0 - (stddev / (avg + 0.01)); // Avoid division by zero
 
                     // High consistency + frequency indicates delimiter-based
                     if (consistency > 0.8 && avg >= 1.0)
@@ -95,19 +98,19 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         private double DetectFrameBasedStrategy(LogData logData)
         {
             // Look for special characters at start of messages
-            var startMarkers = new[] { '^', '~', '<', '>', '@', '#', '$', 'V' };
-            var markerCounts = new Dictionary<char, int>();
+            var startMarkers = new[] { (byte)'^', (byte)'~', (byte)'<', (byte)'>', (byte)'@', (byte)'#', (byte)'$', (byte)'V' };
+            var markerCounts = new Dictionary<byte, int>();
 
-            foreach (var message in logData.Messages)
+            foreach (var messageBytes in logData.Messages)
             {
-                if (string.IsNullOrEmpty(message)) continue;
+                if (messageBytes == null || messageBytes.Length == 0) continue;
 
-                char firstChar = message[0];
-                if (startMarkers.Contains(firstChar))
+                byte firstByte = messageBytes[0];
+                if (startMarkers.Contains(firstByte))
                 {
-                    if (!markerCounts.ContainsKey(firstChar))
-                        markerCounts[firstChar] = 0;
-                    markerCounts[firstChar]++;
+                    if (!markerCounts.ContainsKey(firstByte))
+                        markerCounts[firstByte] = 0;
+                    markerCounts[firstByte]++;
                 }
             }
 
@@ -140,12 +143,15 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 return 0.0; // State machine requires frames
 
             // Analyze pattern repetition within frames
-            // Group messages into frames (simplified - assume sequential)
             var patterns = new Dictionary<string, List<int>>();
 
             for (int i = 0; i < logData.Messages.Count; i++)
             {
-                var message = logData.Messages[i].Trim();
+                var messageBytes = logData.Messages[i];
+                if (messageBytes == null || messageBytes.Length == 0) continue;
+
+                // Convert to string for pattern analysis
+                string message = Encoding.ASCII.GetString(messageBytes).Trim();
                 if (string.IsNullOrEmpty(message)) continue;
 
                 // Extract pattern (e.g., "  X.XX kg" becomes pattern)
@@ -155,6 +161,9 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                     patterns[pattern] = new List<int>();
                 patterns[pattern].Add(i);
             }
+
+            if (patterns.Count == 0)
+                return 0.0;
 
             // Check for patterns that repeat at different positions
             int repeatedPatternCount = patterns.Count(kvp => kvp.Value.Count > 1);
@@ -179,7 +188,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 return 0.0;
 
             var lengths = logData.Messages
-                .Where(m => !string.IsNullOrEmpty(m))
+                .Where(m => m != null && m.Length > 0)
                 .Select(m => m.Length)
                 .ToList();
 
@@ -197,6 +206,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
             // Check length variance
             double avgLength = lengths.Average();
+            if (avgLength < 1) return 0.0;
+
             double stddev = CalculateStandardDeviation(lengths.Select(l => (double)l).ToList());
             double consistency = 1.0 - (stddev / avgLength);
 
