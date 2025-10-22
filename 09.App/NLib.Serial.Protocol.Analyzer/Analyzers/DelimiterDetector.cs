@@ -11,58 +11,90 @@ using NLib.Serial.ProtocolAnalyzer.Models;
 namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 {
     /// <summary>
-    /// Detects field delimiters in serial messages.
+    /// Detects field delimiters dynamically by analyzing character frequency and patterns.
     /// </summary>
     public class DelimiterDetector
     {
         #region Public Methods
 
         /// <summary>
-        /// Detects delimiters from the given log data.
+        /// Detects delimiters by analyzing all characters in messages.
         /// </summary>
         public List<DelimiterInfo> Detect(LogData logData)
         {
             if (logData == null || logData.Messages.Count == 0)
                 return new List<DelimiterInfo>();
 
-            // Common delimiter characters
-            char[] candidateDelimiters = { ',', ';', '\t', ' ', '|', ':', '=' };
+            // Count frequency of each byte value across all messages
+            var byteCounts = new Dictionary<byte, int>();
+            int totalBytes = 0;
 
-            var delimiterCounts = new Dictionary<char, int>();
-            foreach (char delim in candidateDelimiters)
-            {
-                delimiterCounts[delim] = 0;
-            }
-
-            int totalMessages = logData.Messages.Count;
-
-            // Count occurrences of each delimiter
             foreach (var message in logData.Messages)
             {
-                string text = Encoding.ASCII.GetString(message);
-                foreach (char delim in candidateDelimiters)
+                foreach (byte b in message)
                 {
-                    delimiterCounts[delim] += text.Count(c => c == delim);
+                    // Skip control characters except common delimiters
+                    if (b < 0x20 && b != 0x09 && b != 0x0D && b != 0x0A)
+                        continue;
+                    if (b > 0x7E) // Skip non-ASCII
+                        continue;
+
+                    if (!byteCounts.ContainsKey(b))
+                        byteCounts[b] = 0;
+
+                    byteCounts[b]++;
+                    totalBytes++;
                 }
             }
 
-            // Convert to DelimiterInfo list
+            // Analyze each byte to determine if it's likely a delimiter
             var results = new List<DelimiterInfo>();
-            foreach (var kvp in delimiterCounts)
+
+            foreach (var kvp in byteCounts.OrderByDescending(x => x.Value))
             {
-                if (kvp.Value > 0)
+                byte b = kvp.Key;
+                int count = kvp.Value;
+
+                char c = (char)b;
+
+                // Calculate frequency
+                double frequency = (double)count / totalBytes;
+
+                // Determine if this is likely a structural delimiter
+                // Heuristics:
+                // 1. Appears frequently (but not too frequently)
+                // 2. Is a common delimiter character
+                // 3. Appears multiple times per message on average
+
+                double avgPerMessage = (double)count / logData.MessageCount;
+                bool isCommonDelimiter = IsCommonDelimiterChar(c);
+                bool goodFrequency = frequency > 0.01 && frequency < 0.5; // 1% to 50%
+                bool multiplePerMessage = avgPerMessage >= 1.5;
+
+                double confidence = 0.0;
+
+                if (isCommonDelimiter)
+                    confidence += 0.4;
+
+                if (goodFrequency)
+                    confidence += 0.3;
+
+                if (multiplePerMessage)
+                    confidence += 0.3;
+
+                // Only include if confidence is reasonable
+                if (confidence >= 0.3)
                 {
-                    double avgPerMessage = (double)kvp.Value / totalMessages;
-                    bool isStructural = avgPerMessage > 1.0; // Appears multiple times per message
+                    bool isStructural = multiplePerMessage && confidence >= 0.6;
 
                     results.Add(new DelimiterInfo
                     {
-                        Character = kvp.Key,
-                        DisplayName = GetDelimiterName(kvp.Key),
-                        Frequency = avgPerMessage / 10.0, // Normalize
-                        Confidence = isStructural ? 0.9 : 0.5,
+                        Character = c,
+                        DisplayName = GetDelimiterName(c),
+                        Frequency = frequency,
+                        Confidence = confidence,
                         IsStructural = isStructural,
-                        OccurrenceCount = kvp.Value
+                        OccurrenceCount = count
                     });
                 }
             }
@@ -74,6 +106,20 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         #region Private Methods
 
+        /// <summary>
+        /// Checks if a character is commonly used as a delimiter.
+        /// </summary>
+        private bool IsCommonDelimiterChar(char c)
+        {
+            // Common delimiters in protocols
+            return c == ',' || c == ';' || c == '\t' || c == ' ' ||
+                   c == '|' || c == ':' || c == '=' || c == '-' ||
+                   c == '/' || c == '\\';
+        }
+
+        /// <summary>
+        /// Gets a human-readable name for the delimiter character.
+        /// </summary>
         private string GetDelimiterName(char delimiter)
         {
             switch (delimiter)
@@ -85,7 +131,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 case '|': return "Pipe";
                 case ':': return "Colon";
                 case '=': return "Equals";
-                default: return delimiter.ToString();
+                case '-': return "Dash";
+                case '/': return "Slash";
+                case '\\': return "Backslash";
+                default:
+                    if (char.IsLetterOrDigit(delimiter))
+                        return $"'{delimiter}' (Alphanumeric)";
+                    else
+                        return $"'{delimiter}' (0x{((byte)delimiter):X2})";
             }
         }
 

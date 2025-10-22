@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NLib.Serial.ProtocolAnalyzer.Models;
 
 #endregion
@@ -10,123 +11,204 @@ using NLib.Serial.ProtocolAnalyzer.Models;
 namespace NLib.Serial.ProtocolAnalyzer.Parsers
 {
     /// <summary>
-    /// Extracts individual messages from raw byte stream.
+    /// Extracts individual messages from raw byte stream following Algorithm 1 from
+    /// 03-Parsing-Strategy-Analysis.md
     /// </summary>
     public class MessageExtractor
     {
         #region Public Methods
 
         /// <summary>
-        /// Extracts messages from raw bytes using common terminators.
+        /// Extracts messages by detecting frame markers and analyzing gaps.
+        /// Algorithm 1: Message Boundary Detection
         /// </summary>
         public LogData ExtractMessages(byte[] rawBytes)
         {
             if (rawBytes == null || rawBytes.Length == 0)
                 return new LogData();
 
-            // First, try to detect if this is a multi-line package format
-            var packageData = TryExtractPackages(rawBytes);
-            if (packageData != null && packageData.MessageCount > 0)
-                return packageData;
+            // Convert to text lines for pattern analysis
+            string text = Encoding.ASCII.GetString(rawBytes);
+            string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
 
-            // Otherwise, try different terminators for single-line format
-            var terminators = new List<byte[]>
+            // STEP 1: Detect Start/End Markers
+            var markerResult = DetectFrameMarkers(lines);
+
+            if (markerResult != null && markerResult.Confidence > 0.8)
             {
-                new byte[] { 0x0D, 0x0A }, // CRLF
-                new byte[] { 0x0A },       // LF
-                new byte[] { 0x0D }        // CR
-            };
-
-            LogData best = null;
-            int maxMessages = 0;
-
-            foreach (var terminator in terminators)
-            {
-                var logData = ExtractWithTerminator(rawBytes, terminator);
-                if (logData.MessageCount > maxMessages)
-                {
-                    maxMessages = logData.MessageCount;
-                    best = logData;
-                }
+                // Frame-based structure detected
+                return ExtractFrames(rawBytes, markerResult);
             }
 
-            return best ?? new LogData();
+            // STEP 2: Fall back to single-line detection
+            return ExtractSingleLineMessages(rawBytes, lines);
         }
 
         #endregion
 
-        #region Private Methods
+        #region Private Methods - Frame Detection
 
-        private LogData TryExtractPackages(byte[] rawBytes)
+        /// <summary>
+        /// STEP 2 & 3: Detect Start/End Markers and analyze positions
+        /// </summary>
+        private FrameMarkerResult DetectFrameMarkers(string[] lines)
         {
-            // Look for common package boundary markers
-            // Check if data contains start markers like ^, STX (0x02), etc.
-            // and corresponding end markers like ~, ETX (0x03), etc.
+            var markerCandidates = new Dictionary<string, MarkerCandidate>();
 
-            // Pattern 1: ^ (0x5E) ... ~ (0x7E) - common in many devices
-            var pattern1 = ExtractByMarkers(rawBytes, 0x5E, 0x7E);
-            if (pattern1.MessageCount > 0)
-                return pattern1;
+            // Scan for lines that start with special characters
+            char[] specialChars = { '^', '~', '<', '>', '@', '#', '$', '\x02', '\x03' };
 
-            // Pattern 2: STX (0x02) ... ETX (0x03) - standard control characters
-            var pattern2 = ExtractByMarkers(rawBytes, 0x02, 0x03);
-            if (pattern2.MessageCount > 0)
-                return pattern2;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (string.IsNullOrEmpty(lines[i]))
+                    continue;
+
+                char firstChar = lines[i][0];
+
+                if (specialChars.Contains(firstChar))
+                {
+                    // Extract pattern (first few characters)
+                    string pattern = lines[i].Length >= 5 ? lines[i].Substring(0, 5) : lines[i];
+
+                    if (!markerCandidates.ContainsKey(pattern))
+                    {
+                        markerCandidates[pattern] = new MarkerCandidate
+                        {
+                            Pattern = pattern,
+                            Positions = new List<int>(),
+                            LineSamples = new List<string>()
+                        };
+                    }
+
+                    markerCandidates[pattern].Positions.Add(i);
+                    markerCandidates[pattern].LineSamples.Add(lines[i]);
+                }
+            }
+
+            // Analyze marker positions to find consistent gaps
+            MarkerCandidate bestStartMarker = null;
+            double bestConfidence = 0;
+
+            foreach (var marker in markerCandidates.Values)
+            {
+                if (marker.Positions.Count < 2)
+                    continue;
+
+                // Calculate gaps between occurrences
+                var gaps = new List<int>();
+                for (int i = 1; i < marker.Positions.Count; i++)
+                {
+                    gaps.Add(marker.Positions[i] - marker.Positions[i - 1]);
+                }
+
+                if (gaps.Count == 0)
+                    continue;
+
+                double avgGap = gaps.Average();
+                double stdDev = CalculateStdDev(gaps);
+
+                // Confidence is high if gaps are consistent
+                double confidence = avgGap > 0 ? 1.0 - (stdDev / avgGap) : 0;
+
+                // Only consider markers that appear in multi-line frames
+                if (avgGap > 1 && confidence > bestConfidence)
+                {
+                    bestConfidence = confidence;
+                    bestStartMarker = marker;
+                    marker.ExpectedLinesPerFrame = (int)Math.Round(avgGap);
+                    marker.Confidence = confidence;
+
+                    // Look for end marker
+                    marker.EndMarker = FindEndMarker(lines, marker);
+                }
+            }
+
+            if (bestStartMarker != null && bestConfidence > 0.8)
+            {
+                return new FrameMarkerResult
+                {
+                    StartMarker = bestStartMarker.Pattern,
+                    EndMarker = bestStartMarker.EndMarker,
+                    LinesPerFrame = bestStartMarker.ExpectedLinesPerFrame,
+                    Confidence = bestConfidence,
+                    StartPositions = bestStartMarker.Positions
+                };
+            }
 
             return null;
         }
 
-        private LogData ExtractByMarkers(byte[] rawBytes, byte startMarker, byte endMarker)
+        /// <summary>
+        /// Find the end marker by looking at expected position
+        /// </summary>
+        private string FindEndMarker(string[] lines, MarkerCandidate startMarker)
         {
-            var messages = new List<byte[]>();
-            int i = 0;
+            if (startMarker.Positions.Count == 0 || startMarker.ExpectedLinesPerFrame == 0)
+                return null;
 
-            while (i < rawBytes.Length)
+            // Look at the line before the next start marker
+            var endCandidates = new Dictionary<string, int>();
+
+            for (int i = 0; i < startMarker.Positions.Count - 1; i++)
             {
-                // Find start marker
-                int startPos = -1;
-                for (int j = i; j < rawBytes.Length; j++)
+                int startPos = startMarker.Positions[i];
+                int nextStartPos = startMarker.Positions[i + 1];
+                int expectedEndPos = nextStartPos - 1;
+
+                if (expectedEndPos >= 0 && expectedEndPos < lines.Length)
                 {
-                    if (rawBytes[j] == startMarker)
+                    string endLine = lines[expectedEndPos].Trim();
+                    if (!string.IsNullOrEmpty(endLine))
                     {
-                        startPos = j;
-                        break;
+                        if (!endCandidates.ContainsKey(endLine))
+                            endCandidates[endLine] = 0;
+                        endCandidates[endLine]++;
                     }
                 }
+            }
 
-                if (startPos == -1)
-                    break;
+            // Return the most common end line
+            return endCandidates.OrderByDescending(x => x.Value).FirstOrDefault().Key;
+        }
 
-                // Find end marker after start
-                int endPos = -1;
-                for (int j = startPos + 1; j < rawBytes.Length; j++)
+        /// <summary>
+        /// Extract complete frames using detected markers
+        /// </summary>
+        private LogData ExtractFrames(byte[] rawBytes, FrameMarkerResult frameInfo)
+        {
+            string text = Encoding.ASCII.GetString(rawBytes);
+            string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+
+            var messages = new List<byte[]>();
+
+            for (int i = 0; i < frameInfo.StartPositions.Count; i++)
+            {
+                int startLine = frameInfo.StartPositions[i];
+                int endLine;
+
+                if (i < frameInfo.StartPositions.Count - 1)
                 {
-                    if (rawBytes[j] == endMarker)
-                    {
-                        endPos = j;
-                        break;
-                    }
+                    endLine = frameInfo.StartPositions[i + 1] - 1;
+                }
+                else
+                {
+                    endLine = Math.Min(startLine + frameInfo.LinesPerFrame - 1, lines.Length - 1);
                 }
 
-                if (endPos == -1)
-                    break;
-
-                // Skip trailing line terminators after end marker
-                int actualEnd = endPos + 1;
-                while (actualEnd < rawBytes.Length &&
-                       (rawBytes[actualEnd] == 0x0D || rawBytes[actualEnd] == 0x0A ||
-                        rawBytes[actualEnd] == 0x20))
+                // Combine lines into a single frame
+                var frameLines = new List<string>();
+                for (int j = startLine; j <= endLine; j++)
                 {
-                    actualEnd++;
+                    if (j < lines.Length)
+                        frameLines.Add(lines[j]);
                 }
 
-                // Extract package
-                int length = actualEnd - startPos;
-                byte[] message = new byte[length];
-                Array.Copy(rawBytes, startPos, message, 0, length);
-                messages.Add(message);
-
-                i = actualEnd;
+                string frameText = string.Join("\r\n", frameLines);
+                if (!string.IsNullOrEmpty(frameText))
+                {
+                    byte[] frameBytes = Encoding.ASCII.GetBytes(frameText + "\r\n");
+                    messages.Add(frameBytes);
+                }
             }
 
             if (messages.Count == 0)
@@ -142,52 +224,75 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
             };
         }
 
-        private LogData ExtractWithTerminator(byte[] rawBytes, byte[] terminator)
+        #endregion
+
+        #region Private Methods - Single Line Detection
+
+        /// <summary>
+        /// Extract single-line messages when no frame markers found
+        /// </summary>
+        private LogData ExtractSingleLineMessages(byte[] rawBytes, string[] lines)
         {
             var messages = new List<byte[]>();
-            int start = 0;
 
-            for (int i = 0; i <= rawBytes.Length - terminator.Length; i++)
+            // Filter out empty lines and convert back to bytes
+            foreach (var line in lines)
             {
-                bool matches = true;
-                for (int j = 0; j < terminator.Length; j++)
+                if (!string.IsNullOrWhiteSpace(line))
                 {
-                    if (rawBytes[i + j] != terminator[j])
-                    {
-                        matches = false;
-                        break;
-                    }
-                }
-
-                if (matches)
-                {
-                    // Found terminator
-                    int length = i - start + terminator.Length;
-                    byte[] message = new byte[length];
-                    Array.Copy(rawBytes, start, message, 0, length);
-                    messages.Add(message);
-
-                    start = i + terminator.Length;
-                    i += terminator.Length - 1;
+                    byte[] lineBytes = Encoding.ASCII.GetBytes(line + "\r\n");
+                    messages.Add(lineBytes);
                 }
             }
 
-            // Handle remaining bytes
-            if (start < rawBytes.Length)
-            {
-                int length = rawBytes.Length - start;
-                byte[] message = new byte[length];
-                Array.Copy(rawBytes, start, message, 0, length);
-                messages.Add(message);
-            }
+            if (messages.Count == 0)
+                return new LogData { Messages = new List<byte[]> { rawBytes }, MessageCount = 1, TotalBytes = rawBytes.Length, AverageMessageLength = rawBytes.Length };
 
+            int totalBytes = messages.Sum(m => m.Length);
             return new LogData
             {
                 Messages = messages,
                 MessageCount = messages.Count,
-                TotalBytes = rawBytes.Length,
-                AverageMessageLength = messages.Count > 0 ? rawBytes.Length / messages.Count : 0
+                TotalBytes = totalBytes,
+                AverageMessageLength = totalBytes / messages.Count
             };
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private double CalculateStdDev(List<int> values)
+        {
+            if (values.Count == 0)
+                return 0;
+
+            double avg = values.Average();
+            double sumSquares = values.Sum(v => Math.Pow(v - avg, 2));
+            return Math.Sqrt(sumSquares / values.Count);
+        }
+
+        #endregion
+
+        #region Internal Classes
+
+        private class MarkerCandidate
+        {
+            public string Pattern { get; set; }
+            public List<int> Positions { get; set; }
+            public List<string> LineSamples { get; set; }
+            public int ExpectedLinesPerFrame { get; set; }
+            public double Confidence { get; set; }
+            public string EndMarker { get; set; }
+        }
+
+        private class FrameMarkerResult
+        {
+            public string StartMarker { get; set; }
+            public string EndMarker { get; set; }
+            public int LinesPerFrame { get; set; }
+            public double Confidence { get; set; }
+            public List<int> StartPositions { get; set; }
         }
 
         #endregion
