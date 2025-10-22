@@ -6,6 +6,22 @@ The Protocol Analyzer implementation is fundamentally incomplete. Major architec
 
 ---
 
+## ⚠️ CRITICAL INSTRUCTION - DO NOT USE v1 FOLDER
+
+**IMPORTANT**: Do NOT access, read, or modify ANY files in the `v1` folder:
+- ❌ `09.App\NLib.Serial.Protocol.Analyzer\v1\**` - OLD/ABANDONED CODE
+- ❌ `Documents\ModernDesign\v1\**` - OLD/ABANDONED DOCUMENTS
+
+**ONLY work with root-level files**:
+- ✅ `09.App\NLib.Serial.Protocol.Analyzer\Models\` - CURRENT models
+- ✅ `09.App\NLib.Serial.Protocol.Analyzer\Analyzers\` - CURRENT analyzers
+- ✅ `09.App\NLib.Serial.Protocol.Analyzer\Parsers\` - CURRENT parsers
+- ✅ `Documents\ModernDesign\*.md` - CURRENT design documents (root level only)
+
+The v1 folder contains previous failed attempts and must be ignored completely.
+
+---
+
 ## Project Purpose
 
 Create a **Protocol Analyzer Tool** that:
