@@ -188,9 +188,11 @@
     <Compile Include="Models\AnalysisResult.cs" />
     <Compile Include="Models\DelimiterInfo.cs" />
     <Compile Include="Models\FieldInfo.cs" />
+    <Compile Include="Models\FieldRelationship.cs" />
     <Compile Include="Models\LogData.cs" />
     <Compile Include="Models\ProtocolDefinition.cs" />
     <Compile Include="Models\TerminatorInfo.cs" />
+    <Compile Include="Models\ValidationRule.cs" />
     <Compile Include="Parsers\HexLogParser.cs" />
     <Compile Include="Parsers\MessageExtractor.cs" />
   </ItemGroup>
