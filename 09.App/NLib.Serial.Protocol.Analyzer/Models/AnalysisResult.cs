@@ -9,6 +9,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
 {
     /// <summary>
     /// Results from pattern detection and analysis.
+    /// Contains all detected patterns, fields, relationships, and validation rules.
     /// </summary>
     public class AnalysisResult
     {
@@ -21,6 +22,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         {
             Delimiters = new List<DelimiterInfo>();
             Fields = new List<FieldInfo>();
+            Relationships = new List<FieldRelationship>();
+            ValidationRules = new List<ValidationRule>();
         }
 
         #endregion
@@ -61,6 +64,29 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         /// Gets or sets the detected protocol type.
         /// </summary>
         public ProtocolType ProtocolType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the selected parsing strategy.
+        /// Values: "Delimiter", "Frame", "StateMachine", "Position", "Content"
+        /// </summary>
+        public string SelectedStrategy { get; set; }
+
+        /// <summary>
+        /// Gets or sets the confidence score (0.0 to 1.0) for the selected strategy.
+        /// </summary>
+        public double StrategyConfidence { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of detected field relationships.
+        /// Includes Date+Time combinations, compound field splits, and formula calculations.
+        /// </summary>
+        public List<FieldRelationship> Relationships { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of generated validation rules.
+        /// Includes range validations, formula validations, and relationship constraints.
+        /// </summary>
+        public List<ValidationRule> ValidationRules { get; set; }
 
         #endregion
     }
