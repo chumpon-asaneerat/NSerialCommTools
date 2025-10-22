@@ -84,7 +84,12 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         private ProtocolType DetectProtocolType(AnalysisResult result)
         {
             // Simple heuristic based on message structure
-            if (result.Fields.Count > 0)
+            // If we have many fields (lines), it's likely a multi-line package
+            if (result.Fields.Count > 5)
+            {
+                return ProtocolType.MultiLine;
+            }
+            else if (result.Fields.Count > 0)
             {
                 return ProtocolType.SingleLine;
             }

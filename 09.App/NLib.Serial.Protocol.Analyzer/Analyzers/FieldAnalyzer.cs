@@ -23,8 +23,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// </summary>
         public List<FieldInfo> Analyze(LogData logData, DelimiterInfo delimiter)
         {
-            if (logData == null || logData.Messages.Count == 0 || delimiter == null)
+            if (logData == null || logData.Messages.Count == 0)
                 return new List<FieldInfo>();
+
+            // If delimiter is not found or confidence is low, try multi-line analysis
+            if (delimiter == null || delimiter.Confidence < 0.6)
+            {
+                return AnalyzeMultiLine(logData);
+            }
 
             char delim = delimiter.Character;
             var fieldData = new Dictionary<int, List<string>>();
@@ -56,6 +62,61 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                     Position = position,
                     AutoName = $"Field{position}",
                     SampleValues = values.Distinct().Take(10).ToList(),
+                    MinLength = values.Min(v => v.Length),
+                    MaxLength = values.Max(v => v.Length),
+                    IsConstant = values.Distinct().Count() == 1
+                };
+
+                // Infer type
+                InferFieldType(fieldInfo, values);
+
+                results.Add(fieldInfo);
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Analyzes multi-line messages where each line is a field.
+        /// </summary>
+        private List<FieldInfo> AnalyzeMultiLine(LogData logData)
+        {
+            var fieldData = new Dictionary<int, List<string>>();
+
+            // Split each message by line breaks
+            foreach (var message in logData.Messages)
+            {
+                string text = Encoding.ASCII.GetString(message);
+                string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i].Trim();
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    if (!fieldData.ContainsKey(i))
+                        fieldData[i] = new List<string>();
+
+                    fieldData[i].Add(line);
+                }
+            }
+
+            // Analyze each field (line)
+            var results = new List<FieldInfo>();
+            foreach (var kvp in fieldData.OrderBy(x => x.Key))
+            {
+                int position = kvp.Key;
+                List<string> values = kvp.Value;
+
+                if (values.Count == 0)
+                    continue;
+
+                var fieldInfo = new FieldInfo
+                {
+                    Position = position,
+                    AutoName = $"Line{position}",
+                    SampleValues = values.Distinct().Take(5).ToList(),
                     MinLength = values.Min(v => v.Length),
                     MaxLength = values.Max(v => v.Length),
                     IsConstant = values.Distinct().Count() == 1
