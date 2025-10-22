@@ -18,6 +18,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         private readonly TerminatorDetector _terminatorDetector;
         private readonly DelimiterDetector _delimiterDetector;
         private readonly FieldAnalyzer _fieldAnalyzer;
+        private readonly RelationshipDetector _relationshipDetector;
+        private readonly ValidationRuleGenerator _validationRuleGenerator;
 
         #endregion
 
@@ -31,6 +33,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             _terminatorDetector = new TerminatorDetector();
             _delimiterDetector = new DelimiterDetector();
             _fieldAnalyzer = new FieldAnalyzer();
+            _relationshipDetector = new RelationshipDetector();
+            _validationRuleGenerator = new ValidationRuleGenerator();
         }
 
         #endregion
@@ -61,6 +65,18 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             if (bestDelimiter != null)
             {
                 result.Fields = _fieldAnalyzer.Analyze(logData, bestDelimiter);
+            }
+
+            // Detect relationships between fields (Phase 5)
+            if (result.Fields != null && result.Fields.Count > 0)
+            {
+                result.Relationships = _relationshipDetector.DetectRelationships(result.Fields);
+            }
+
+            // Generate validation rules (Phase 6)
+            if (result.Fields != null && result.Fields.Count > 0)
+            {
+                result.ValidationRules = _validationRuleGenerator.GenerateRules(result.Fields, result.Relationships);
             }
 
             // Determine protocol type

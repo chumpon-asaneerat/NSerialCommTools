@@ -313,10 +313,17 @@ namespace NLib
             // Update Delimiters section
             dgDelimiters.ItemsSource = _currentAnalysis.Delimiters;
 
-            // Update Fields section - using FieldInfo directly with SampleValuesDisplay property
-            dgFieldsDetected.ItemsSource = _currentAnalysis.Fields;
+            // Update Raw Fields tab - shows ALL fields including compound ones (Option A)
+            dgFieldsDetectedRaw.ItemsSource = _currentAnalysis.Fields;
 
-            UpdateStatus($"Analysis complete - {_currentAnalysis.Fields.Count} fields detected");
+            // Update Fields tab - filter out skipped fields to show only split fields (Option B)
+            var activeFields = _currentAnalysis.Fields
+                .Where(f => f.Action != "Skip")
+                .ToList();
+
+            dgFieldsDetected.ItemsSource = activeFields;
+
+            UpdateStatus($"Analysis complete - Raw: {_currentAnalysis.Fields.Count} fields, Processed: {activeFields.Count} fields");
         }
 
         #endregion
@@ -327,8 +334,11 @@ namespace NLib
         {
             UpdateStatus("Preparing field editor...");
 
-            // Just use the fields directly - no conversion needed
-            _fields = _currentAnalysis.Fields;
+            // Filter out skipped fields (fields that were split into value+unit)
+            // Only show fields that should be included in the definition
+            _fields = _currentAnalysis.Fields
+                .Where(f => f.Action != "Skip")
+                .ToList();
 
             dgFields.ItemsSource = _fields;
 
@@ -509,6 +519,14 @@ namespace NLib
         private void UpdateStatus(string message)
         {
             txtStatus.Text = message;
+        }
+
+        /// <summary>
+        /// Adds row numbers to DataGrid row headers.
+        /// </summary>
+        private void DataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            e.Row.Header = (e.Row.GetIndex() + 1).ToString();
         }
 
         #endregion
