@@ -441,38 +441,28 @@ namespace NLib
         {
             var definition = new ProtocolDefinition
             {
-                DeviceInfo = new DeviceInfo
+                DeviceName = txtDeviceName.Text,
+                Version = "1.0",
+                GeneratedDate = DateTime.Now,
+                Description = $"Auto-generated protocol definition with {_currentAnalysis.Confidence * 100:F0}% confidence",
+                Encoding = "ASCII",
+                MessageType = "single-line", // TODO: Detect from analysis
+                EntryTerminator = _currentAnalysis.Terminator?.String ?? "\\r\\n",
+                Fields = _fields.Select(f => new FieldInfo
                 {
-                    Name = txtDeviceName.Text,
-                    CreatedDate = DateTime.Now,
-                    AnalysisConfidence = _currentAnalysis.Confidence
-                },
-                Protocol = new ProtocolSpec
-                {
-                    Type = "streaming",
-                    Format = "text",
-                    Encoding = "ASCII",
-                    Terminator = _currentAnalysis.Terminator?.String ?? "\\r\\n",
-                    Fields = _fields.Select(f => new FieldSpec
-                    {
-                        Name = f.Name,
-                        Position = f.Order,
-                        Type = f.DataType,
-                        Confidence = f.Confidence,
-                        IsConstant = f.IsConstant
-                    }).ToList()
-                },
-                Parsing = new ParsingSpec
-                {
-                    Strategy = _currentAnalysis.SuggestedStrategy,
-                    Delimiter = _currentAnalysis.Delimiters.FirstOrDefault()?.Character.ToString() ?? ",",
-                    Steps = new List<string>
-                    {
-                        "1. Remove terminator",
-                        "2. Split by delimiter",
-                        "3. Parse each field by type"
-                    }
-                }
+                    Order = f.Order,
+                    Name = f.Name,
+                    DataType = f.DataType,
+                    SampleValues = f.SampleValues,
+                    Confidence = f.Confidence,
+                    IsConstant = f.IsConstant,
+                    MinLength = f.MinLength,
+                    MaxLength = f.MaxLength,
+                    Required = !f.IsConstant,
+                    IncludeInDefinition = f.IncludeInDefinition
+                }).ToList(),
+                Relationships = new List<FieldRelationship>(),
+                ValidationRules = new List<ValidationRule>()
             };
 
             return definition;
