@@ -197,31 +197,5 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         }
 
         #endregion
-
-        #region Backward Compatibility
-
-        /// <summary>
-        /// Gets or sets the field position (deprecated - use Order instead).
-        /// Kept for backward compatibility.
-        /// </summary>
-        [Obsolete("Use Order property instead")]
-        public int Position
-        {
-            get { return Order; }
-            set { Order = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets the detected data type (deprecated - use DataType instead).
-        /// Kept for backward compatibility.
-        /// </summary>
-        [Obsolete("Use DataType property instead")]
-        public string Type
-        {
-            get { return DataType; }
-            set { DataType = value; }
-        }
-
-        #endregion
     }
 }
