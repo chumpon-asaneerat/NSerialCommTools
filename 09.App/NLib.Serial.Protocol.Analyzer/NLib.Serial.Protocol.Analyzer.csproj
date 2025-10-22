@@ -50,6 +50,7 @@
       <HintPath>..\..\References\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.IO.Pipelines, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\References\System.IO.Pipelines.dll</HintPath>
@@ -180,10 +181,22 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Analyzers\" />
+    <Compile Include="Analyzers\DelimiterDetector.cs" />
+    <Compile Include="Analyzers\FieldAnalyzer.cs" />
+    <Compile Include="Analyzers\PatternAnalyzer.cs" />
+    <Compile Include="Analyzers\TerminatorDetector.cs" />
+    <Compile Include="Models\AnalysisResult.cs" />
+    <Compile Include="Models\DelimiterInfo.cs" />
+    <Compile Include="Models\FieldDefinition.cs" />
+    <Compile Include="Models\FieldInfo.cs" />
+    <Compile Include="Models\LogData.cs" />
+    <Compile Include="Models\ProtocolDefinition.cs" />
+    <Compile Include="Models\TerminatorInfo.cs" />
+    <Compile Include="Parsers\HexLogParser.cs" />
+    <Compile Include="Parsers\MessageExtractor.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="Generators\" />
-    <Folder Include="Models\" />
-    <Folder Include="Parsers\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
