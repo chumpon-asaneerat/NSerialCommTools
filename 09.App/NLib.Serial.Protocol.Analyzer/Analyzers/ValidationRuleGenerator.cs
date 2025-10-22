@@ -191,8 +191,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                         var field1 = relationship.SourceFields[0]; // Gross
                         var field2 = relationship.SourceFields[1]; // Tare
 
-                        if (field1.Contains("Gross", StringComparison.OrdinalIgnoreCase) &&
-                            field2.Contains("Tare", StringComparison.OrdinalIgnoreCase))
+                        if (field1.IndexOf("Gross", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                            field2.IndexOf("Tare", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             var rule = new NLib.Serial.ProtocolAnalyzer.Models.ValidationRule
                             {

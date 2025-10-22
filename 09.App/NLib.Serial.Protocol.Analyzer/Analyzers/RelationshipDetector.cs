@@ -240,7 +240,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         {
             return field.FieldType == "Date" ||
                    field.DataType == "DateTime" ||
-                   (field.Name != null && field.Name.Contains("Date", StringComparison.OrdinalIgnoreCase));
+                   (field.Name != null && field.Name.IndexOf("Date", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         {
             return field.FieldType == "Time" ||
                    field.DataType == "TimeSpan" ||
-                   (field.Name != null && field.Name.Contains("Time", StringComparison.OrdinalIgnoreCase));
+                   (field.Name != null && field.Name.IndexOf("Time", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         #endregion
@@ -268,16 +268,16 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // Find weight fields
             var weightFields = fields.Where(f =>
                 f.Name != null &&
-                (f.Name.Contains("Weight", StringComparison.OrdinalIgnoreCase) ||
-                 f.Name.Contains("Kg", StringComparison.OrdinalIgnoreCase) ||
-                 f.Name.Contains("Mass", StringComparison.OrdinalIgnoreCase)) &&
+                (f.Name.IndexOf("Weight", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 f.Name.IndexOf("Kg", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 f.Name.IndexOf("Mass", StringComparison.OrdinalIgnoreCase) >= 0) &&
                 f.Action == "Parse"
             ).ToList();
 
             // Look for Tare, Gross, Net pattern
-            var tareField = weightFields.FirstOrDefault(f => f.Name.Contains("Tare", StringComparison.OrdinalIgnoreCase));
-            var grossField = weightFields.FirstOrDefault(f => f.Name.Contains("Gross", StringComparison.OrdinalIgnoreCase));
-            var netField = weightFields.FirstOrDefault(f => f.Name.Contains("Net", StringComparison.OrdinalIgnoreCase));
+            var tareField = weightFields.FirstOrDefault(f => f.Name.IndexOf("Tare", StringComparison.OrdinalIgnoreCase) >= 0);
+            var grossField = weightFields.FirstOrDefault(f => f.Name.IndexOf("Gross", StringComparison.OrdinalIgnoreCase) >= 0);
+            var netField = weightFields.FirstOrDefault(f => f.Name.IndexOf("Net", StringComparison.OrdinalIgnoreCase) >= 0);
 
             if (tareField != null && grossField != null && netField != null)
             {
