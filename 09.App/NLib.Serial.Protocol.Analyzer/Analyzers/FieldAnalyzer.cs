@@ -120,7 +120,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         {
             var fieldInfo = new FieldInfo
             {
-                Position = lineNumber,
+                Order = lineNumber,
                 SampleValues = samples.Distinct().Take(5).ToList(),
                 MinLength = samples.Min(s => s.Length),
                 MaxLength = samples.Max(s => s.Length),
@@ -131,7 +131,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             if (lineNumber == 0)
             {
                 fieldInfo.Name = "StartMarker";
-                fieldInfo.Type = "string";
+                fieldInfo.DataType = "string";
                 fieldInfo.Confidence = 1.0;
                 return fieldInfo;
             }
@@ -140,7 +140,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             if (uniqueSamples.Count == 1 && uniqueSamples[0].Length < 5)
             {
                 fieldInfo.Name = "EndMarker";
-                fieldInfo.Type = "string";
+                fieldInfo.DataType = "string";
                 fieldInfo.Confidence = 1.0;
                 return fieldInfo;
             }
@@ -149,7 +149,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             if (samples.All(s => string.IsNullOrWhiteSpace(s)))
             {
                 fieldInfo.Name = "Empty";
-                fieldInfo.Type = "string";
+                fieldInfo.DataType = "string";
                 fieldInfo.Confidence = 1.0;
                 return fieldInfo;
             }
@@ -174,7 +174,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 if (matchRate > 0.9)
                 {
                     fieldInfo.Name = pattern.Name;
-                    fieldInfo.Type = pattern.Name.Contains("Weight") || pattern.Name.Contains("Count") || pattern.Name.Contains("Decimal") ? "decimal" :
+                    fieldInfo.DataType = pattern.Name.Contains("Weight") || pattern.Name.Contains("Count") || pattern.Name.Contains("Decimal") ? "decimal" :
                                      pattern.Name == "Integer" ? "int" : "string";
                     fieldInfo.Confidence = matchRate;
                     return fieldInfo;
@@ -187,13 +187,13 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             if (variance < 0.1)
             {
                 fieldInfo.Name = "Reserved";
-                fieldInfo.Type = "string";
+                fieldInfo.DataType = "string";
                 fieldInfo.Confidence = 0.7;
             }
             else
             {
                 fieldInfo.Name = "Unknown";
-                fieldInfo.Type = "string";
+                fieldInfo.DataType = "string";
                 fieldInfo.Confidence = 0.5;
             }
 
