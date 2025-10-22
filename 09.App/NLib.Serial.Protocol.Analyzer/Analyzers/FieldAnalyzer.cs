@@ -351,17 +351,17 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
             if (intRatio > 0.9)
             {
-                fieldInfo.Type = "int";
+                fieldInfo.DataType = "int";
                 fieldInfo.Confidence = intRatio;
             }
             else if (decimalRatio > 0.9 || (intCount + decimalCount) > total * 0.9)
             {
-                fieldInfo.Type = "decimal";
+                fieldInfo.DataType = "decimal";
                 fieldInfo.Confidence = (intRatio + decimalRatio) / (double)total;
             }
             else
             {
-                fieldInfo.Type = "string";
+                fieldInfo.DataType = "string";
                 fieldInfo.Confidence = 0.95;
             }
         }
