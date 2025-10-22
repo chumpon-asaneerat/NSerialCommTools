@@ -354,7 +354,7 @@ namespace NLib
             {
                 if (string.IsNullOrWhiteSpace(field.Name))
                 {
-                    errors.Add($"Field at position {field.Position} has no name");
+                    errors.Add($"Field at position {field.Order} has no name");
                 }
                 else if (!IsValidCSharpIdentifier(field.Name))
                 {
@@ -456,8 +456,8 @@ namespace NLib
                     Fields = _fields.Select(f => new FieldSpec
                     {
                         Name = f.Name,
-                        Position = f.Position,
-                        Type = f.Type,
+                        Position = f.Order,
+                        Type = f.DataType,
                         Confidence = f.Confidence,
                         IsConstant = f.IsConstant
                     }).ToList()
@@ -505,7 +505,7 @@ namespace NLib
             sb.AppendLine("------");
             foreach (var field in _fields)
             {
-                sb.AppendLine($"  {field.Position}: {field.Name} ({field.Type}) - Confidence: {(field.Confidence * 100):F0}%");
+                sb.AppendLine($"  {field.Order}: {field.Name} ({field.DataType}) - Confidence: {(field.Confidence * 100):F0}%");
                 sb.AppendLine($"     Samples: {string.Join(", ", field.SampleValues.Take(3))}");
             }
 
