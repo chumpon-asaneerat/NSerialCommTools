@@ -241,7 +241,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
                 var fieldInfo = new FieldInfo
                 {
-                    Position = position,
+                    Order = position,
                     Name = $"Field{position}",
                     SampleValues = values.Distinct().Take(10).ToList(),
                     MinLength = values.Min(v => v.Length),
@@ -296,7 +296,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
                 var fieldInfo = new FieldInfo
                 {
-                    Position = position,
+                    Order = position,
                     Name = $"Line{position}",
                     SampleValues = values.Distinct().Take(5).ToList(),
                     MinLength = values.Min(v => v.Length),
