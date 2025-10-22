@@ -187,7 +187,6 @@
     <Compile Include="Analyzers\TerminatorDetector.cs" />
     <Compile Include="Models\AnalysisResult.cs" />
     <Compile Include="Models\DelimiterInfo.cs" />
-    <Compile Include="Models\FieldDefinition.cs" />
     <Compile Include="Models\FieldInfo.cs" />
     <Compile Include="Models\LogData.cs" />
     <Compile Include="Models\ProtocolDefinition.cs" />

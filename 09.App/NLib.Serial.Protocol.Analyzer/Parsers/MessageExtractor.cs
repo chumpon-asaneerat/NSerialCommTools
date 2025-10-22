@@ -91,10 +91,45 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
 
             foreach (var marker in markerCandidates.Values)
             {
-                if (marker.Positions.Count < 2)
+                if (marker.Positions.Count == 0)
                     continue;
 
-                // Calculate gaps between occurrences
+                // Handle single frame case
+                if (marker.Positions.Count == 1)
+                {
+                    // Look for end marker pattern
+                    int startPos = marker.Positions[0];
+                    string endMarker = FindEndMarkerSingleFrame(lines, startPos);
+
+                    if (endMarker != null)
+                    {
+                        // Found start and end marker - this is likely a frame
+                        // Calculate frame size
+                        int frameLines = 0;
+                        for (int i = startPos; i < lines.Length; i++)
+                        {
+                            frameLines++;
+                            if (lines[i].Trim() == endMarker.Trim())
+                                break;
+                        }
+
+                        if (frameLines > 1)
+                        {
+                            marker.ExpectedLinesPerFrame = frameLines;
+                            marker.Confidence = 0.85; // Lower confidence for single frame
+                            marker.EndMarker = endMarker;
+
+                            if (marker.Confidence > bestConfidence)
+                            {
+                                bestConfidence = marker.Confidence;
+                                bestStartMarker = marker;
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                // Multiple frames - calculate gaps
                 var gaps = new List<int>();
                 for (int i = 1; i < marker.Positions.Count; i++)
                 {
@@ -133,6 +168,31 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
                     Confidence = bestConfidence,
                     StartPositions = bestStartMarker.Positions
                 };
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Find the end marker for a single frame
+        /// </summary>
+        private string FindEndMarkerSingleFrame(string[] lines, int startPos)
+        {
+            // Look for lines with special ending characters (~ or short lines)
+            char[] endMarkerChars = { '~', '<', '>', '\x03' }; // ETX
+
+            for (int i = startPos + 1; i < lines.Length; i++)
+            {
+                string line = lines[i].Trim();
+
+                // Check for end marker characteristics
+                if (!string.IsNullOrEmpty(line) && line.Length < 10)
+                {
+                    if (endMarkerChars.Contains(line[0]))
+                    {
+                        return line;
+                    }
+                }
             }
 
             return null;

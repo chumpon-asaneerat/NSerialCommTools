@@ -93,7 +93,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 }
             }
 
-            // STEP 2: Analyze each line position
+            // STEP 2: Analyze each line position using AnalyzeLinePattern
             var results = new List<FieldInfo>();
 
             foreach (var kvp in fieldsByLineNumber.OrderBy(x => x.Key))
@@ -104,23 +104,109 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 if (samples.Count == 0)
                     continue;
 
-                var fieldInfo = new FieldInfo
-                {
-                    Position = position,
-                    AutoName = $"Line{position}",
-                    SampleValues = samples.Distinct().Take(5).ToList(),
-                    MinLength = samples.Min(s => s.Length),
-                    MaxLength = samples.Max(s => s.Length),
-                    IsConstant = samples.Distinct().Count() == 1
-                };
-
-                // Infer type based on line content
-                InferFieldType(fieldInfo, samples);
-
+                // Use AnalyzeLinePattern from Algorithm 4
+                var fieldInfo = AnalyzeLinePattern(position, samples);
                 results.Add(fieldInfo);
             }
 
             return results;
+        }
+
+        /// <summary>
+        /// Algorithm 4: AnalyzeLinePattern
+        /// Detects the field type and generates Name based on pattern
+        /// </summary>
+        private FieldInfo AnalyzeLinePattern(int lineNumber, List<string> samples)
+        {
+            var fieldInfo = new FieldInfo
+            {
+                Position = lineNumber,
+                SampleValues = samples.Distinct().Take(5).ToList(),
+                MinLength = samples.Min(s => s.Length),
+                MaxLength = samples.Max(s => s.Length),
+                IsConstant = samples.Distinct().Count() == 1
+            };
+
+            // Check for Marker Lines
+            if (lineNumber == 0)
+            {
+                fieldInfo.Name = "StartMarker";
+                fieldInfo.Type = "string";
+                fieldInfo.Confidence = 1.0;
+                return fieldInfo;
+            }
+
+            var uniqueSamples = samples.Distinct().ToList();
+            if (uniqueSamples.Count == 1 && uniqueSamples[0].Length < 5)
+            {
+                fieldInfo.Name = "EndMarker";
+                fieldInfo.Type = "string";
+                fieldInfo.Confidence = 1.0;
+                return fieldInfo;
+            }
+
+            // Check for Empty/Whitespace Lines
+            if (samples.All(s => string.IsNullOrWhiteSpace(s)))
+            {
+                fieldInfo.Name = "Empty";
+                fieldInfo.Type = "string";
+                fieldInfo.Confidence = 1.0;
+                return fieldInfo;
+            }
+
+            // Detect Data Patterns
+            var patterns = new[]
+            {
+                new { Name = "Date", Regex = new System.Text.RegularExpressions.Regex(@"^\d{4}-\d{2}-\d{2}$") },
+                new { Name = "Time", Regex = new System.Text.RegularExpressions.Regex(@"^\d{2}:\d{2}:\d{2}$") },
+                new { Name = "WeightKg", Regex = new System.Text.RegularExpressions.Regex(@"^\s*[+-]?\d+\.\d+\s*kg\s*$") },
+                new { Name = "WeightG", Regex = new System.Text.RegularExpressions.Regex(@"^\s*[+-]?\d+\.\d+\s*g\s*$") },
+                new { Name = "CountPcs", Regex = new System.Text.RegularExpressions.Regex(@"^\s*\d+\s*pcs\s*$") },
+                new { Name = "Decimal", Regex = new System.Text.RegularExpressions.Regex(@"^\s*[+-]?\d+\.\d+\s*$") },
+                new { Name = "Integer", Regex = new System.Text.RegularExpressions.Regex(@"^\s*\d+\s*$") }
+            };
+
+            foreach (var pattern in patterns)
+            {
+                int matchCount = samples.Count(s => pattern.Regex.IsMatch(s));
+                double matchRate = (double)matchCount / samples.Count;
+
+                if (matchRate > 0.9)
+                {
+                    fieldInfo.Name = pattern.Name;
+                    fieldInfo.Type = pattern.Name.Contains("Weight") || pattern.Name.Contains("Count") || pattern.Name.Contains("Decimal") ? "decimal" :
+                                     pattern.Name == "Integer" ? "int" : "string";
+                    fieldInfo.Confidence = matchRate;
+                    return fieldInfo;
+                }
+            }
+
+            // No Pattern Matched - Check variance
+            double variance = CalculateVariance(samples);
+
+            if (variance < 0.1)
+            {
+                fieldInfo.Name = "Reserved";
+                fieldInfo.Type = "string";
+                fieldInfo.Confidence = 0.7;
+            }
+            else
+            {
+                fieldInfo.Name = "Unknown";
+                fieldInfo.Type = "string";
+                fieldInfo.Confidence = 0.5;
+            }
+
+            return fieldInfo;
+        }
+
+        private double CalculateVariance(List<string> samples)
+        {
+            if (samples.Count == 0)
+                return 0;
+
+            var uniqueCount = samples.Distinct().Count();
+            return (double)uniqueCount / samples.Count;
         }
 
         /// <summary>
@@ -156,7 +242,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 var fieldInfo = new FieldInfo
                 {
                     Position = position,
-                    AutoName = $"Field{position}",
+                    Name = $"Field{position}",
                     SampleValues = values.Distinct().Take(10).ToList(),
                     MinLength = values.Min(v => v.Length),
                     MaxLength = values.Max(v => v.Length),
@@ -211,7 +297,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 var fieldInfo = new FieldInfo
                 {
                     Position = position,
-                    AutoName = $"Line{position}",
+                    Name = $"Line{position}",
                     SampleValues = values.Distinct().Take(5).ToList(),
                     MinLength = values.Min(v => v.Length),
                     MaxLength = values.Max(v => v.Length),
