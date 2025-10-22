@@ -197,6 +197,7 @@
     <Compile Include="Models\ValidationRule.cs" />
     <Compile Include="Parsers\HexLogParser.cs" />
     <Compile Include="Parsers\MessageExtractor.cs" />
+    <Compile Include="Parsers\StateMachineParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Generators\" />
