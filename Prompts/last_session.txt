@@ -557,3 +557,33 @@ var compoundPatterns = new[]
 5. Pointed out hardcoded unit detection ✅
 6. Decided to remove ValidationRules entirely ✅
 7. Questioned document organization (update existing vs create new) ✅
+
+---
+
+## 🔔 IMPORTANT: Design Documents Need Updates
+
+**CRITICAL**: The following design documents are OUT OF SYNC with the code after this session's changes:
+
+### Must Update in Next Session:
+
+**1. Documents/ModernDesign/04-Data-Models-Design.md** (CRITICAL - 8 locations)
+- Line 911: Remove `ValidationRules` property from ProtocolDefinition
+- Line 935: Remove from constructor
+- Lines 1306-1400: Remove entire ValidationRule class definition
+- Line 1937: Remove from feature list
+- Line 1971: Update version history
+- Add deprecation note
+- Note: `IsSkipped` renamed to `ShowInEditor`
+- Note: Width property is optional
+
+**2. Documents/ModernDesign/03-Parsing-Strategy-Analysis.md** (MINOR - 2 locations)
+- Line 1038-1040: Remove GenerateValidationRules function
+- Line 1484-1486: Remove ValidationRule from output
+- Add note about validation being user responsibility
+
+**Already Updated**:
+- ✅ 02-System-Architecture.md (Architecture Principles + Critical Debt)
+- ✅ 05-JSON-Schema-Design.md (no changes needed)
+- ✅ 06-Protocol-Analyzer-Complete-UI.md (no changes needed)
+
+**Reference**: See WORK-SUMMARY-2025-10-24-Session-1.md lines 1218-1273 for complete details

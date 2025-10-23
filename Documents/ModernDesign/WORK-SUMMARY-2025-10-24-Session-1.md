@@ -1215,6 +1215,65 @@ new { Name = "WeightKg", Pattern = new Regex(@"(\d+\.?\d*)\s*(kg)") }
 
 ---
 
+## 🔔 IMPORTANT: Documents Requiring Updates (Future Session)
+
+The following design documents contain **outdated information** based on changes made in this session and need to be updated:
+
+### Priority 1 - CRITICAL: 04-Data-Models-Design.md
+**Status**: Contains ValidationRule class that was REMOVED from code
+
+**Updates Required** (8 locations):
+1. **Line 911**: Remove `public List<ValidationRule> ValidationRules { get; set; }` from ProtocolDefinition
+2. **Line 935**: Remove `ValidationRules = new List<ValidationRule>();` from constructor
+3. **Lines 1306-1400**: Remove entire `ValidationRule` class definition (~95 lines)
+4. **Line 1937**: Remove ValidationRule from feature list
+5. **Line 1971**: Update version history - add "v2.1: Removed ValidationRule (not used by runtime)"
+6. Add section explaining removal with reference to Architecture Principles
+7. Check for `IsSkipped` property - should note it was renamed to `ShowInEditor`
+8. Add note about Width property being optional (not needed for regex-based parsing)
+
+**Why**: ValidationRule class was removed in Part 4 of this session. The document still shows the full class definition which no longer exists in the codebase.
+
+---
+
+### Priority 2 - MINOR: 03-Parsing-Strategy-Analysis.md
+**Status**: References ValidationRule generation in algorithms
+
+**Updates Required** (2 locations):
+1. **Line 1038-1040**: Remove `GenerateValidationRules` function from algorithm
+2. **Line 1484-1486**: Remove `List<ValidationRule>` from algorithm output diagram
+3. Add note: "Validation rules removed - users implement validation in their application layer (see 02-System-Architecture.md Architecture Principles #5)"
+
+**Why**: ValidationRule generation was removed from the analysis pipeline.
+
+---
+
+### ✅ Already Updated (No Action Needed):
+- **02-System-Architecture.md** - Updated today with Architecture Principles + Critical Debt sections
+- **05-JSON-Schema-Design.md** - No ValidationRule references found
+- **06-Protocol-Analyzer-Complete-UI.md** - No ValidationRule references found
+
+---
+
+### Changes to Document:
+
+**What Was Removed**:
+- `ValidationRule` class and all related code
+- `ValidationRules` property from models
+- Validation rule generation and export logic
+
+**What Was Renamed**:
+- `IsSkipped` → `ShowInEditor` (for clarity)
+
+**What Was Clarified**:
+- Width property is optional (not needed for regex-based architecture)
+- Field names don't affect protocol recreation
+- Action property is for Terminal logic, not UI filtering
+
+**Reference**: See Part 4 of this document (lines 831-1183) for complete details.
+
+---
+
 ## References
 
 - Previous session: `WORK-SUMMARY-2025-10-23.md`
@@ -1226,3 +1285,5 @@ new { Name = "WeightKg", Pattern = new Regex(@"(\d+\.?\d*)\s*(kg)") }
 ---
 
 **End of Session 1 - All Parts Completed** ✅
+
+**Next Session TODO**: Update design documents (03, 04) to reflect ValidationRule removal and property changes.
