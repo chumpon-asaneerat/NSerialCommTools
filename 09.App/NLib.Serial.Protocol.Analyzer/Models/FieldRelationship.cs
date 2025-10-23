@@ -74,13 +74,6 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         /// </summary>
         public double Tolerance { get; set; }
 
-        /// <summary>
-        /// Gets or sets the template for combining fields (used for Split relationships).
-        /// Example: "  {0:F2} {1}" for combining decimal value and unit string.
-        /// Used by Device to serialize child fields back into complete line.
-        /// </summary>
-        public string Template { get; set; }
-
         #endregion
     }
 }

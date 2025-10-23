@@ -1,8 +1,8 @@
 {
-  "deviceName": "JIK6CAB",
+  "deviceName": "D1",
   "version": "1.0",
-  "generatedDate": "2025-10-23T14:20:21.7793468+07:00",
-  "description": "Auto-generated protocol definition for JIK6CAB",
+  "generatedDate": "2025-10-24T00:58:22.0440285+07:00",
+  "description": "Auto-generated protocol definition for D1",
   "encoding": "ASCII",
   "messageType": "multi-line-frame",
   "frameStart": "\\^KJIK000",
@@ -421,6 +421,61 @@
     }
   ],
   "relationships": [
+    {
+      "type": "Split",
+      "sourceFields": [
+        "WeightKg1"
+      ],
+      "targetField": "WeightKg1Value,WeightKg1Unit",
+      "operation": "Split WeightKg1 into WeightKg1Value and WeightKg1Unit",
+      "confidence": 1,
+      "reason": "Compound field detected with pattern: value \u002B unit",
+      "tolerance": 0
+    },
+    {
+      "type": "Split",
+      "sourceFields": [
+        "WeightKg2"
+      ],
+      "targetField": "WeightKg2Value,WeightKg2Unit",
+      "operation": "Split WeightKg2 into WeightKg2Value and WeightKg2Unit",
+      "confidence": 1,
+      "reason": "Compound field detected with pattern: value \u002B unit",
+      "tolerance": 0
+    },
+    {
+      "type": "Split",
+      "sourceFields": [
+        "WeightKg3"
+      ],
+      "targetField": "WeightKg3Value,WeightKg3Unit",
+      "operation": "Split WeightKg3 into WeightKg3Value and WeightKg3Unit",
+      "confidence": 1,
+      "reason": "Compound field detected with pattern: value \u002B unit",
+      "tolerance": 0
+    },
+    {
+      "type": "Split",
+      "sourceFields": [
+        "WeightKg4"
+      ],
+      "targetField": "WeightKg4Value,WeightKg4Unit",
+      "operation": "Split WeightKg4 into WeightKg4Value and WeightKg4Unit",
+      "confidence": 1,
+      "reason": "Compound field detected with pattern: value \u002B unit",
+      "tolerance": 0
+    },
+    {
+      "type": "Split",
+      "sourceFields": [
+        "CountPcs1"
+      ],
+      "targetField": "CountPcs1Value,CountPcs1Unit",
+      "operation": "Split CountPcs1 into CountPcs1Value and CountPcs1Unit",
+      "confidence": 1,
+      "reason": "Compound field detected with pattern: value \u002B unit",
+      "tolerance": 0
+    },
     {
       "type": "Combine",
       "sourceFields": [

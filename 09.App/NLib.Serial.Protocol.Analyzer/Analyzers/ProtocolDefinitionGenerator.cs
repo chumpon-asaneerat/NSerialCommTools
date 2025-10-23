@@ -429,14 +429,10 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 return;
             }
 
-            // Only include relationships where all referenced fields are exported
-            var exportedFieldNames = new HashSet<string>(definition.Fields.Select(f => f.Name));
-
-            var validRelationships = analysis.Relationships
-                .Where(r => r.SourceFields.All(sf => exportedFieldNames.Contains(sf)))
-                .ToList();
-
-            definition.Relationships = validRelationships;
+            // Export all relationships - they are documentation/metadata only
+            // Relationships show how fields were detected/analyzed but don't affect parsing/serialization
+            // Terminal/Device work with individual field definitions, not relationships
+            definition.Relationships = analysis.Relationships;
         }
 
         #endregion
