@@ -1,8 +1,9 @@
 ** CRITICAL: READ THESE DOCUMENTS FIRST BEFORE ANY WORK **
 
-1. @Documents/ModernDesign/WORK-SUMMARY-2025-10-23.md - COMPLETE session summary with corrections
-2. @Documents/ModernDesign/05-JSON-Schema-Design.md - See lines 1094-1183 for correct architecture
-3. @Documents/ModernDesign/00-Requirements-Specification.md - Terminal/Device requirements
+1. @Documents/ModernDesign/WORK-SUMMARY-2025-10-24-Session-1.md - CURRENT session summary (Parts 1-4)
+2. @Documents/ModernDesign/02-System-Architecture.md - Architecture Principles + Critical Debt (lines 716-1006)
+3. @Documents/ModernDesign/05-JSON-Schema-Design.md - See lines 1094-1183 for correct architecture
+4. @Documents/ModernDesign/00-Requirements-Specification.md - Terminal/Device requirements
 
 ** ⚠️ CRITICAL WARNINGS - DO NOT VIOLATE **
 
@@ -16,9 +17,10 @@
    - Analyze actual sample data dynamically
    - Cannot assume protocols have specific field types
 
-3. **NO v1 FOLDER ACCESS** - Old abandoned code/documents
+3. **NO v1/v2 FOLDER ACCESS** - Old abandoned code/documents
    - ❌ 09.App\NLib.Serial.Protocol.Analyzer\v1\**
    - ❌ Documents\ModernDesign\v1\**
+   - ❌ Documents\ModernDesign\v2\**
 
 4. **FIELDS CAN SHARE SAME LINE** - This is the key understanding!
    Example: Line "  0.00 kg" has TWO fields:
