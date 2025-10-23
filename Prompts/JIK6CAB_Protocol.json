@@ -1,7 +1,7 @@
 {
   "deviceName": "Device1",
   "version": "1.0",
-  "generatedDate": "2025-10-24T02:06:19.4275954+07:00",
+  "generatedDate": "2025-10-24T02:09:46.950357+07:00",
   "description": "Auto-generated protocol definition for Device1",
   "encoding": "ASCII",
   "messageType": "multi-line-frame",
@@ -372,6 +372,52 @@
       "minLength": 3,
       "maxLength": 3,
       "sampleValuesDisplay": "pcs"
+    },
+    {
+      "order": 10,
+      "name": "Empty1",
+      "dataType": "string",
+      "sampleValues": [
+        " "
+      ],
+      "confidence": 1,
+      "alignment": "left",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": true,
+      "fieldType": "Empty",
+      "action": "Validate",
+      "variance": 0,
+      "includeInDefinition": true,
+      "showInEditor": false,
+      "isConstant": true,
+      "minLength": 1,
+      "maxLength": 1,
+      "sampleValuesDisplay": " "
+    },
+    {
+      "order": 11,
+      "name": "Empty2",
+      "dataType": "string",
+      "sampleValues": [
+        " "
+      ],
+      "confidence": 1,
+      "alignment": "left",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": true,
+      "fieldType": "Empty",
+      "action": "Validate",
+      "variance": 0,
+      "includeInDefinition": true,
+      "showInEditor": false,
+      "isConstant": true,
+      "minLength": 1,
+      "maxLength": 1,
+      "sampleValuesDisplay": " "
     },
     {
       "order": 12,
