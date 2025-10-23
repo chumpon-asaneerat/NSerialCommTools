@@ -6,11 +6,12 @@ The Protocol Analyzer implementation is fundamentally incomplete. Major architec
 
 ---
 
-## ⚠️ CRITICAL INSTRUCTION - DO NOT USE v1 FOLDER
+## ⚠️ CRITICAL INSTRUCTION - DO NOT USE v1/v2 FOLDERS
 
-**IMPORTANT**: Do NOT access, read, or modify ANY files in the `v1` folder:
+**IMPORTANT**: Do NOT access, read, or modify ANY files in the `v1` or `v2` folders:
 - ❌ `09.App\NLib.Serial.Protocol.Analyzer\v1\**` - OLD/ABANDONED CODE
 - ❌ `Documents\ModernDesign\v1\**` - OLD/ABANDONED DOCUMENTS
+- ❌ `Documents\ModernDesign\v2\**` - ARCHIVED HISTORICAL DOCUMENTS
 
 **ONLY work with root-level files**:
 - ✅ `09.App\NLib.Serial.Protocol.Analyzer\Models\` - CURRENT models
@@ -18,7 +19,7 @@ The Protocol Analyzer implementation is fundamentally incomplete. Major architec
 - ✅ `09.App\NLib.Serial.Protocol.Analyzer\Parsers\` - CURRENT parsers
 - ✅ `Documents\ModernDesign\*.md` - CURRENT design documents (root level only)
 
-The v1 folder contains previous failed attempts and must be ignored completely.
+The v1 and v2 folders contain previous failed attempts and archived historical documents. They must be ignored completely.
 
 ---
 
