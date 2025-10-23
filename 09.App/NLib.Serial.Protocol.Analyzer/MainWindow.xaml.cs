@@ -408,8 +408,20 @@ namespace NLib
         {
             var errors = new List<string>();
 
-            // Check for duplicate names
-            var nameGroups = _fields.GroupBy(f => f.Name);
+            // Only validate DATA fields that will be exported
+            // Skip markers, empty lines, and fields with Action = "Skip"
+            var dataFields = _fields.Where(f =>
+                f.IncludeInDefinition &&
+                f.Action != "Skip" &&
+                f.FieldType != "StartMarker" &&
+                f.FieldType != "EndMarker" &&
+                f.FieldType != "Empty" &&
+                f.FieldType != "Reserved" &&
+                f.Variance > 0.1  // Has actual varying data
+            ).ToList();
+
+            // Check for duplicate names in data fields only
+            var nameGroups = dataFields.GroupBy(f => f.Name);
             foreach (var group in nameGroups)
             {
                 if (group.Count() > 1)
@@ -418,8 +430,8 @@ namespace NLib
                 }
             }
 
-            // Check for valid C# identifiers
-            foreach (var field in _fields)
+            // Check for valid C# identifiers in data fields only
+            foreach (var field in dataFields)
             {
                 if (string.IsNullOrWhiteSpace(field.Name))
                 {
@@ -466,14 +478,35 @@ namespace NLib
 
         private void PrepareExport()
         {
+            if (_currentAnalysis == null || _currentLogData == null)
+            {
+                UpdateStatus("No analysis data available");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtDeviceName.Text))
+            {
+                UpdateStatus("Device name required");
+                return;
+            }
+
             UpdateStatus("Preparing export...");
 
-            var definition = BuildProtocolDefinition();
-            string json = NLib.NJson.ToJson(definition, true);
+            try
+            {
+                var generator = new ProtocolDefinitionGenerator();
+                var definition = generator.Generate(_currentAnalysis, txtDeviceName.Text, _currentLogData);
+                string json = generator.ExportToJson(definition);
 
-            txtExportPreview.Text = json;
+                txtExportPreview.Text = json;
 
-            UpdateStatus("Export preview ready");
+                UpdateStatus("Export preview ready");
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus($"Error preparing export: {ex.Message}");
+                txtExportPreview.Text = $"Error: {ex.Message}";
+            }
         }
 
         private void PerformExport()

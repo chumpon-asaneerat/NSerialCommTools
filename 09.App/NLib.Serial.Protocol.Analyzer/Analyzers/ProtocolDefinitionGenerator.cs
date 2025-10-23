@@ -369,6 +369,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// <summary>
         /// Exports fields to protocol definition.
         /// Only includes fields where IncludeInDefinition = true.
+        /// Filters out markers, empty lines, and skipped fields.
         /// </summary>
         private void ExportFields(ProtocolDefinition definition, AnalysisResult analysis)
         {
@@ -377,9 +378,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 return;
             }
 
-            // Filter: only include fields marked for export
+            // Filter: only include DATA fields that should be in the protocol definition
+            // Exclude: markers, empty lines, reserved fields, and explicitly skipped fields
             var fieldsToExport = analysis.Fields
-                .Where(f => f.IncludeInDefinition)
+                .Where(f => f.IncludeInDefinition &&
+                           f.Action != "Skip" &&
+                           f.FieldType != "StartMarker" &&
+                           f.FieldType != "EndMarker" &&
+                           f.FieldType != "Empty")
                 .OrderBy(f => f.Order)
                 .ToList();
 
