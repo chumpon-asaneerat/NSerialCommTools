@@ -30,6 +30,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
             Action = "Parse";
             Required = true;
             IncludeInDefinition = true;
+            ShowInEditor = true;  // By default, show all fields in editor
         }
 
         #endregion
@@ -157,9 +158,11 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         public bool IncludeInDefinition { get; set; }
 
         /// <summary>
-        /// Gets or sets whether this field is skipped in parsing.
+        /// Gets or sets whether this field should be shown in the field editor UI.
+        /// False for system fields that user shouldn't edit (empty lines, split parent fields).
+        /// True for data fields that user can rename.
         /// </summary>
-        public bool IsSkipped { get; set; }
+        public bool ShowInEditor { get; set; }
 
         /// <summary>
         /// Gets or sets whether the field appears to be constant across all messages.

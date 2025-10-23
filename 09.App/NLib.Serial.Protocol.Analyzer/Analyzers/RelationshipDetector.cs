@@ -152,9 +152,10 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
                         result.Relationships.Add(relationship);
 
-                        // Mark original field as skipped (it's been split)
-                        field.Action = "Skip";
-                        field.IncludeInDefinition = false;
+                        // Mark parent field: don't export (split into children), hide from UI
+                        field.IncludeInDefinition = false;  // Don't export parent to JSON
+                        field.ShowInEditor = false;         // Hide from UI editor
+                        field.Action = "Parse";              // Keep action for documentation
 
                         break; // Found match, move to next field
                     }

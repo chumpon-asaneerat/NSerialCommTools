@@ -378,9 +378,9 @@ namespace NLib
             // Update Raw Fields tab - shows ALL fields including compound ones (Option A)
             dgFieldsDetectedRaw.ItemsSource = _currentAnalysis.Fields;
 
-            // Update Fields tab - filter out skipped fields to show only split fields (Option B)
+            // Update Fields tab - filter fields shown to user (hide system fields, split parents, empty lines)
             var activeFields = _currentAnalysis.Fields
-                .Where(f => f.Action != "Skip")
+                .Where(f => f.ShowInEditor)
                 .ToList();
 
             dgFieldsDetected.ItemsSource = activeFields;
@@ -396,10 +396,9 @@ namespace NLib
         {
             UpdateStatus("Preparing field editor...");
 
-            // Filter out skipped fields (fields that were split into value+unit)
-            // Only show fields that should be included in the definition
+            // Show only fields that user should edit (hide empty lines, split parents, etc.)
             _fields = _currentAnalysis.Fields
-                .Where(f => f.Action != "Skip")
+                .Where(f => f.ShowInEditor)
                 .ToList();
 
             dgFields.ItemsSource = _fields;
@@ -412,10 +411,9 @@ namespace NLib
             var errors = new List<string>();
 
             // Only validate DATA fields that will be exported
-            // Skip markers, empty lines, and fields with Action = "Skip"
+            // Skip markers, empty lines, reserved fields
             var dataFields = _fields.Where(f =>
                 f.IncludeInDefinition &&
-                f.Action != "Skip" &&
                 f.FieldType != "StartMarker" &&
                 f.FieldType != "EndMarker" &&
                 f.FieldType != "Empty" &&

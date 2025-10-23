@@ -172,14 +172,16 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             var uniqueSamples = samples.Distinct().ToList();
 
             // IMPORTANT: Check for Empty/Whitespace Lines FIRST before checking for Markers
-            // This prevents single spaces " " from being detected as Markers
+            // Empty lines (whitespace-only)
+            // These are needed for position counting in state-machine protocols
             // Document 03: samples.All(s => string.IsNullOrWhiteSpace(s))
             if (samples.All(s => string.IsNullOrWhiteSpace(s)))
             {
                 fieldInfo.Name = $"Empty{emptyCounter++}";
                 fieldInfo.DataType = "string";
                 fieldInfo.FieldType = "Empty";
-                fieldInfo.Action = "Skip";
+                fieldInfo.Action = "Validate";  // Validate line is empty, needed for position
+                fieldInfo.ShowInEditor = false;  // Hide from UI - user shouldn't rename
                 fieldInfo.Confidence = 1.0;
                 fieldInfo.Variance = 0.0;
                 return fieldInfo;
