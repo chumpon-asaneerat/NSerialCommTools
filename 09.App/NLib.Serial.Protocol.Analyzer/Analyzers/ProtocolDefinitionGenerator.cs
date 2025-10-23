@@ -368,8 +368,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         /// <summary>
         /// Exports fields to protocol definition.
-        /// Only includes fields where IncludeInDefinition = true.
-        /// Filters out markers, empty lines, and skipped fields.
+        /// Includes all fields needed for State Machine parsing (data fields + structural fields with Skip action).
+        /// For State Machine protocols: Empty lines and Reserved fields are REQUIRED to maintain position counting.
         /// </summary>
         private void ExportFields(ProtocolDefinition definition, AnalysisResult analysis)
         {
@@ -378,14 +378,39 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 return;
             }
 
-            // Filter: only include DATA fields that should be in the protocol definition
-            // Exclude: markers, empty lines, reserved fields, and explicitly skipped fields
+            // For State Machine protocols, we need ALL fields including Skip fields
+            // because the line position determines field meaning
             var fieldsToExport = analysis.Fields
-                .Where(f => f.IncludeInDefinition &&
-                           f.Action != "Skip" &&
-                           f.FieldType != "StartMarker" &&
-                           f.FieldType != "EndMarker" &&
-                           f.FieldType != "Empty")
+                .Where(f => {
+                    // Must be marked for inclusion
+                    if (!f.IncludeInDefinition)
+                        return false;
+
+                    // Include Parse fields (actual data)
+                    if (f.Action == "Parse")
+                    {
+                        // Include Date/Time fields even if constant in sample
+                        if (f.FieldType == "Date" || f.FieldType == "Time" ||
+                            f.DataType == "DateTime" || f.DataType == "TimeSpan")
+                            return true;
+
+                        // Include fields with varying data
+                        if (f.Variance > 0.01)
+                            return true;
+                    }
+
+                    // Include Skip fields for State Machine (Empty, Reserved)
+                    // These maintain position count in multi-line frames
+                    if (f.Action == "Skip" && (f.FieldType == "Empty" || f.FieldType == "Reserved"))
+                        return true;
+
+                    // Include Validate fields (StartMarker, EndMarker) for frame boundaries
+                    if (f.Action == "Validate" && (f.FieldType == "StartMarker" || f.FieldType == "EndMarker"))
+                        return true;
+
+                    // Exclude everything else (constant unit fields marked as Parse, etc.)
+                    return false;
+                })
                 .OrderBy(f => f.Order)
                 .ToList();
 
