@@ -1,7 +1,7 @@
 {
   "deviceName": "Device1",
   "version": "1.0",
-  "generatedDate": "2025-10-24T02:09:46.950357+07:00",
+  "generatedDate": "2025-10-24T02:38:26.2800459+07:00",
   "description": "Auto-generated protocol definition for Device1",
   "encoding": "ASCII",
   "messageType": "multi-line-frame",
@@ -533,53 +533,6 @@
       "confidence": 1,
       "reason": "Adjacent Date and Time fields detected",
       "tolerance": 0
-    }
-  ],
-  "validationRules": [
-    {
-      "name": "WeightKg1ValueRange",
-      "type": "Range",
-      "field": "WeightKg1Value",
-      "severity": "Warning",
-      "message": "WeightKg1Value should be between -0.10 and 0.10",
-      "minValue": -0.10000000000000001,
-      "maxValue": 0.10000000000000001
-    },
-    {
-      "name": "WeightKg2ValueRange",
-      "type": "Range",
-      "field": "WeightKg2Value",
-      "severity": "Warning",
-      "message": "WeightKg2Value should be between 1.84 and 2.04",
-      "minValue": 1.8400000000000001,
-      "maxValue": 2.04
-    },
-    {
-      "name": "WeightKg3ValueRange",
-      "type": "Range",
-      "field": "WeightKg3Value",
-      "severity": "Warning",
-      "message": "WeightKg3Value should be between 1.84 and 2.04",
-      "minValue": 1.8400000000000001,
-      "maxValue": 2.04
-    },
-    {
-      "name": "WeightKg4ValueRange",
-      "type": "Range",
-      "field": "WeightKg4Value",
-      "severity": "Warning",
-      "message": "WeightKg4Value should be between 1.84 and 2.04",
-      "minValue": 1.8400000000000001,
-      "maxValue": 2.04
-    },
-    {
-      "name": "CountPcs1ValueRange",
-      "type": "Range",
-      "field": "CountPcs1Value",
-      "severity": "Warning",
-      "message": "CountPcs1Value should be between -0.10 and 0.10",
-      "minValue": -0.10000000000000001,
-      "maxValue": 0.10000000000000001
     }
   ]
 }

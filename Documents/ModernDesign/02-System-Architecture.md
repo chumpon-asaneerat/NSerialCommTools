@@ -713,6 +713,298 @@ classDiagram
 
 ---
 
+## Architecture Principles
+
+### 1. No Hardcoding Protocol Assumptions
+**Principle**: The analyzer must work with ANY protocol without hardcoded assumptions.
+
+**Violations Found**:
+- ❌ **Hardcoded terminators**: `text.Split(new[] { "\r\n", "\n", "\r" })`
+  - Location: FieldAnalyzer.cs:79
+  - Issue: Ignores TerminatorDetector results completely
+  - Should use: Detected terminator from `TerminatorInfo.Bytes`
+  - Impact: Cannot analyze protocols with custom terminators (e.g., `\x83\r`, custom binary sequences)
+
+- ❌ **Hardcoded unit patterns**: `"kg"`, `"g"`, `"pcs"`, `"°C"`, `"pH"`
+  - Location: RelationshipDetector.cs:77-84
+  - Issue: Regex patterns hardcoded for specific units only
+  - Should use: Dynamic pattern extraction from sample data
+  - Impact: Cannot detect unknown units (e.g., "lb", "oz", "mL", custom units)
+
+- ❌ **Hardcoded encoding assumption**: ASCII
+  - Issue: Assumes all protocols use ASCII encoding
+  - Should use: EncodingDetector results
+  - Impact: Cannot handle UTF-8, UTF-16, or custom encodings
+
+**Correct Approach**:
+```csharp
+// DON'T: Hardcoded terminators
+string[] lines = text.Split(new[] { "\r\n", "\n", "\r" });
+
+// DO: Use detected terminator
+byte[] terminator = detectedTerminator.Bytes;  // From TerminatorDetector
+List<byte[]> frames = SplitByTerminator(rawBytes, terminator);
+```
+
+```csharp
+// DON'T: Hardcoded unit patterns
+var patterns = new[] {
+    new { Name = "WeightKg", Pattern = new Regex(@"(\d+\.?\d*)\s*(kg)") }
+};
+
+// DO: Extract patterns from data
+// Sample: "1.94 kg" → Detect: NUMBER + SPACE + TEXT_UNIT
+// Extract unit from data: "kg" (not from hardcoded list)
+// Generate generic Split: ValueField + UnitField
+```
+
+### 2. Byte-Level Processing Required
+**Principle**: Work with `byte[]` throughout, not strings.
+
+**Current Issue**:
+- String-based processing loses binary data
+- Assumes ASCII encoding for string conversion
+- Cannot handle binary protocols
+- `TerminatorInfo` has `byte[] Bytes` property but it's unused
+
+**Should Be**:
+```csharp
+// Current (WRONG):
+string text = Encoding.ASCII.GetString(rawBytes);  // Loses binary data
+string[] lines = text.Split(new[] { "\r\n", "\n", "\r" });
+
+// Should be:
+byte[] terminator = detectedTerminator.Bytes;  // Binary-safe
+List<byte[]> frames = SplitByTerminator(rawBytes, terminator);
+// Convert to string ONLY when needed for display:
+string displayText = DetectedEncoding.GetString(frame);
+```
+
+**Why This Matters**:
+- Binary protocols may contain `\x00` (null) bytes - lost in string conversion
+- Protocol terminators may be custom binary sequences (e.g., `\x83\r`)
+- Different encodings (UTF-16, Shift-JIS) require proper detection
+
+### 3. Data-Driven Field Detection
+**Principle**: No assumptions about field types or meanings.
+
+**Current Issue**:
+- Hardcoded patterns for WeightKg, Temperature, pH
+- Cannot detect unknown unit types
+- Assumes specific field semantics
+
+**Should Be**:
+```csharp
+// Analyze samples: "1.94 kg", "2.01 kg", "0.00 kg"
+// Detect pattern: (\d+\.?\d*)\s+(\w+)
+// Extract unit from data: "kg"
+// Generate relationship: Value + Unit (generic, not WeightKg-specific)
+// Don't assume meaning - just document the pattern
+```
+
+### 4. Separation of Concerns
+**Principle**: Clear distinction between analysis metadata and protocol definition.
+
+**Property Purposes**:
+- `ShowInEditor` → UI visibility only (hide system fields like Empty lines)
+- `IncludeInDefinition` → JSON export control (user decides what to export)
+- `Action` → Terminal logic (Parse/Validate)
+
+**Field Names**:
+- Irrelevant for protocol recreation (device doesn't send field names)
+- Used only for property mapping in Terminal configuration
+- User customizes for clarity in their application code
+
+### 5. ValidationRules Removed
+**Decision**: ValidationRules feature has been **REMOVED** from the codebase.
+
+**Reasons**:
+- ❌ Not used by Terminal/Device runtime code
+- ❌ Auto-generated ranges unreliable (based on limited sample data)
+- ❌ Hardcoded assumptions (e.g., "Gross >= Tare") don't apply universally
+- ❌ Added complexity with zero runtime benefit
+- ✅ Users implement actual validation in their application layer
+
+**What Was Removed**:
+- `ValidationRule` class properties from models
+- `ValidationRuleGenerator` class (logic still exists for reference)
+- Export of validation rules to JSON
+- UI display of rule counts
+
+**If Users Need Validation**:
+- Implement in application layer after parsing
+- Use domain-specific business rules
+- Not generic auto-generated suggestions
+
+---
+
+## Critical Architectural Debt
+
+This section documents known architectural issues that violate the principles above and require refactoring.
+
+### TODO-001: Use Detected Terminator Instead of Hardcoded Split
+**Priority**: CRITICAL
+**Location**: `FieldAnalyzer.cs:79`
+**Issue**: Code ignores TerminatorDetector results and uses hardcoded `"\r\n", "\n", "\r"`
+
+**Current Code**:
+```csharp
+string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+```
+
+**Impact**:
+- Cannot analyze protocols with custom terminators (e.g., `\x83\r`, `\x03`, binary sequences)
+- TerminatorDetector results are calculated but completely unused
+- Wastes CPU on detection that's ignored
+
+**Fix Required**:
+```csharp
+// Use detected terminator from TerminatorInfo.Bytes
+byte[] terminator = _terminatorDetector.DetectedTerminator.Bytes;
+List<byte[]> frames = SplitByTerminator(rawBytes, terminator);
+```
+
+**Effort**: Medium (requires byte[] processing implementation)
+
+---
+
+### TODO-002: Redesign for Byte[] Processing Throughout
+**Priority**: CRITICAL
+**Scope**: Major architectural refactoring
+**Impact**: Cannot handle binary protocols, loses data in string conversion
+
+**Current Architecture**:
+```
+byte[] → string → Split → Analyze → Export
+         ^^^^^^
+         Loses binary data here!
+```
+
+**Should Be**:
+```
+byte[] → Split by terminator → Analyze bytes → Export
+         ^^^^^^^^^^^^^^^^^^^^^^
+         Binary-safe throughout
+
+Convert to string ONLY for display:
+byte[] frame → DetectedEncoding.GetString(frame) → UI display
+```
+
+**Components Requiring Changes**:
+- **FieldAnalyzer**: Work with `byte[]` frames instead of string lines
+- **RelationshipDetector**: Parse `byte[]` patterns
+- **FieldInfo**: Support both byte patterns and regex (for text protocols)
+- **UI Display**: Convert bytes to string using detected encoding for display only
+
+**Why This Matters**:
+- Binary protocols may contain `\x00` (null) bytes → lost in string conversion
+- Some protocols use custom encodings (Shift-JIS, custom character sets)
+- Protocol terminators may be non-printable binary sequences
+
+**Effort**: Large (3-5 days of refactoring)
+
+---
+
+### TODO-003: Add Encoding Detector and Use Detected Encoding
+**Priority**: HIGH
+**Issue**: Code assumes ASCII encoding everywhere
+
+**Current Issues**:
+```csharp
+// Hardcoded ASCII assumption:
+string text = Encoding.ASCII.GetString(rawBytes);
+```
+
+**Fix Required**:
+1. Implement `EncodingDetector` class:
+   - Auto-detect: UTF-8 BOM, UTF-16 BOM
+   - Analyze byte patterns (ASCII vs UTF-8 vs others)
+   - Calculate confidence scores
+2. Use detected encoding for string conversions:
+   ```csharp
+   Encoding detectedEncoding = _encodingDetector.DetectedEncoding;
+   string displayText = detectedEncoding.GetString(frameBytes);
+   ```
+3. Store detected encoding in protocol definition (already in schema)
+
+**Impact**: Can handle international characters, Chinese/Japanese protocols, UTF-8 data
+
+**Effort**: Medium (2-3 days)
+
+---
+
+### TODO-004: Remove Hardcoded Unit Detection
+**Priority**: HIGH
+**Location**: `RelationshipDetector.cs:77-84`
+**Issue**: Hardcoded regex patterns for specific units only
+
+**Current Code**:
+```csharp
+var compoundPatterns = new[]
+{
+    new { Name = "WeightKg", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(kg)\s*$") },
+    new { Name = "WeightG", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(g)\s*$") },
+    new { Name = "CountPcs", Pattern = new Regex(@"^\s*(\d+)\s*(pcs)\s*$") },
+    new { Name = "Temperature", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(°C|C)\s*$") },
+    new { Name = "pH", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(pH)\s*$") }
+};
+```
+
+**Impact**:
+- Cannot detect unknown units: "lb", "oz", "mL", "cm", "mm", "PSI", etc.
+- Fails on custom units specific to industrial devices
+- Violates "no hardcoding" principle
+
+**Fix Required**:
+```csharp
+// Dynamic pattern detection:
+// 1. Analyze all field samples
+// 2. Detect pattern: NUMBER + WHITESPACE + TEXT
+// 3. Extract the text part as the unit (from actual data)
+// 4. Generate generic Split relationship: ValueField + UnitField
+// 5. Don't assume semantics - just document the pattern
+
+// Example:
+// Samples: "1.94 kg", "2.01 kg", "0.00 kg"
+// Detected pattern: (\d+\.?\d*)\s+(\w+)
+// Extracted unit: "kg" (from data, not hardcoded list)
+// Relationship: Field3 → Field3Value (1.94) + Field3Unit (kg)
+```
+
+**Benefits**:
+- Works with ANY unit system
+- Discovers unknown/custom units automatically
+- More maintainable (no hardcoded lists)
+
+**Effort**: Medium (1-2 days)
+
+---
+
+### TODO-005: Width Analysis Not Implemented
+**Priority**: LOW (not critical for current use case)
+**Status**: DEFERRED
+
+**Current State**:
+- All exported fields have `width: 0`
+- Width property exists but is never calculated
+
+**Impact**:
+- Device emulator cannot recreate exact byte-perfect spacing
+- Works fine for data extraction (parsePattern handles parsing)
+- Only affects protocol recreation fidelity
+
+**If Needed**:
+- Calculate fixed-width positions from aligned sample data
+- Detect padding characters and alignment
+- Store in field definition for emulator use
+
+**Reason for Deferral**:
+- Modern architecture uses regex `parsePattern` (not positional)
+- Device formats each field individually (doesn't need exact widths)
+- Can be added later if byte-perfect recreation is required
+
+---
+
 ## Technology Stack
 
 - **Framework**: .NET Framework 4.7.2

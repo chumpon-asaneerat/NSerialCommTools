@@ -51,8 +51,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // 5. Export Relationships
             ExportRelationships(definition, analysis);
 
-            // 6. Export Validation Rules
-            ExportValidationRules(definition, analysis);
+            // Validation rules removed - user implements validation in their application layer
 
             return definition;
         }
@@ -438,29 +437,6 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         #endregion
 
-        #region Validation Rule Export
-
-        /// <summary>
-        /// Exports validation rules to protocol definition.
-        /// </summary>
-        private void ExportValidationRules(ProtocolDefinition definition, AnalysisResult analysis)
-        {
-            if (analysis.ValidationRules == null)
-            {
-                return;
-            }
-
-            // Only include rules where referenced fields are exported
-            var exportedFieldNames = new HashSet<string>(definition.Fields.Select(f => f.Name));
-
-            var validRules = analysis.ValidationRules
-                .Where(r => string.IsNullOrEmpty(r.Field) || exportedFieldNames.Contains(r.Field))
-                .ToList();
-
-            definition.ValidationRules = validRules;
-        }
-
-        #endregion
 
         #region Helper Methods
 

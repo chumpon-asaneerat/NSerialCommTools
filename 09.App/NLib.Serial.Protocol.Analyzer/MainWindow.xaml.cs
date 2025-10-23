@@ -261,7 +261,7 @@ namespace NLib
                 string json = generator.ExportToJson(definition);
                 txtExportPreview.Text = json;
 
-                UpdateStatus($"JSON preview generated ({definition.Fields.Count} fields, {definition.Relationships.Count} relationships, {definition.ValidationRules.Count} rules)");
+                UpdateStatus($"JSON preview generated ({definition.Fields.Count} fields, {definition.Relationships.Count} relationships)");
             }
             catch (Exception ex)
             {

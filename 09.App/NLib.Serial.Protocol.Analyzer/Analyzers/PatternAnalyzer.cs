@@ -73,11 +73,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 result.Relationships = _relationshipDetector.DetectRelationships(result.Fields);
             }
 
-            // Generate validation rules (Phase 6)
-            if (result.Fields != null && result.Fields.Count > 0)
-            {
-                result.ValidationRules = _validationRuleGenerator.GenerateRules(result.Fields, result.Relationships);
-            }
+            // Validation rules removed - user implements validation in their application layer
 
             // Determine protocol type
             result.ProtocolType = DetectProtocolType(result);

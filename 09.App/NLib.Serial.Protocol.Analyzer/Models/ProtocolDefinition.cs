@@ -22,7 +22,6 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         {
             Fields = new List<FieldInfo>();
             Relationships = new List<FieldRelationship>();
-            ValidationRules = new List<ValidationRule>();
             Version = "1.0";
             GeneratedDate = DateTime.Now;
             Encoding = "ASCII";
@@ -101,11 +100,6 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         /// </summary>
         public List<FieldRelationship> Relationships { get; set; }
 
-        /// <summary>
-        /// Gets or sets the list of validation rules.
-        /// Includes range validations, formula validations, relationship constraints.
-        /// </summary>
-        public List<ValidationRule> ValidationRules { get; set; }
 
         #endregion
     }

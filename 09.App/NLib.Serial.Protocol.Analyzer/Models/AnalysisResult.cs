@@ -23,7 +23,6 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
             Delimiters = new List<DelimiterInfo>();
             Fields = new List<FieldInfo>();
             Relationships = new List<FieldRelationship>();
-            ValidationRules = new List<ValidationRule>();
         }
 
         #endregion
@@ -82,11 +81,6 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         /// </summary>
         public List<FieldRelationship> Relationships { get; set; }
 
-        /// <summary>
-        /// Gets or sets the list of generated validation rules.
-        /// Includes range validations, formula validations, and relationship constraints.
-        /// </summary>
-        public List<ValidationRule> ValidationRules { get; set; }
 
         #endregion
     }
