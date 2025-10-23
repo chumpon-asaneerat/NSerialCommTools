@@ -1,14 +1,129 @@
-** Check files
-- @Prompts/prompt.md
-- 02-System-Architecture.md
-- 03-Parsing-Strategy-Analysis.md
-- 04-Data-Models-Design.md
-- 05-JSON-Schema-Design.md
-- 06-Protocol-Analyzer-Complete-UI.md
+** CRITICAL: READ THESE DOCUMENTS FIRST BEFORE ANY WORK **
 
-** Also keep in mind we must not assume to code using only JIK6CAB protocol but need to cover all protocols 
-that analysis by applcation itself to create definition file that can work properly with terminal class 
+1. @Documents/ModernDesign/WORK-SUMMARY-2025-10-23.md - COMPLETE session summary with corrections
+2. @Documents/ModernDesign/05-JSON-Schema-Design.md - See lines 1094-1183 for correct architecture
+3. @Documents/ModernDesign/00-Requirements-Specification.md - Terminal/Device requirements
 
-- Last Session
-Then Check @Prompts/JIK6CAB_Protocol.json are it generate correctly and ready to use in terminal 
-but from what i see it still wrong.
+** ⚠️ CRITICAL WARNINGS - DO NOT VIOLATE **
+
+1. **NO TEMPLATES** - Terminal/Device work with individual field mappings ONLY
+   - Terminal maps: field.name → dataClass.property (one-to-one)
+   - Device outputs: fields sequentially by Order/Position
+   - NO line templates, NO combining logic needed
+
+2. **NO HARDCODING** - Must be data-driven for ANY protocol
+   - NO switch/case on field types like "WeightKg", "Temperature"
+   - Analyze actual sample data dynamically
+   - Cannot assume protocols have specific field types
+
+3. **NO v1 FOLDER ACCESS** - Old abandoned code/documents
+   - ❌ 09.App\NLib.Serial.Protocol.Analyzer\v1\**
+   - ❌ Documents\ModernDesign\v1\**
+
+4. **FIELDS CAN SHARE SAME LINE** - This is the key understanding!
+   Example: Line "  0.00 kg" has TWO fields:
+   - TareWeight (position 3): parsePattern matches whole line, extracts number
+   - TareUnit (position 4): parsePattern matches whole line, extracts unit
+   Both fields parse from SAME line, map to DIFFERENT properties!
+
+5. **FIELD NAMES MUST BE UNIQUE BY DEFAULT** - Critical for validation!
+   - Analyzer doesn't know semantic meaning, so uses running numbers: Date1, Date2, WeightKg1, WeightKg2
+   - Same datatype appears multiple times → needs unique names to avoid validation errors
+   - User renames ONLY the fields they need to map to data class properties
+   - Fields user doesn't need (markers, empty lines, reserved) keep default unique names
+   - Example: WeightKg1, WeightKg2, WeightKg3, WeightKg4 (all same pattern, different lines)
+   - User renames: WeightKg1→TareWeight, WeightKg2→GrossWeight, WeightKg3→NetWeight
+   - WeightKg4 stays as-is (maybe duplicate display field, user doesn't need it)
+
+** LAST SESSION SUMMARY **
+
+Session 2025-10-23 found and attempted to fix bug where Split relationships not exported to JSON.
+
+**BUG FOUND** ✅:
+- Location: ProtocolDefinitionGenerator.cs line 436
+- Problem: Filters out relationships where SourceFields reference non-exported fields
+- Split relationship has SourceFields=["WeightKg1"] (parent field)
+- Parent field has IncludeInDefinition=false
+- Result: Relationship filtered out!
+
+**WRONG SOLUTION IMPLEMENTED** ❌ (MUST REVERT):
+- Added Template property to FieldRelationship model
+- Added GenerateLineTemplate() method with hardcoded switch cases
+- Changed Split relationship to store templates like "  {0:F2} {1}"
+- **This violates architecture** - Terminal/Device don't use templates!
+
+**WHY TEMPLATE APPROACH IS WRONG**:
+1. Template "  {0:F2} {1}" produces ONE string, but data class has TWO properties (decimal + string)
+2. Terminal cannot map one template to two separate typed properties
+3. Terminal must map: field.name → property.name (individual mapping)
+4. Device outputs fields sequentially, not via templates
+5. Hardcoded format strings assume specific decimal places and units
+
+**CORRECT ARCHITECTURE** (from 05-JSON-Schema-Design.md lines 1094-1183):
+
+Protocol line: "  0.00 kg\r\n"
+
+Definition has TWO fields for SAME line:
+```json
+{
+  "name": "TareWeight",
+  "position": 3,
+  "parsePattern": "^\\s*(\\d+\\.\\d+)\\s*kg",  // Matches complete line, extracts number
+  "formatString": "F2",
+  "width": 6,
+  "padding": "left"
+},
+{
+  "name": "TareUnit",
+  "position": 4,
+  "parsePattern": "(kg|g)$",  // Matches complete line, extracts unit
+  "formatString": null,
+  "width": 2
+}
+```
+
+Terminal parsing:
+- Reads line: "  0.00 kg"
+- Applies TareWeight.parsePattern → extracts "0.00" → data.TareWeight
+- Applies TareUnit.parsePattern → extracts "kg" → data.TareUnit
+
+Device serialization:
+- Has: data.TareWeight=0.00, data.TareUnit="kg"
+- Outputs fields by Order/Position:
+  - Position 3: Format(0.00, "F2") = "0.00", pad left to width 6 = "  0.00"
+  - Position 4: Output "kg", pad to width 2 = " kg"
+- Result: "  0.00 kg" + terminator
+
+NO TEMPLATES NEEDED!
+
+** NEXT SESSION TASKS **
+
+**Priority 1: REVERT WRONG CHANGES** ⚠️ CRITICAL
+1. Revert Models/FieldRelationship.cs - Remove Template property
+2. Revert Analyzers/RelationshipDetector.cs - Remove GenerateLineTemplate() method
+3. Revert relationship creation code that generates templates
+4. Verify code compiles after revert
+
+**Priority 2: IMPLEMENT SIMPLE FIX**
+Choose ONE approach:
+- Option A: Remove/modify filter in ProtocolDefinitionGenerator.cs line 436 (simplest)
+- Option B: Change Split relationship SourceFields to reference children ["WeightKg1Value", "WeightKg1Unit"]
+- Option C: Export relationships without filtering, they're documentation only
+
+**Priority 3: TEST**
+1. Build solution
+2. Run Protocol Analyzer with JIK6CAB log
+3. Export JSON
+4. Verify Split relationships present (without Template property!)
+5. Relationships are for documentation/understanding, not operational
+
+** THE ACTUAL PROBLEM TO SOLVE IS SIMPLE **
+
+Just need to export Split relationships to JSON. They're metadata/documentation showing which fields came from splitting compound fields. Terminal/Device don't need them to operate - they just use individual field definitions.
+
+** REMEMBER **
+- Split relationships = documentation only
+- Terminal/Device = work with individual fields only
+- NO templates, NO combining logic, NO hardcoding
+- Fields can share same line by having same position
+- Each field maps to one property in data class

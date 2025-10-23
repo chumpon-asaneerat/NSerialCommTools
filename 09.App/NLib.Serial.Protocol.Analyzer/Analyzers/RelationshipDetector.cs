@@ -139,13 +139,17 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                         result.NewFields.Add(valueField);
                         result.NewFields.Add(unitField);
 
-                        // Create relationship
+                        // Generate template from sample for Device serialization
+                        string template = GenerateLineTemplate(samples, compoundPattern.Name);
+
+                        // Create relationship - reference child fields with template for reconstruction
                         var relationship = new FieldRelationship
                         {
                             Type = "Split",
-                            SourceFields = new List<string> { field.Name },
-                            TargetField = null, // Multiple targets
-                            Operation = $"Split '{field.Name}' into Value and Unit",
+                            SourceFields = new List<string> { valueField.Name, unitField.Name }, // Reference children
+                            TargetField = field.Name, // Store original field name for reference
+                            Operation = $"Combine {valueField.Name} and {unitField.Name} to recreate line",
+                            Template = template, // How to combine them back: "  {0:F2} {1}"
                             Confidence = field.Confidence,
                             Reason = $"Compound field detected with pattern: value + unit"
                         };
@@ -193,6 +197,41 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // Consider it compound if 80%+ samples match the pattern
             double matchRate = (double)matchCount / field.SampleValues.Count;
             return matchRate > 0.8;
+        }
+
+        /// <summary>
+        /// Generates a format template string for combining value and unit back into line.
+        /// Example: "  1.94 kg" → "  {0:F2} {1}"
+        /// </summary>
+        private string GenerateLineTemplate(List<string> samples, string patternName)
+        {
+            var sample = samples.FirstOrDefault() ?? "";
+
+            // Analyze spacing pattern
+            int leadingSpaces = sample.TakeWhile(c => c == ' ').Count();
+
+            switch (patternName)
+            {
+                case "WeightKg":
+                case "WeightG":
+                    // "  1.94 kg" → "  {0:F2} {1}"
+                    return new string(' ', leadingSpaces) + "{0:F2} {1}";
+
+                case "CountPcs":
+                    // "    0 pcs" → "    {0} {1}"
+                    return new string(' ', leadingSpaces) + "{0} {1}";
+
+                case "Temperature":
+                    // "  25.5 °C" → "  {0:F1} {1}"
+                    return new string(' ', leadingSpaces) + "{0:F1} {1}";
+
+                case "pH":
+                    // "  7.2 pH" → "  {0:F1} {1}"
+                    return new string(' ', leadingSpaces) + "{0:F1} {1}";
+
+                default:
+                    return "{0} {1}";
+            }
         }
 
         #endregion
