@@ -96,6 +96,23 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // STEP 2: Analyze each line position using AnalyzeLinePattern
             var results = new List<FieldInfo>();
 
+            // Running number counters for all field types
+            int markerCounter = 1;     // Marker1, Marker2, Marker3, etc.
+            int emptyCounter = 1;      // Empty1, Empty2, Empty3, etc.
+            int reservedCounter = 1;   // Reserved1, Reserved2, Reserved3, etc.
+
+            // Data field type counters
+            var dataFieldCounters = new Dictionary<string, int>
+            {
+                { "Date", 1 },
+                { "Time", 1 },
+                { "WeightKg", 1 },
+                { "WeightG", 1 },
+                { "CountPcs", 1 },
+                { "Decimal", 1 },
+                { "Integer", 1 }
+            };
+
             foreach (var kvp in fieldsByLineNumber.OrderBy(x => x.Key))
             {
                 int position = kvp.Key;
@@ -105,7 +122,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                     continue;
 
                 // Use AnalyzeLinePattern from Algorithm 4
-                var fieldInfo = AnalyzeLinePattern(position, samples);
+                var fieldInfo = AnalyzeLinePattern(position, samples,
+                    ref markerCounter, ref emptyCounter, ref reservedCounter, dataFieldCounters);
                 results.Add(fieldInfo);
             }
 
@@ -116,7 +134,9 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// Algorithm 4: AnalyzeLinePattern
         /// Detects the field type and generates Name based on pattern
         /// </summary>
-        private FieldInfo AnalyzeLinePattern(int lineNumber, List<string> samples)
+        private FieldInfo AnalyzeLinePattern(int lineNumber, List<string> samples,
+            ref int markerCounter, ref int emptyCounter, ref int reservedCounter,
+            Dictionary<string, int> dataFieldCounters)
         {
             var fieldInfo = new FieldInfo
             {
@@ -127,30 +147,47 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 IsConstant = samples.Distinct().Count() == 1
             };
 
-            // Check for Marker Lines
+            // ═══ Document 03: Algorithm 6 - Line Pattern Analysis ═══
+
+            // Check for Start Marker (line_number == 1, we use 0-based so == 0)
             if (lineNumber == 0)
             {
                 fieldInfo.Name = "StartMarker";
                 fieldInfo.DataType = "string";
+                fieldInfo.FieldType = "StartMarker";
+                fieldInfo.Action = "Validate";
                 fieldInfo.Confidence = 1.0;
+                fieldInfo.Variance = CalculateVariance(samples);
                 return fieldInfo;
             }
 
             var uniqueSamples = samples.Distinct().ToList();
+
+            // Check if this is end marker or fixed label
+            // Document 03: unique_samples.Count == 1 AND length < 5
             if (uniqueSamples.Count == 1 && uniqueSamples[0].Length < 5)
             {
-                fieldInfo.Name = "EndMarker";
+                // Give unique running number to avoid duplicates
+                // User sees: Marker1="0", Marker2="~P1" and renames as needed
+                fieldInfo.Name = $"Marker{markerCounter++}";
                 fieldInfo.DataType = "string";
+                fieldInfo.FieldType = "Marker";
+                fieldInfo.Action = "Validate";
                 fieldInfo.Confidence = 1.0;
+                fieldInfo.Variance = 0.0;
                 return fieldInfo;
             }
 
             // Check for Empty/Whitespace Lines
+            // Document 03: samples.All(s => string.IsNullOrWhiteSpace(s))
             if (samples.All(s => string.IsNullOrWhiteSpace(s)))
             {
-                fieldInfo.Name = "Empty";
+                fieldInfo.Name = $"Empty{emptyCounter++}";
                 fieldInfo.DataType = "string";
+                fieldInfo.FieldType = "Empty";
+                fieldInfo.Action = "Skip";
                 fieldInfo.Confidence = 1.0;
+                fieldInfo.Variance = 0.0;
                 return fieldInfo;
             }
 
@@ -173,27 +210,42 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
                 if (matchRate > 0.9)
                 {
-                    fieldInfo.Name = pattern.Name;
+                    // Use running number for field name: Date1, Date2, WeightKg1, WeightKg2, etc.
+                    string baseName = pattern.Name;
+                    int counter = dataFieldCounters[baseName];
+                    fieldInfo.Name = $"{baseName}{counter}";
+                    dataFieldCounters[baseName] = counter + 1; // Increment counter for next occurrence
+
                     fieldInfo.DataType = pattern.Name.Contains("Weight") || pattern.Name.Contains("Count") || pattern.Name.Contains("Decimal") ? "decimal" :
-                                     pattern.Name == "Integer" ? "int" : "string";
+                                     pattern.Name == "Integer" ? "int" :
+                                     pattern.Name == "Date" ? "DateTime" :
+                                     pattern.Name == "Time" ? "TimeSpan" : "string";
+                    fieldInfo.FieldType = pattern.Name;
+                    fieldInfo.Action = "Parse";
                     fieldInfo.Confidence = matchRate;
+                    fieldInfo.Variance = CalculateVariance(samples);
                     return fieldInfo;
                 }
             }
 
             // No Pattern Matched - Check variance
             double variance = CalculateVariance(samples);
+            fieldInfo.Variance = variance;
 
             if (variance < 0.1)
             {
-                fieldInfo.Name = "Reserved";
+                fieldInfo.Name = $"Reserved{reservedCounter++}";  // Unique name with running number
                 fieldInfo.DataType = "string";
+                fieldInfo.FieldType = "Reserved";
+                fieldInfo.Action = "Skip";  // Low variance constant fields
                 fieldInfo.Confidence = 0.7;
             }
             else
             {
-                fieldInfo.Name = "Unknown";
+                fieldInfo.Name = $"Field{lineNumber}";  // Generic name for unknown fields
                 fieldInfo.DataType = "string";
+                fieldInfo.FieldType = "Unknown";
+                fieldInfo.Action = "Parse";
                 fieldInfo.Confidence = 0.5;
             }
 

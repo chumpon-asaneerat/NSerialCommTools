@@ -561,7 +561,7 @@ This TODO tracks all missing components discovered during Session 2025-10-22. Th
 
 ## Phase 7: JSON Definition Generator 📄
 
-**Status**: ✅ COMPLETE
+**Status**: ✅ COMPLETE (including running number implementation)
 **Priority**: CRITICAL - Main purpose of the tool!
 **Estimated Time**: 6-8 hours
 **Dependencies**: Phase 5, 6, 5.1 (All Complete)
@@ -936,6 +936,9 @@ This TODO tracks all missing components discovered during Session 2025-10-22. Th
   - Comprehensive validation (C# identifiers, regex patterns, duplicates)
   - MainWindow UI updated with "Preview JSON" button
   - Export functionality fully integrated
+  - **Running number implementation**: Marker1, Marker2, Empty1, Empty2, Reserved1
+  - Fixed field naming to use sequential counters instead of line numbers
+  - Follows Document 03 Algorithm 6 specification exactly
 
 **2025-10-22:**
 - ✅ **Phase 1**: Data Model Foundation - ALL models complete

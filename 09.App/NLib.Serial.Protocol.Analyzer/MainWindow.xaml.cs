@@ -243,6 +243,9 @@ namespace NLib
             {
                 UpdateStatus("Generating JSON preview...");
 
+                // IMPORTANT: Use _fields (edited by user) instead of _currentAnalysis.Fields
+                _currentAnalysis.Fields = _fields;
+
                 var generator = new ProtocolDefinitionGenerator();
                 var definition = generator.Generate(_currentAnalysis, txtDeviceName.Text, _currentLogData);
 
@@ -494,6 +497,9 @@ namespace NLib
 
             try
             {
+                // IMPORTANT: Use _fields (edited by user) instead of _currentAnalysis.Fields
+                _currentAnalysis.Fields = _fields;
+
                 var generator = new ProtocolDefinitionGenerator();
                 var definition = generator.Generate(_currentAnalysis, txtDeviceName.Text, _currentLogData);
                 string json = generator.ExportToJson(definition);
@@ -520,6 +526,9 @@ namespace NLib
             {
                 Directory.CreateDirectory(outputFolder);
             }
+
+            // IMPORTANT: Use _fields (edited by user) instead of _currentAnalysis.Fields
+            _currentAnalysis.Fields = _fields;
 
             // Generate protocol definition using new generator
             var generator = new ProtocolDefinitionGenerator();

@@ -92,12 +92,10 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 {
                     if (IsCompoundField(field, compoundPattern.Pattern, out var valueSamples, out var unitSamples))
                     {
-                        // Extract base name from current field name (remove position suffix)
-                        string baseName = Regex.Replace(field.Name, @"\d+$", "");
-                        if (string.IsNullOrEmpty(baseName))
-                        {
-                            baseName = compoundPattern.Name;
-                        }
+                        // Keep the full field name including the running number
+                        // Example: WeightKg1 → WeightKg1Value and WeightKg1Unit
+                        //          WeightKg2 → WeightKg2Value and WeightKg2Unit
+                        string baseName = field.Name;
 
                         // Create Value field
                         var valueField = new FieldInfo

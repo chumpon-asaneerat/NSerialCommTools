@@ -122,15 +122,17 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                     }
                 }
 
-                // Check for duplicate field names
-                var duplicates = definition.Fields
+                // Check for duplicate field names (only for actual data fields)
+                // Structural markers (StartMarker/EndMarker) have already been deduplicated during export
+                var dataFieldDuplicates = definition.Fields
+                    .Where(f => f.Name != "StartMarker" && f.Name != "EndMarker") // Markers already filtered
                     .GroupBy(f => f.Name)
                     .Where(g => g.Count() > 1)
                     .Select(g => g.Key);
 
-                foreach (var dup in duplicates)
+                foreach (var dup in dataFieldDuplicates)
                 {
-                    errors.Add($"Duplicate field name: {dup}");
+                    errors.Add($"Duplicate field name: '{dup}' - Please rename in Field Editor");
                 }
 
                 // Validate regex patterns compile
@@ -368,48 +370,39 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         /// <summary>
         /// Exports fields to protocol definition.
-        /// Includes all fields needed for State Machine parsing (data fields + structural fields with Skip action).
-        /// For State Machine protocols: Empty lines and Reserved fields are REQUIRED to maintain position counting.
+        /// Intelligently filters fields - user should only need to rename actual data fields.
+        /// Automatically excludes: duplicate markers, empty lines, constant unit fields.
         /// </summary>
         private void ExportFields(ProtocolDefinition definition, AnalysisResult analysis)
         {
-            if (analysis.Fields == null)
+            if (analysis.Fields == null || analysis.Fields.Count == 0)
             {
                 return;
             }
 
-            // For State Machine protocols, we need ALL fields including Skip fields
-            // because the line position determines field meaning
+            // Intelligent filtering: exclude structural/duplicate fields automatically
             var fieldsToExport = analysis.Fields
                 .Where(f => {
-                    // Must be marked for inclusion
+                    // Must be marked for inclusion by user
                     if (!f.IncludeInDefinition)
                         return false;
 
-                    // Include Parse fields (actual data)
-                    if (f.Action == "Parse")
-                    {
-                        // Include Date/Time fields even if constant in sample
-                        if (f.FieldType == "Date" || f.FieldType == "Time" ||
-                            f.DataType == "DateTime" || f.DataType == "TimeSpan")
-                            return true;
+                    // Auto-exclude: Empty lines (variance=0, maxLength=0)
+                    if (f.Variance == 0 && f.MaxLength == 0)
+                        return false;
 
-                        // Include fields with varying data
-                        if (f.Variance > 0.01)
-                            return true;
-                    }
-
-                    // Include Skip fields for State Machine (Empty, Reserved)
-                    // These maintain position count in multi-line frames
-                    if (f.Action == "Skip" && (f.FieldType == "Empty" || f.FieldType == "Reserved"))
+                    // INCLUDE: Unit fields with Action="Validate" (needed for parsing!)
+                    // Terminal validates unit exists: "1.94 kg" → validates "kg"
+                    if (f.Action == "Validate" && f.Name != null && f.Name.EndsWith("Unit"))
                         return true;
 
-                    // Include Validate fields (StartMarker, EndMarker) for frame boundaries
-                    if (f.Action == "Validate" && (f.FieldType == "StartMarker" || f.FieldType == "EndMarker"))
+                    // INCLUDE: Markers (StartMarker, EndMarker) with Action="Validate"
+                    // Terminal needs these for frame boundaries
+                    if (f.FieldType == "StartMarker" || f.FieldType == "EndMarker")
                         return true;
 
-                    // Exclude everything else (constant unit fields marked as Parse, etc.)
-                    return false;
+                    // Include everything else
+                    return true;
                 })
                 .OrderBy(f => f.Order)
                 .ToList();
