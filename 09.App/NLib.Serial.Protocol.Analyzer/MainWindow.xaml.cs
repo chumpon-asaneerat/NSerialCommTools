@@ -223,11 +223,70 @@ namespace NLib
             }
         }
 
+        private void btnPreviewJSON_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentAnalysis == null || _currentLogData == null)
+            {
+                MessageBox.Show("Please analyze a log file first.", "Preview",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtDeviceName.Text))
+            {
+                MessageBox.Show("Please enter a device name.", "Preview",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                UpdateStatus("Generating JSON preview...");
+
+                var generator = new ProtocolDefinitionGenerator();
+                var definition = generator.Generate(_currentAnalysis, txtDeviceName.Text, _currentLogData);
+
+                // Validate definition
+                var validationErrors = generator.ValidateDefinition(definition);
+                if (validationErrors.Count > 0)
+                {
+                    MessageBox.Show("JSON Definition has validation errors:\n\n" + string.Join("\n", validationErrors),
+                        "Validation Errors", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // Generate JSON
+                string json = generator.ExportToJson(definition);
+                txtExportPreview.Text = json;
+
+                UpdateStatus($"JSON preview generated ({definition.Fields.Count} fields, {definition.Relationships.Count} relationships, {definition.ValidationRules.Count} rules)");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating JSON preview:\n{ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                UpdateStatus("Error generating JSON preview");
+            }
+        }
+
         private void btnPerformExport_Click(object sender, RoutedEventArgs e)
         {
+            if (_currentAnalysis == null || _currentLogData == null)
+            {
+                MessageBox.Show("Please analyze a log file first.", "Export",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(txtDeviceName.Text))
             {
                 MessageBox.Show("Please enter a device name.", "Export",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtOutputFolder.Text))
+            {
+                MessageBox.Show("Please select an output folder.", "Export",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
@@ -421,7 +480,6 @@ namespace NLib
         {
             UpdateStatus("Exporting...");
 
-            var definition = BuildProtocolDefinition();
             string deviceName = txtDeviceName.Text;
             string outputFolder = txtOutputFolder.Text;
 
@@ -430,11 +488,33 @@ namespace NLib
                 Directory.CreateDirectory(outputFolder);
             }
 
+            // Generate protocol definition using new generator
+            var generator = new ProtocolDefinitionGenerator();
+            var definition = generator.Generate(_currentAnalysis, deviceName, _currentLogData);
+
+            // Validate definition before export
+            var validationErrors = generator.ValidateDefinition(definition);
+            if (validationErrors.Count > 0)
+            {
+                var result = MessageBox.Show(
+                    "JSON Definition has validation errors:\n\n" + string.Join("\n", validationErrors) + "\n\nContinue with export?",
+                    "Validation Errors",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result != MessageBoxResult.Yes)
+                {
+                    UpdateStatus("Export cancelled due to validation errors");
+                    return;
+                }
+            }
+
             if (chkExportJSON.IsChecked == true)
             {
                 string jsonPath = Path.Combine(outputFolder, $"{deviceName}_Protocol.json");
-                string json = NLib.NJson.ToJson(definition, true);
+                string json = generator.ExportToJson(definition);
                 File.WriteAllText(jsonPath, json);
+                UpdateStatus($"JSON exported to: {jsonPath}");
             }
 
             if (chkExportReport.IsChecked == true)
@@ -442,40 +522,10 @@ namespace NLib
                 string reportPath = Path.Combine(outputFolder, $"{deviceName}_Report.txt");
                 string report = GenerateAnalysisReport();
                 File.WriteAllText(reportPath, report);
+                UpdateStatus($"Report exported to: {reportPath}");
             }
 
             UpdateStatus($"Export completed to: {outputFolder}");
-        }
-
-        private ProtocolDefinition BuildProtocolDefinition()
-        {
-            var definition = new ProtocolDefinition
-            {
-                DeviceName = txtDeviceName.Text,
-                Version = "1.0",
-                GeneratedDate = DateTime.Now,
-                Description = $"Auto-generated protocol definition with {_currentAnalysis.Confidence * 100:F0}% confidence",
-                Encoding = "ASCII",
-                MessageType = "single-line", // TODO: Detect from analysis
-                EntryTerminator = _currentAnalysis.Terminator?.String ?? "\\r\\n",
-                Fields = _fields.Select(f => new FieldInfo
-                {
-                    Order = f.Order,
-                    Name = f.Name,
-                    DataType = f.DataType,
-                    SampleValues = f.SampleValues,
-                    Confidence = f.Confidence,
-                    IsConstant = f.IsConstant,
-                    MinLength = f.MinLength,
-                    MaxLength = f.MaxLength,
-                    Required = !f.IsConstant,
-                    IncludeInDefinition = f.IncludeInDefinition
-                }).ToList(),
-                Relationships = new List<FieldRelationship>(),
-                ValidationRules = new List<NLib.Serial.ProtocolAnalyzer.Models.ValidationRule>()
-            };
-
-            return definition;
         }
 
         private string GenerateAnalysisReport()

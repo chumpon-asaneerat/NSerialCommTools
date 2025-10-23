@@ -184,6 +184,7 @@
     <Compile Include="Analyzers\DelimiterDetector.cs" />
     <Compile Include="Analyzers\FieldAnalyzer.cs" />
     <Compile Include="Analyzers\PatternAnalyzer.cs" />
+    <Compile Include="Analyzers\ProtocolDefinitionGenerator.cs" />
     <Compile Include="Analyzers\RelationshipDetector.cs" />
     <Compile Include="Analyzers\StrategySelector.cs" />
     <Compile Include="Analyzers\TerminatorDetector.cs" />
