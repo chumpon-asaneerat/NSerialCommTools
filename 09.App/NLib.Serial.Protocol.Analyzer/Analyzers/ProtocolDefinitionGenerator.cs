@@ -383,14 +383,15 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // Intelligent filtering: exclude structural/duplicate fields automatically
             var fieldsToExport = analysis.Fields
                 .Where(f => {
+                    // INCLUDE: Empty lines for State Machine protocols FIRST
+                    // Terminal needs Empty fields to maintain position counting
+                    // Check this BEFORE IncludeInDefinition to ensure they're always exported
+                    if (f.FieldType == "Empty")
+                        return true;
+
                     // Must be marked for inclusion by user
                     if (!f.IncludeInDefinition)
                         return false;
-
-                    // INCLUDE: Empty lines for State Machine protocols
-                    // Terminal needs Empty fields to maintain position counting
-                    if (f.FieldType == "Empty")
-                        return true;
 
                     // INCLUDE: Unit fields with Action="Validate" (needed for parsing!)
                     // Terminal validates unit exists: "1.94 kg" → validates "kg"

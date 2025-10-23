@@ -495,9 +495,8 @@ namespace NLib
 
             try
             {
-                // IMPORTANT: Use _fields (edited by user) instead of _currentAnalysis.Fields
-                _currentAnalysis.Fields = _fields;
-
+                // Export uses _currentAnalysis.Fields which contains ALL fields (including hidden)
+                // User edits are already in the objects because _fields shares the same object references
                 var generator = new ProtocolDefinitionGenerator();
                 var definition = generator.Generate(_currentAnalysis, txtDeviceName.Text, _currentLogData);
                 string json = generator.ExportToJson(definition);
@@ -525,8 +524,8 @@ namespace NLib
                 Directory.CreateDirectory(outputFolder);
             }
 
-            // IMPORTANT: Use _fields (edited by user) instead of _currentAnalysis.Fields
-            _currentAnalysis.Fields = _fields;
+            // Export uses _currentAnalysis.Fields which contains ALL fields (including hidden)
+            // User edits are already in the objects because _fields shares the same object references
 
             // Generate protocol definition using new generator
             var generator = new ProtocolDefinitionGenerator();

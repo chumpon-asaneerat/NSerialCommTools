@@ -82,8 +82,9 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 {
                     string line = lines[lineNum];
 
-                    // Skip completely empty lines at the end
-                    if (lineNum >= lines.Length - 2 && string.IsNullOrWhiteSpace(line))
+                    // Skip ONLY the final line if it's completely empty (artifact from trailing delimiter)
+                    // DO NOT skip whitespace-only lines - they are legitimate protocol lines
+                    if (lineNum == lines.Length - 1 && line.Length == 0)
                         continue;
 
                     if (!fieldsByLineNumber.ContainsKey(lineNum))
