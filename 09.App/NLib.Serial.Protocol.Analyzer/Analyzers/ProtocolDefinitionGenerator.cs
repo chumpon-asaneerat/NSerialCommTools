@@ -387,22 +387,27 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                     if (!f.IncludeInDefinition)
                         return false;
 
-                    // Auto-exclude: Empty lines (variance=0, maxLength=0)
-                    if (f.Variance == 0 && f.MaxLength == 0)
-                        return false;
+                    // INCLUDE: Empty lines for State Machine protocols
+                    // Terminal needs Empty fields to maintain position counting
+                    if (f.FieldType == "Empty")
+                        return true;
 
                     // INCLUDE: Unit fields with Action="Validate" (needed for parsing!)
                     // Terminal validates unit exists: "1.94 kg" → validates "kg"
                     if (f.Action == "Validate" && f.Name != null && f.Name.EndsWith("Unit"))
                         return true;
 
-                    // INCLUDE: Markers (StartMarker, EndMarker) with Action="Validate"
-                    // Terminal needs these for frame boundaries
-                    if (f.FieldType == "StartMarker" || f.FieldType == "EndMarker")
+                    // INCLUDE: Markers (StartMarker, EndMarker, Marker) with Action="Validate"
+                    // Terminal needs these for frame boundaries and position counting
+                    if (f.FieldType == "StartMarker" || f.FieldType == "EndMarker" || f.FieldType == "Marker")
                         return true;
 
-                    // Include everything else
-                    return true;
+                    // INCLUDE: Data fields with Action="Parse"
+                    if (f.Action == "Parse")
+                        return true;
+
+                    // EXCLUDE: Everything else (like Action="Skip" compound fields)
+                    return false;
                 })
                 .OrderBy(f => f.Order)
                 .ToList();

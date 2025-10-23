@@ -1,10 +1,12 @@
 {
   "deviceName": "JIK6CAB",
   "version": "1.0",
-  "generatedDate": "2025-10-23T14:13:08.9037369+07:00",
+  "generatedDate": "2025-10-23T14:20:21.7793468+07:00",
   "description": "Auto-generated protocol definition for JIK6CAB",
   "encoding": "ASCII",
-  "messageType": "multi-line-block",
+  "messageType": "multi-line-frame",
+  "frameStart": "\\^KJIK000",
+  "frameEnd": "~P1",
   "fields": [
     {
       "order": 0,
@@ -76,6 +78,106 @@
       "sampleValuesDisplay": "17:19:26"
     },
     {
+      "order": 3,
+      "name": "WeightKg1Value",
+      "dataType": "decimal",
+      "sampleValues": [
+        "0.00"
+      ],
+      "confidence": 1,
+      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
+      "formatString": "{0:F2}",
+      "alignment": "right",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": true,
+      "fieldType": "Decimal",
+      "action": "Parse",
+      "variance": 0,
+      "includeInDefinition": true,
+      "isSkipped": false,
+      "isConstant": false,
+      "minLength": 4,
+      "maxLength": 4,
+      "sampleValuesDisplay": "0.00"
+    },
+    {
+      "order": 3,
+      "name": "WeightKg1Unit",
+      "dataType": "string",
+      "sampleValues": [
+        "kg"
+      ],
+      "confidence": 1,
+      "parsePattern": "^(kg)$",
+      "formatString": "kg",
+      "alignment": "left",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": false,
+      "fieldType": "Reserved",
+      "action": "Validate",
+      "variance": 0,
+      "includeInDefinition": true,
+      "isSkipped": false,
+      "isConstant": true,
+      "minLength": 2,
+      "maxLength": 2,
+      "sampleValuesDisplay": "kg"
+    },
+    {
+      "order": 4,
+      "name": "WeightKg2Value",
+      "dataType": "decimal",
+      "sampleValues": [
+        "1.94"
+      ],
+      "confidence": 1,
+      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
+      "formatString": "{0:F2}",
+      "alignment": "right",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": true,
+      "fieldType": "Decimal",
+      "action": "Parse",
+      "variance": 0,
+      "includeInDefinition": true,
+      "isSkipped": false,
+      "isConstant": false,
+      "minLength": 4,
+      "maxLength": 4,
+      "sampleValuesDisplay": "1.94"
+    },
+    {
+      "order": 4,
+      "name": "WeightKg2Unit",
+      "dataType": "string",
+      "sampleValues": [
+        "kg"
+      ],
+      "confidence": 1,
+      "parsePattern": "^(kg)$",
+      "formatString": "kg",
+      "alignment": "left",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": false,
+      "fieldType": "Reserved",
+      "action": "Validate",
+      "variance": 0,
+      "includeInDefinition": true,
+      "isSkipped": false,
+      "isConstant": true,
+      "minLength": 2,
+      "maxLength": 2,
+      "sampleValuesDisplay": "kg"
+    },
+    {
       "order": 5,
       "name": "Marker1",
       "dataType": "string",
@@ -122,199 +224,7 @@
       "sampleValuesDisplay": "0"
     },
     {
-      "order": 10,
-      "name": "Marker3",
-      "dataType": "string",
-      "sampleValues": [
-        " "
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Marker",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": true,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": " "
-    },
-    {
-      "order": 11,
-      "name": "Marker4",
-      "dataType": "string",
-      "sampleValues": [
-        " "
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Marker",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": true,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": " "
-    },
-    {
-      "order": 12,
-      "name": "Marker5",
-      "dataType": "string",
-      "sampleValues": [
-        "E"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Marker",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": true,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": "E"
-    },
-    {
-      "order": 13,
-      "name": "Marker6",
-      "dataType": "string",
-      "sampleValues": [
-        "~P1"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Marker",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": true,
-      "minLength": 3,
-      "maxLength": 3,
-      "sampleValuesDisplay": "~P1"
-    },
-    {
-      "order": 300,
-      "name": "WeightKg1Value",
-      "dataType": "decimal",
-      "sampleValues": [
-        "0.00"
-      ],
-      "confidence": 1,
-      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
-      "formatString": "{0:F2}",
-      "alignment": "right",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Decimal",
-      "action": "Parse",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": false,
-      "minLength": 4,
-      "maxLength": 4,
-      "sampleValuesDisplay": "0.00"
-    },
-    {
-      "order": 301,
-      "name": "WeightKg1Unit",
-      "dataType": "string",
-      "sampleValues": [
-        "kg"
-      ],
-      "confidence": 1,
-      "parsePattern": "^(kg)$",
-      "formatString": "kg",
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": false,
-      "fieldType": "Reserved",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": true,
-      "minLength": 2,
-      "maxLength": 2,
-      "sampleValuesDisplay": "kg"
-    },
-    {
-      "order": 400,
-      "name": "WeightKg2Value",
-      "dataType": "decimal",
-      "sampleValues": [
-        "1.94"
-      ],
-      "confidence": 1,
-      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
-      "formatString": "{0:F2}",
-      "alignment": "right",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Decimal",
-      "action": "Parse",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": false,
-      "minLength": 4,
-      "maxLength": 4,
-      "sampleValuesDisplay": "1.94"
-    },
-    {
-      "order": 401,
-      "name": "WeightKg2Unit",
-      "dataType": "string",
-      "sampleValues": [
-        "kg"
-      ],
-      "confidence": 1,
-      "parsePattern": "^(kg)$",
-      "formatString": "kg",
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": false,
-      "fieldType": "Reserved",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "isSkipped": false,
-      "isConstant": true,
-      "minLength": 2,
-      "maxLength": 2,
-      "sampleValuesDisplay": "kg"
-    },
-    {
-      "order": 700,
+      "order": 7,
       "name": "WeightKg3Value",
       "dataType": "decimal",
       "sampleValues": [
@@ -339,7 +249,7 @@
       "sampleValuesDisplay": "1.94"
     },
     {
-      "order": 701,
+      "order": 7,
       "name": "WeightKg3Unit",
       "dataType": "string",
       "sampleValues": [
@@ -364,7 +274,7 @@
       "sampleValuesDisplay": "kg"
     },
     {
-      "order": 800,
+      "order": 8,
       "name": "WeightKg4Value",
       "dataType": "decimal",
       "sampleValues": [
@@ -389,7 +299,7 @@
       "sampleValuesDisplay": "1.94"
     },
     {
-      "order": 801,
+      "order": 8,
       "name": "WeightKg4Unit",
       "dataType": "string",
       "sampleValues": [
@@ -414,7 +324,7 @@
       "sampleValuesDisplay": "kg"
     },
     {
-      "order": 900,
+      "order": 9,
       "name": "CountPcs1Value",
       "dataType": "decimal",
       "sampleValues": [
@@ -439,7 +349,7 @@
       "sampleValuesDisplay": "0"
     },
     {
-      "order": 901,
+      "order": 9,
       "name": "CountPcs1Unit",
       "dataType": "string",
       "sampleValues": [
@@ -462,6 +372,52 @@
       "minLength": 3,
       "maxLength": 3,
       "sampleValuesDisplay": "pcs"
+    },
+    {
+      "order": 12,
+      "name": "Marker3",
+      "dataType": "string",
+      "sampleValues": [
+        "E"
+      ],
+      "confidence": 1,
+      "alignment": "left",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": true,
+      "fieldType": "Marker",
+      "action": "Validate",
+      "variance": 0,
+      "includeInDefinition": true,
+      "isSkipped": false,
+      "isConstant": true,
+      "minLength": 1,
+      "maxLength": 1,
+      "sampleValuesDisplay": "E"
+    },
+    {
+      "order": 13,
+      "name": "EndMarker",
+      "dataType": "string",
+      "sampleValues": [
+        "~P1"
+      ],
+      "confidence": 1,
+      "alignment": "left",
+      "paddingChar": " ",
+      "width": 0,
+      "fieldPosition": "body",
+      "required": true,
+      "fieldType": "EndMarker",
+      "action": "Validate",
+      "variance": 0,
+      "includeInDefinition": true,
+      "isSkipped": false,
+      "isConstant": true,
+      "minLength": 3,
+      "maxLength": 3,
+      "sampleValuesDisplay": "~P1"
     }
   ],
   "relationships": [

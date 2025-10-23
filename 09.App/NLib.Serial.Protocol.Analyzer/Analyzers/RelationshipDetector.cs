@@ -100,7 +100,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                         // Create Value field
                         var valueField = new FieldInfo
                         {
-                            Order = field.Order * 100, // Sub-field ordering
+                            Order = field.Order, // Keep same order as parent field
                             Name = $"{baseName}Value",
                             DataType = "decimal",
                             FieldType = "Decimal",
@@ -119,7 +119,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                         // Create Unit field
                         var unitField = new FieldInfo
                         {
-                            Order = field.Order * 100 + 1, // After value field
+                            Order = field.Order, // Keep same order as parent field
                             Name = $"{baseName}Unit",
                             DataType = "string",
                             FieldType = "Reserved",

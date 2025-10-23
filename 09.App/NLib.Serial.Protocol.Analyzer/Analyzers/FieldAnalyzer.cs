@@ -127,6 +127,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 results.Add(fieldInfo);
             }
 
+            // Post-processing: Mark the last Marker as EndMarker
+            var lastMarker = results.LastOrDefault(f => f.FieldType == "Marker");
+            if (lastMarker != null)
+            {
+                lastMarker.FieldType = "EndMarker";
+                lastMarker.Name = "EndMarker";
+            }
+
             return results;
         }
 
@@ -163,6 +171,20 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
             var uniqueSamples = samples.Distinct().ToList();
 
+            // IMPORTANT: Check for Empty/Whitespace Lines FIRST before checking for Markers
+            // This prevents single spaces " " from being detected as Markers
+            // Document 03: samples.All(s => string.IsNullOrWhiteSpace(s))
+            if (samples.All(s => string.IsNullOrWhiteSpace(s)))
+            {
+                fieldInfo.Name = $"Empty{emptyCounter++}";
+                fieldInfo.DataType = "string";
+                fieldInfo.FieldType = "Empty";
+                fieldInfo.Action = "Skip";
+                fieldInfo.Confidence = 1.0;
+                fieldInfo.Variance = 0.0;
+                return fieldInfo;
+            }
+
             // Check if this is end marker or fixed label
             // Document 03: unique_samples.Count == 1 AND length < 5
             if (uniqueSamples.Count == 1 && uniqueSamples[0].Length < 5)
@@ -173,19 +195,6 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 fieldInfo.DataType = "string";
                 fieldInfo.FieldType = "Marker";
                 fieldInfo.Action = "Validate";
-                fieldInfo.Confidence = 1.0;
-                fieldInfo.Variance = 0.0;
-                return fieldInfo;
-            }
-
-            // Check for Empty/Whitespace Lines
-            // Document 03: samples.All(s => string.IsNullOrWhiteSpace(s))
-            if (samples.All(s => string.IsNullOrWhiteSpace(s)))
-            {
-                fieldInfo.Name = $"Empty{emptyCounter++}";
-                fieldInfo.DataType = "string";
-                fieldInfo.FieldType = "Empty";
-                fieldInfo.Action = "Skip";
                 fieldInfo.Confidence = 1.0;
                 fieldInfo.Variance = 0.0;
                 return fieldInfo;

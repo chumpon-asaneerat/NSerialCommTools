@@ -1,1 +1,15 @@
 - Last Session 
+
+** Check files
+- 02-System-Architecture.md
+- 03-Parsing-Strategy-Analysis.md
+- 04-Data-Models-Design.md
+- 05-JSON-Schema-Design.md
+- 06-Protocol-Analyzer-Complete-UI.md
+
+** Also keep in mind we must not assume to code using only JIK6CAB protocol but need to cover all protocols 
+that analysis by applcation itself to create definition file that can work properly with terminal class 
+
+
+Then Check @Prompts/JIK6CAB_Protocol.json are it generate correctly and ready to use in terminal 
+but from what i see it still wrong.
