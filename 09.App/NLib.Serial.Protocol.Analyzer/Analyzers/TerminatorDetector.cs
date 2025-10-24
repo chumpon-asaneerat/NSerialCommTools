@@ -25,8 +25,9 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// </summary>
         /// <param name="rawBytes">The entire file content as raw bytes (UNSPLIT).</param>
         /// <param name="encoding">Detected encoding (for text analysis if needed).</param>
+        /// <param name="isSingleMessage">User hint: true=single message, false=multi-message, null=auto-detect.</param>
         /// <returns>Complete terminator hierarchy with confidence scores.</returns>
-        public TerminatorHierarchyResult DetectTerminatorHierarchy(byte[] rawBytes, Encoding encoding)
+        public TerminatorHierarchyResult DetectTerminatorHierarchy(byte[] rawBytes, Encoding encoding, bool? isSingleMessage = null)
         {
             if (rawBytes == null || rawBytes.Length == 0)
             {
@@ -42,9 +43,28 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             var analyzed = AnalyzeCandidates(candidates, rawBytes);
 
             // STEP 3: Classify candidates into hierarchy levels
-            result.FrameTerminator = ClassifyFrameTerminator(analyzed, rawBytes);
-            result.SegmentTerminator = ClassifySegmentTerminator(analyzed, rawBytes, result.FrameTerminator);
-            result.FieldDelimiter = ClassifyFieldDelimiter(analyzed, rawBytes);
+            // Use user hint if provided, otherwise auto-detect
+            if (isSingleMessage == true)
+            {
+                // USER SAYS: Single message - don't detect frame terminator
+                result.FrameTerminator = null; // No frame boundaries
+                result.SegmentTerminator = ClassifySegmentTerminator(analyzed, rawBytes, null);
+                result.FieldDelimiter = ClassifyFieldDelimiter(analyzed, rawBytes);
+            }
+            else if (isSingleMessage == false)
+            {
+                // USER SAYS: Multi-message - detect frame terminator
+                result.FrameTerminator = ClassifyFrameTerminator(analyzed, rawBytes);
+                result.SegmentTerminator = ClassifySegmentTerminator(analyzed, rawBytes, result.FrameTerminator);
+                result.FieldDelimiter = ClassifyFieldDelimiter(analyzed, rawBytes);
+            }
+            else
+            {
+                // AUTO-DETECT (null) - try to figure it out
+                result.FrameTerminator = ClassifyFrameTerminator(analyzed, rawBytes);
+                result.SegmentTerminator = ClassifySegmentTerminator(analyzed, rawBytes, result.FrameTerminator);
+                result.FieldDelimiter = ClassifyFieldDelimiter(analyzed, rawBytes);
+            }
 
             return result;
         }
@@ -349,8 +369,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             var frameCandidate = candidates
                 .Where(c => c.Bytes.Length >= 2)  // At least 2 bytes
                 .Where(c => c.Count >= 1)         // At least 1 occurrence (supports single-frame logs!)
-                .OrderBy(c => c.Count)            // Prefer FEWER occurrences (frames)
-                .ThenByDescending(c => c.Bytes.Length) // Prefer longer sequences
+                .OrderByDescending(c => c.Bytes.Length) // FIRST: Prefer longer sequences (4-byte over 2-byte)
+                .ThenBy(c => c.Count)            // THEN: Prefer fewer occurrences (frames)
                 .FirstOrDefault();
 
             if (frameCandidate != null)

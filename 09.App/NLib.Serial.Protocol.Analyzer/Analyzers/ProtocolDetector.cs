@@ -48,8 +48,9 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// NO SPLITTING happens here - only analysis of byte patterns.
         /// </summary>
         /// <param name="rawBytes">The entire file content as raw bytes (unsplit).</param>
+        /// <param name="isSingleMessage">User hint: true if file contains single message/frame, false for multi-message. Null for auto-detect.</param>
         /// <returns>Complete detection results including encoding, terminators, markers, and structure.</returns>
-        public DetectionResult DetectProtocolStructure(byte[] rawBytes)
+        public DetectionResult DetectProtocolStructure(byte[] rawBytes, bool? isSingleMessage = null)
         {
             if (rawBytes == null || rawBytes.Length == 0)
             {
@@ -70,7 +71,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 // This is the CRITICAL step - must detect ALL levels before splitting
                 var terminatorHierarchy = _terminatorDetector.DetectTerminatorHierarchy(
                     rawBytes,
-                    encodingInfo.Encoding
+                    encodingInfo.Encoding,
+                    isSingleMessage
                 );
 
                 // Populate terminator hierarchy in result

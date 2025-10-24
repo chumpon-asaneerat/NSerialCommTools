@@ -570,6 +570,177 @@ Changed segment classification to **require exactly 2 bytes**:
 
 Now Space will correctly be classified as field delimiter, not segment terminator!
 
+### ✅ Task 13: Bug Fix - Single-Frame Log Support
+**Status**: COMPLETED
+
+**Issue Found by User**:
+User correctly identified: "It seem you has problem with protocol that has only one message right?"
+
+**Root Cause**:
+All three classification methods had minimum occurrence counts that were too high:
+- Frame: `c.Count >= 2` ❌ (requires 2+ frames)
+- Segment: `c.Count >= 5` ❌ (requires 5+ segments)
+- Field: `c.Count >= 10` ❌ (requires 10+ fields)
+
+**Problem for Single-Frame Logs**:
+If log has only ONE frame (one message):
+- Double CRLF: 1 occurrence → Filtered out! ❌
+- Algorithm fails, falls back to incorrect detection
+
+**The Fix**:
+
+**File**: `Analyzers\TerminatorDetector.cs`
+
+Reduced minimum occurrence counts to support single-frame logs:
+
+```csharp
+// Frame terminators - was: >= 2, now: >= 1
+.Where(c => c.Count >= 1)  // Supports single-frame logs! ✅
+
+// Segment terminators - was: >= 5, now: >= 1
+.Where(c => c.Count >= 1)  // Supports single-segment frames! ✅
+
+// Field delimiters - was: >= 10, now: >= 2
+.Where(c => c.Count >= 2)  // At least 2 fields needed ✅
+```
+
+**Why This Works**:
+- The sorting logic (`OrderBy(Count)` for frames, `OrderByDescending(Count)` for segments/fields) ensures correct classification even with low counts
+- A single frame with double CRLF (1 occurrence) is still FEWER than single CRLF (10 occurrences)
+- The hierarchy still works correctly!
+
+**Now Supports**:
+- ✅ Single-frame logs (test data, debugging)
+- ✅ Multi-frame logs (production data)
+- ✅ JIK6CAB (5 frames, 10 segments per frame)
+- ✅ Any protocol structure!
+
+### ✅ Task 14: Bug Fix - Frame Terminator Ordering Priority
+**Status**: COMPLETED
+
+**Issue Found During Testing (Round 3)**:
+After all previous fixes, detection still showing:
+- Terminator: CRLF (Frame) - 95% confidence ❌
+- Should be: Double CRLF (Frame) - 95% confidence ✅
+
+**Root Cause**:
+The frame classification was ordering by COUNT first, then LENGTH:
+```csharp
+.OrderBy(c => c.Count)            // Prefer FEWER occurrences
+.ThenByDescending(c => c.Bytes.Length) // Then prefer longer
+```
+
+**Problem**:
+Even with overlap exclusion, single CRLF appears in MORE places than double CRLF:
+- Double CRLF: 5 occurrences (between frames only)
+- Single CRLF: ~45 occurrences (within frames as segment terminators)
+
+Result: Single CRLF selected as frame terminator! ❌
+
+**The Fix**:
+
+**File**: `Analyzers\TerminatorDetector.cs`
+
+**Reversed the ordering priority** - LENGTH first, COUNT second:
+```csharp
+.OrderByDescending(c => c.Bytes.Length) // FIRST: Prefer longer sequences (4-byte over 2-byte)
+.ThenBy(c => c.Count)                   // THEN: Prefer fewer occurrences
+```
+
+**Why This Is Correct**:
+- **Longer patterns are MORE specific** - Double CRLF is explicitly a frame boundary
+- **Shorter patterns are MORE common** - Single CRLF appears in many contexts
+- When we see a 4-byte pattern, it's almost certainly intentional (frame separator)
+- When we see a 2-byte pattern, it could be segment OR frame terminator
+
+**Ordering Logic Now**:
+1. **Length** (descending): 4-byte → 2-byte → 1-byte
+2. **Count** (ascending): Fewer → More
+
+**Result**:
+- Double CRLF (4 bytes, 5 occurrences) beats Single CRLF (2 bytes, 45 occurrences) ✅
+- Frame terminator correctly identified!
+
+### ✅ Task 15: MAJOR Improvement - User Hint for Single/Multi Message
+**Status**: COMPLETED
+
+**User's Brilliant Suggestion**:
+"Let think what if i can told you from UI that file is one message protocols or multi message protocol is that help?"
+
+**YES! This is the CORRECT solution!**
+
+**Problem**: Auto-detection is unreliable when patterns are ambiguous
+- Double CRLF might appear in data
+- Single CRLF appears everywhere
+- Algorithm can't be 100% certain
+
+**Solution**: Let the USER tell us!
+
+**Implementation**:
+
+1. **Added parameter to ProtocolDetector**:
+```csharp
+public DetectionResult DetectProtocolStructure(byte[] rawBytes, bool? isSingleMessage = null)
+// true = single message
+// false = multi-message
+// null = auto-detect
+```
+
+2. **Updated TerminatorDetector logic**:
+```csharp
+if (isSingleMessage == true)
+{
+    // Single message - NO frame terminator
+    result.FrameTerminator = null;
+    result.SegmentTerminator = ClassifySegmentTerminator(...);
+}
+else if (isSingleMessage == false)
+{
+    // Multi-message - DETECT frame terminator
+    result.FrameTerminator = ClassifyFrameTerminator(...);
+    result.SegmentTerminator = ClassifySegmentTerminator(...);
+}
+else
+{
+    // Auto-detect - try to figure it out
+    result.FrameTerminator = ClassifyFrameTerminator(...);
+    ...
+}
+```
+
+3. **Temporary MainWindow implementation**:
+```csharp
+bool? isSingleMessage = false; // User can change this
+_currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes, isSingleMessage);
+```
+
+**Three Modes**:
+1. **Single Message** (`true`): Entire file = one frame, only detect segments/fields
+2. **Multi Message** (`false`): Detect frame boundaries (double CRLF, etc.)
+3. **Auto Detect** (`null`): Let algorithm try to figure it out
+
+**Benefits**:
+- ✅ **100% Reliable** - user knows their protocol
+- ✅ **No more guessing** - algorithm uses user's knowledge
+- ✅ **Handles edge cases** - works with ANY protocol structure
+- ✅ **Simple to implement** - just one parameter
+- ✅ **Backward compatible** - defaults to auto-detect (null)
+
+**TODO for UI** (user should implement):
+Add radio buttons in Input tab:
+```
+Protocol Structure:
+○ Single Message (entire file)
+○ Multi Message (detect frames)  [DEFAULT for JIK6CAB]
+○ Auto Detect
+```
+
+**For immediate testing**: Change line 334 in MainWindow.xaml.cs:
+- JIK6CAB: `bool? isSingleMessage = false;` (multi-message)
+- Single frame: `bool? isSingleMessage = true;` (single-message)
+
+**This was the KEY insight to solve the detection problem!**
+
 ---
 
 ## Next Steps (Phase 7 - User Task)

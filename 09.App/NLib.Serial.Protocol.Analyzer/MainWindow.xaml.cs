@@ -328,7 +328,12 @@ namespace NLib
 
             // PASS 1: DETECT - Analyze raw bytes to find ALL patterns (encoding, terminators, structure)
             UpdateStatus("Pass 1: Detecting protocol structure...");
-            _currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes);
+
+            // TODO: Add UI control for user to select single/multi message mode
+            // For now: Try multi-message mode (false) to detect frame boundaries
+            bool? isSingleMessage = false; // false = multi-message, true = single-message, null = auto-detect
+
+            _currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes, isSingleMessage);
 
             // PASS 2: EXTRACT - Split using detected patterns (NO GUESSING!)
             UpdateStatus("Pass 2: Extracting messages...");
