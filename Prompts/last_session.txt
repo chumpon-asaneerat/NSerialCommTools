@@ -1,7 +1,12 @@
 Check WORK-SUMMARY-2025-10-25-Session-3.md after update Task 15 in this documents you go to
 compact context and session reach limit.
 
-Then for Task 15 about (Single Message/Multi Message) update ui for me. 
+I test code with new data log file that has multiple messages it still not work properly 
+(the singleMessage variable in MainWindow i check is properly). The @Prompts/img.png show 
+the analysis result that i draw read block on image show that your code not separate segments 
+and fields properly.
+
+Also for Task 15 about (Single Message/Multi Message) update ui for me. 
 Also i not sure when load log data file are you detect HEX only, HEX/Text, Text Only format.
 If not when load file you binary data will has problem.
 
