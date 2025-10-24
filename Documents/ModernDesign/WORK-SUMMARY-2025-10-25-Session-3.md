@@ -528,6 +528,48 @@ private List<int> FindAllOccurrences(byte[] data, byte[] pattern, HashSet<int> e
 - Space detected as field delimiter
 - Fields: WeightKg1Value, WeightKg1Unit, etc. (properly split!)
 
+### ✅ Task 12: Bug Fix - Segment Terminator Misclassification
+**Status**: COMPLETED
+
+**Issue Found During Testing (Round 2)**:
+After fixing Task 11, user tested again and found Space (0x20) being classified as segment terminator with 80% confidence (WRONG!).
+
+**Root Cause**:
+The `ClassifySegmentTerminator()` method allowed single-byte patterns:
+```csharp
+.Where(c => c.Bytes.Length <= 2)  // Allowed 1-2 bytes ❌
+```
+
+This meant Space (1 byte, 19 occurrences) was competing with CRLF (2 bytes) and winning due to higher count!
+
+**The Fix**:
+
+**File**: `Analyzers\TerminatorDetector.cs`
+
+Changed segment classification to **require exactly 2 bytes**:
+```csharp
+.Where(c => c.Bytes.Length == 2)  // EXACTLY 2 bytes (not 1!) ✅
+```
+
+**Why This Is Correct**:
+- **Frame terminators**: 2-4 bytes (Double CRLF, ETX sequences)
+- **Segment terminators**: Exactly 2 bytes (CRLF, LF+CR variants)
+- **Field delimiters**: Exactly 1 byte (Space, Comma, Tab)
+
+**Clear Hierarchy**:
+```
+4-byte patterns → Frame terminators (lowest frequency)
+2-byte patterns → Segment terminators (medium frequency)
+1-byte patterns → Field delimiters (highest frequency)
+```
+
+**Expected Result After Fix**:
+- Frame terminator: `0x0D 0x0A 0x0D 0x0A` (Double CRLF) - 5 occurrences
+- Segment terminator: `0x0D 0x0A` (CRLF) - ~45 occurrences (excluding frame terminators)
+- Field delimiter: `0x20` (Space) - 19 occurrences
+
+Now Space will correctly be classified as field delimiter, not segment terminator!
+
 ---
 
 ## Next Steps (Phase 7 - User Task)

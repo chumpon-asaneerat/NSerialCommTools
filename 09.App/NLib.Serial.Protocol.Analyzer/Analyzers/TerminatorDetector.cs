@@ -348,7 +348,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
             var frameCandidate = candidates
                 .Where(c => c.Bytes.Length >= 2)  // At least 2 bytes
-                .Where(c => c.Count >= 2)         // At least 2 occurrences
+                .Where(c => c.Count >= 1)         // At least 1 occurrence (supports single-frame logs!)
                 .OrderBy(c => c.Count)            // Prefer FEWER occurrences (frames)
                 .ThenByDescending(c => c.Bytes.Length) // Prefer longer sequences
                 .FirstOrDefault();
@@ -382,12 +382,13 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         {
             // Segment terminators characteristics:
             // - Medium frequency (more than frames, less than fields)
-            // - 1-2 bytes typically
+            // - Exactly 2 bytes (e.g., CRLF, not single bytes like Space)
             // - Often part of frame terminator (e.g., CRLF vs Double CRLF)
+            // - Single-byte patterns are field delimiters, not segment terminators!
 
             var segmentCandidate = candidates
-                .Where(c => c.Bytes.Length <= 2)  // 1-2 bytes
-                .Where(c => c.Count >= 5)         // At least 5 occurrences
+                .Where(c => c.Bytes.Length == 2)  // EXACTLY 2 bytes (not 1!) - single bytes are field delimiters
+                .Where(c => c.Count >= 1)         // At least 1 occurrence (supports single-segment frames)
                 .Where(c => frameTerminator == null || !ByteArrayEquals(c.Bytes, frameTerminator.Bytes)) // Not same as frame
                 .OrderByDescending(c => c.Count)  // Prefer MORE occurrences (segments)
                 .ThenBy(c => c.Bytes.Length)      // Prefer shorter
@@ -430,7 +431,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             var fieldCandidate = candidates
                 .Where(c => c.Bytes.Length == 1)  // Single byte
                 .Where(c => c.Bytes[0] != 0x0D && c.Bytes[0] != 0x0A) // NOT CR/LF
-                .Where(c => c.Count >= 10)        // At least 10 occurrences
+                .Where(c => c.Count >= 2)         // At least 2 occurrences (need at least 2 fields to detect)
                 .OrderByDescending(c => c.Count)  // Prefer MOST occurrences (fields)
                 .FirstOrDefault();
 
