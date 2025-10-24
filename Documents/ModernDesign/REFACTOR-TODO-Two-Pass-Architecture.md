@@ -37,17 +37,17 @@ Input: byte[] rawBytes (entire file, unsplit)
 Process:
 1. Detect encoding (UTF-8, ASCII, etc.)
 2. Detect ALL terminators in one analysis:
-   - Message terminator (frame boundaries)
-   - Line terminator (line boundaries)
-   - Field delimiter (field boundaries)
+   - Frame terminator (message/frame boundaries)
+   - Segment terminator (segment boundaries within frame)
+   - Field delimiter (field boundaries within segment)
 3. Detect frame markers (^, ~, <START>, etc.)
 4. Calculate confidence scores
 
 Output: DetectionResult {
   Encoding: UTF-8
-  MessageTerminator: [0x0D, 0x0A, 0x0D, 0x0A]  // Double CRLF
-  LineTerminator: [0x0D, 0x0A]                 // Single CRLF
-  FieldDelimiter: [0x20]                        // Space
+  FrameTerminator: [0x0D, 0x0A, 0x0D, 0x0A]    // Double CRLF
+  SegmentTerminator: [0x0D, 0x0A]               // Single CRLF
+  FieldDelimiter: [0x20]                         // Space
   FrameMarkers: {...}
   Confidence scores
 }
@@ -58,8 +58,8 @@ Output: DetectionResult {
 Input: byte[] rawBytes + DetectionResult
 
 Process:
-1. Split by message terminator → byte[][] messages
-2. (Optional) Split by line terminator → byte[][][] lines
+1. Split by frame terminator → byte[][] frames
+2. (Optional) Split by segment terminator → byte[][][] segments
 3. (Optional) Split by field delimiter → byte[][][][] fields
 
 Output: LogData with properly split messages
@@ -93,10 +93,10 @@ public class DetectionResult
     public string EncodingName { get; set; }
     public double EncodingConfidence { get; set; }
 
-    // Terminator Hierarchy
-    public TerminatorInfo MessageTerminator { get; set; }  // Frame boundaries
-    public TerminatorInfo LineTerminator { get; set; }     // Line boundaries
-    public TerminatorInfo FieldDelimiter { get; set; }     // Field boundaries
+    // Terminator Hierarchy (Binary-First Thinking)
+    public TerminatorInfo FrameTerminator { get; set; }    // Frame boundaries (complete messages)
+    public TerminatorInfo SegmentTerminator { get; set; }  // Segment boundaries (chunks within frame)
+    public TerminatorInfo FieldDelimiter { get; set; }     // Field boundaries (data within segment)
 
     // Frame Markers
     public FrameMarkerInfo StartMarker { get; set; }
@@ -109,8 +109,8 @@ public class DetectionResult
 
 #### 1.2: Update TerminatorInfo Model
 **File**: `Models\TerminatorInfo.cs` (UPDATE)
-- Add `TerminatorType` enum: Message, Line, Field
-- Add `Level` property to indicate hierarchy
+- Add `TerminatorType` enum: Frame, Segment, Field
+- Add `Level` property to indicate hierarchy (1=Frame, 2=Segment, 3=Field)
 
 ---
 
@@ -161,8 +161,8 @@ public TerminatorHierarchy DetectTerminatorHierarchy(byte[] rawBytes, Encoding e
     var candidates = FindRepeatingSequences(rawBytes);
 
     // Step 2: Analyze patterns
-    // - Short sequences (1-2 bytes) → likely line terminators (\r\n, \n)
-    // - Medium sequences (2-4 bytes) → likely message terminators (\r\n\r\n)
+    // - Short sequences (1-2 bytes) → likely segment terminators (\r\n, \n)
+    // - Medium sequences (2-4 bytes) → likely frame terminators (\r\n\r\n)
     // - Single bytes → likely field delimiters (space, tab, comma)
 
     // Step 3: Statistical analysis
@@ -171,13 +171,13 @@ public TerminatorHierarchy DetectTerminatorHierarchy(byte[] rawBytes, Encoding e
     // - Calculate confidence
 
     // Step 4: Determine hierarchy
-    // Which terminator separates messages?
-    // Which separates lines?
-    // Which separates fields?
+    // Which terminator separates frames (complete messages)?
+    // Which separates segments (chunks within frame)?
+    // Which separates fields (data within segment)?
 
     return new TerminatorHierarchy {
-        MessageTerminator = ...,
-        LineTerminator = ...,
+        FrameTerminator = ...,
+        SegmentTerminator = ...,
         FieldDelimiter = ...
     };
 }
@@ -205,13 +205,13 @@ public LogData ExtractMessages(byte[] rawBytes, DetectionResult detection)
 {
     // Now we KNOW all terminators - no guessing!
 
-    // Use detected message terminator
-    byte[][] messages = ByteArraySplitter.Split(
+    // Use detected frame terminator
+    byte[][] frames = ByteArraySplitter.Split(
         rawBytes,
-        detection.MessageTerminator.Bytes
+        detection.FrameTerminator.Bytes
     );
 
-    return new LogData { Messages = messages.ToList() };
+    return new LogData { Messages = frames.ToList() };
 }
 ```
 
@@ -242,14 +242,14 @@ public AnalysisResult Analyze(LogData logData, DetectionResult detection)
 
     // Copy detection results
     result.DetectedEncoding = detection.DetectedEncoding;
-    result.Terminator = detection.LineTerminator;  // Already detected!
+    result.Terminator = detection.SegmentTerminator;  // Already detected!
 
     // Analyze fields using detected patterns
     result.Fields = _fieldAnalyzer.Analyze(
         logData,
         detection.FieldDelimiter,
         detection.DetectedEncoding,
-        detection.LineTerminator  // Use detected, not guessed!
+        detection.SegmentTerminator  // Use detected, not guessed!
     );
 
     // Detect relationships
@@ -294,7 +294,7 @@ ProtocolDefinition definition = _generator.Generate(result, deviceName, logData,
 
 ## Terminator Detection Algorithm (Key Logic)
 
-### Detect Message Terminator vs Line Terminator vs Field Delimiter
+### Detect Frame Terminator vs Segment Terminator vs Field Delimiter
 
 ```
 Algorithm: TerminatorHierarchy Detection
@@ -329,17 +329,17 @@ Step 3: Determine Hierarchy Level
     - Evenly spaced within lines
     - Examples: space (0x20), comma (0x2C), tab (0x09)
 
-  Line Terminator Characteristics:
+  Segment Terminator Characteristics:
     - 1-2 bytes
     - Medium frequency
-    - Creates regular structure
+    - Creates regular structure within frames
     - Examples: \r\n (0x0D 0x0A), \n (0x0A)
 
-  Message Terminator Characteristics:
-    - 2-4 bytes (often repeated line terminator)
-    - Low frequency (fewer than lines)
-    - Separates larger blocks
-    - Examples: \r\n\r\n (double CRLF), frame markers
+  Frame Terminator Characteristics:
+    - 2-4 bytes (often repeated segment terminator)
+    - Low frequency (fewer than segments)
+    - Separates complete messages/frames
+    - Examples: \r\n\r\n (double CRLF), frame markers, ETX
 
 Step 4: Confidence Scoring
   For each level:
@@ -350,8 +350,8 @@ Step 4: Confidence Scoring
   Return confidence 0.0-1.0
 
 Output: TerminatorHierarchy {
-  MessageTerminator: { Bytes, Confidence }
-  LineTerminator: { Bytes, Confidence }
+  FrameTerminator: { Bytes, Confidence }
+  SegmentTerminator: { Bytes, Confidence }
   FieldDelimiter: { Bytes, Confidence }
 }
 ```
@@ -360,22 +360,22 @@ Output: TerminatorHierarchy {
 
 ```
 Raw data structure:
-[data][0x0D][0x0A]  ← Line 1
-[data][0x0D][0x0A]  ← Line 2
+[data][0x0D][0x0A]  ← Segment 1
+[data][0x0D][0x0A]  ← Segment 2
 ...
-[data][0x0D][0x0A]  ← Line 10
-[0x0D][0x0A]         ← Empty line (message terminator!)
-[data][0x0D][0x0A]  ← Line 1 of next frame
+[data][0x0D][0x0A]  ← Segment 10
+[0x0D][0x0A]         ← Empty segment (frame terminator!)
+[data][0x0D][0x0A]  ← Segment 1 of next frame
 ...
 
 Detection Results:
-- 0x0D 0x0A appears 55 times (50 lines + 5 frames)
+- 0x0D 0x0A appears 55 times (50 segments + 5 frames)
 - 0x0D 0x0A 0x0D 0x0A appears 5 times (frame separators)
 - 0x20 (space) appears 100 times (between value and unit)
 
 Hierarchy:
-- MessageTerminator: [0x0D, 0x0A, 0x0D, 0x0A] (double CRLF) - Confidence 0.95
-- LineTerminator: [0x0D, 0x0A] (single CRLF) - Confidence 0.95
+- FrameTerminator: [0x0D, 0x0A, 0x0D, 0x0A] (double CRLF) - Confidence 0.95
+- SegmentTerminator: [0x0D, 0x0A] (single CRLF) - Confidence 0.95
 - FieldDelimiter: [0x20] (space) - Confidence 0.80
 ```
 
@@ -385,19 +385,19 @@ Hierarchy:
 
 ### Test Cases:
 
-1. **JIK6CAB (Multi-line frames, double CRLF separator)**
-   - Expected: Detect double CRLF as message terminator
-   - Expected: Detect single CRLF as line terminator
+1. **JIK6CAB (Multi-segment frames, double CRLF separator)**
+   - Expected: Detect double CRLF as frame terminator
+   - Expected: Detect single CRLF as segment terminator
    - Expected: Detect space as field delimiter
 
-2. **CSV Protocol (Single-line, comma-delimited)**
-   - Expected: Detect CRLF as both message and line terminator
+2. **CSV Protocol (Single-segment frames, comma-delimited)**
+   - Expected: Detect CRLF as both frame and segment terminator
    - Expected: Detect comma as field delimiter
 
 3. **Binary Protocol (Binary terminators)**
-   - Expected: Detect 0x03 (ETX) as message terminator
+   - Expected: Detect 0x03 (ETX) as frame terminator
    - Expected: Detect 0x1F (Unit Separator) as field delimiter
-   - Expected: No line terminator
+   - Expected: No segment terminator (binary data)
 
 4. **Mixed Protocol (Variable terminators)**
    - Expected: Handle both \r\n and \n
