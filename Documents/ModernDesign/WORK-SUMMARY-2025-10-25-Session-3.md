@@ -70,6 +70,119 @@ Continue from Session 2 (2025-10-24) to implement the two-pass architecture refa
 - Phase 6: MainWindow pipeline (1 task)
 - Phase 7: Testing (1 task)
 
+### ✅ Task 4: Phase 1 - Create Models
+**Status**: COMPLETED (All 3 sub-tasks)
+**Time**: ~30 minutes
+
+#### 4.1: Create DetectionResult.cs ✅
+**File**: `Models\DetectionResult.cs` (NEW - 221 lines)
+
+**Content**:
+- Complete Pass 1 output model
+- Encoding detection properties (DetectedEncoding, EncodingName, EncodingConfidence)
+- Terminator hierarchy (FrameTerminator, SegmentTerminator, FieldDelimiter)
+- Structure flags (HasSegmentStructure, HasFieldDelimiter)
+- Frame markers (StartMarker, EndMarker)
+- Protocol structure enum (Unknown, FlatDelimited, SegmentedDelimited, FlatFixedPosition, SegmentedFixedPosition, Binary)
+- FrameMarkerInfo class
+- Comprehensive XML documentation with binary-first terminology
+
+#### 4.2: Update TerminatorInfo.cs ✅
+**File**: `Models\TerminatorInfo.cs` (UPDATED)
+
+**Added**:
+- `Type` property (TerminatorType enum)
+- `Level` property (int: 1=Frame, 2=Segment, 3=Field)
+- `TerminatorType` enum (Unknown, Frame, Segment, Field)
+- Binary-first terminology in documentation
+
+**Why Important**: Allows terminator classification in hierarchy
+
+#### 4.3: TerminatorHierarchy.cs NOT NEEDED ✅
+**Decision**: DetectionResult already contains the hierarchy
+- FrameTerminator, SegmentTerminator, FieldDelimiter properties serve this purpose
+- No separate class needed - avoids duplication
+
+### ✅ Task 5: Phase 2 - Create ProtocolDetector
+**Status**: COMPLETED
+**Time**: ~20 minutes
+
+**File**: `Analyzers\ProtocolDetector.cs` (NEW - 237 lines)
+
+**Content**:
+- PASS 1 orchestrator class
+- `DetectProtocolStructure(byte[] rawBytes)` - main entry point
+- Integrates EncodingDetector, TerminatorDetector, MarkerDetector
+- Determines protocol structure type
+- Calculates overall confidence
+- Returns complete DetectionResult
+
+**Detection Steps**:
+1. Detect encoding (BOM + patterns)
+2. Detect terminator hierarchy (Frame → Segment → Field)
+3. Detect frame markers (optional)
+4. Determine protocol structure
+5. Calculate overall confidence
+
+**Dependencies**:
+- EncodingDetector (already exists from Session 2)
+- TerminatorDetector (refactored in Phase 3)
+- MarkerDetector (placeholder - to be implemented later)
+
+### ✅ Task 6: Phase 3 - Refactor TerminatorDetector (CRITICAL)
+**Status**: COMPLETED
+**Time**: ~45 minutes
+
+**File**: `Analyzers\TerminatorDetector.cs` (MAJOR REFACTOR - added ~340 lines)
+
+**NEW Method**: `DetectTerminatorHierarchy(byte[] rawBytes, Encoding encoding)`
+- Works on RAW UNSPLIT bytes (critical fix!)
+- Detects ALL three levels in ONE analysis
+- Returns `TerminatorHierarchyResult`
+
+**Detection Algorithm**:
+
+1. **FindRepeatingSequences()**: Scans for common patterns
+   - Double CRLF, CRLF, LF, CR
+   - Space, Tab, Comma, Semicolon, Pipe
+   - STX, ETX, NULL, Record Separator, Unit Separator
+   - Returns positions of all occurrences
+
+2. **AnalyzeCandidates()**: Analyzes characteristics
+   - Frequency (occurrences / file length)
+   - Average spacing between occurrences
+   - Appears at end of data?
+
+3. **ClassifyFrameTerminator()**: Top level
+   - Characteristics: Low frequency, 2+ bytes, fewer occurrences
+   - Example: Double CRLF [0x0D 0x0A 0x0D 0x0A]
+   - Confidence: 0.7-0.95
+
+4. **ClassifySegmentTerminator()**: Middle level
+   - Characteristics: Medium frequency, 1-2 bytes, more than frames
+   - Often subset of frame terminator (CRLF vs Double CRLF)
+   - Example: Single CRLF [0x0D 0x0A]
+   - Confidence: 0.8-0.95 (higher if subset of frame)
+
+5. **ClassifyFieldDelimiter()**: Bottom level
+   - Characteristics: High frequency, single byte, NOT CR/LF
+   - Example: Space [0x20], Comma [0x2C]
+   - Confidence: 0.6-0.95
+
+**Helper Methods**:
+- `FindAllOccurrences()`: Boyer-Moore-like pattern matching
+- `CalculateAverageSpacing()`: Spacing analysis
+- `IsSubsequence()`: Checks if segment is part of frame
+- `ByteArrayEquals()`: Byte array comparison
+
+**Backward Compatibility**:
+- Marked old `Detect(LogData)` method as `[Obsolete]`
+- Kept for transition period
+- Warns developers to use new method
+
+**Key Innovation**:
+This solves the circular dependency! Now we can detect terminators BEFORE splitting, which was the entire point of the two-pass architecture.
+
 ---
 
 ## Understanding from Previous Sessions

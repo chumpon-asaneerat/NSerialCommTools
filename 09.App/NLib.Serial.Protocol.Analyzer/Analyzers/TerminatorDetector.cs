@@ -12,14 +12,50 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 {
     /// <summary>
     /// Detects message terminators dynamically by analyzing message endings.
+    /// NEW: Now supports two-pass architecture with DetectTerminatorHierarchy().
     /// </summary>
     public class TerminatorDetector
     {
         #region Public Methods
 
         /// <summary>
-        /// Detects the terminator by analyzing the endings of all messages.
+        /// NEW METHOD - TWO-PASS ARCHITECTURE
+        /// Detects ALL terminator levels (Frame, Segment, Field) from raw bytes in ONE analysis.
+        /// This is PASS 1 - Detection happens BEFORE any splitting.
         /// </summary>
+        /// <param name="rawBytes">The entire file content as raw bytes (UNSPLIT).</param>
+        /// <param name="encoding">Detected encoding (for text analysis if needed).</param>
+        /// <returns>Complete terminator hierarchy with confidence scores.</returns>
+        public TerminatorHierarchyResult DetectTerminatorHierarchy(byte[] rawBytes, Encoding encoding)
+        {
+            if (rawBytes == null || rawBytes.Length == 0)
+            {
+                return CreateEmptyHierarchy();
+            }
+
+            var result = new TerminatorHierarchyResult();
+
+            // STEP 1: Find all repeating byte sequences (candidates)
+            var candidates = FindRepeatingSequences(rawBytes);
+
+            // STEP 2: Analyze each candidate to determine its characteristics
+            var analyzed = AnalyzeCandidates(candidates, rawBytes);
+
+            // STEP 3: Classify candidates into hierarchy levels
+            result.FrameTerminator = ClassifyFrameTerminator(analyzed, rawBytes);
+            result.SegmentTerminator = ClassifySegmentTerminator(analyzed, rawBytes, result.FrameTerminator);
+            result.FieldDelimiter = ClassifyFieldDelimiter(analyzed, rawBytes);
+
+            return result;
+        }
+
+        /// <summary>
+        /// OLD METHOD - LEGACY (for backward compatibility during transition)
+        /// Detects the terminator by analyzing the endings of all messages.
+        /// NOTE: This method works on already-split data (wrong approach).
+        /// Use DetectTerminatorHierarchy() for new two-pass architecture.
+        /// </summary>
+        [Obsolete("Use DetectTerminatorHierarchy() instead - this method requires pre-split data")]
         public TerminatorInfo Detect(LogData logData)
         {
             if (logData == null || logData.Messages.Count < 2)
@@ -132,14 +168,338 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             return $"0x{BitConverter.ToString(bytes).Replace("-", " 0x")}";
         }
 
+        /// <summary>
+        /// Creates an empty hierarchy result (fallback when detection fails).
+        /// </summary>
+        private TerminatorHierarchyResult CreateEmptyHierarchy()
+        {
+            return new TerminatorHierarchyResult
+            {
+                FrameTerminator = null,
+                SegmentTerminator = null,
+                FieldDelimiter = null
+            };
+        }
+
+        /// <summary>
+        /// STEP 1: Finds all repeating byte sequences in the raw data.
+        /// Scans for patterns of 1-4 bytes that occur multiple times.
+        /// </summary>
+        private Dictionary<string, ByteSequenceCandidate> FindRepeatingSequences(byte[] rawBytes)
+        {
+            var candidates = new Dictionary<string, ByteSequenceCandidate>();
+
+            // Common terminator/delimiter patterns to check
+            var patternsToCheck = new List<byte[]>
+            {
+                new byte[] { 0x0D, 0x0A, 0x0D, 0x0A },  // Double CRLF
+                new byte[] { 0x0D, 0x0A },               // CRLF
+                new byte[] { 0x0A },                     // LF
+                new byte[] { 0x0D },                     // CR
+                new byte[] { 0x20 },                     // Space
+                new byte[] { 0x09 },                     // Tab
+                new byte[] { 0x2C },                     // Comma
+                new byte[] { 0x3B },                     // Semicolon
+                new byte[] { 0x7C },                     // Pipe |
+                new byte[] { 0x00 },                     // NULL
+                new byte[] { 0x02 },                     // STX
+                new byte[] { 0x03 },                     // ETX
+                new byte[] { 0x1E },                     // Record Separator
+                new byte[] { 0x1F }                      // Unit Separator
+            };
+
+            // Search for each pattern
+            foreach (var pattern in patternsToCheck)
+            {
+                var positions = FindAllOccurrences(rawBytes, pattern);
+                if (positions.Count > 0)
+                {
+                    string key = BitConverter.ToString(pattern);
+                    candidates[key] = new ByteSequenceCandidate
+                    {
+                        Bytes = pattern,
+                        Positions = positions,
+                        Count = positions.Count
+                    };
+                }
+            }
+
+            return candidates;
+        }
+
+        /// <summary>
+        /// Finds all positions where a pattern occurs in the data.
+        /// </summary>
+        private List<int> FindAllOccurrences(byte[] data, byte[] pattern)
+        {
+            var positions = new List<int>();
+
+            for (int i = 0; i <= data.Length - pattern.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < pattern.Length; j++)
+                {
+                    if (data[i + j] != pattern[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    positions.Add(i);
+                    i += pattern.Length - 1; // Skip past this occurrence
+                }
+            }
+
+            return positions;
+        }
+
+        /// <summary>
+        /// STEP 2: Analyzes each candidate to determine characteristics.
+        /// </summary>
+        private List<AnalyzedCandidate> AnalyzeCandidates(
+            Dictionary<string, ByteSequenceCandidate> candidates,
+            byte[] rawBytes)
+        {
+            var analyzed = new List<AnalyzedCandidate>();
+
+            foreach (var kvp in candidates.Values)
+            {
+                var candidate = new AnalyzedCandidate
+                {
+                    Bytes = kvp.Bytes,
+                    Positions = kvp.Positions,
+                    Count = kvp.Count,
+                    Frequency = (double)kvp.Count / rawBytes.Length,
+                    AverageSpacing = CalculateAverageSpacing(kvp.Positions),
+                    AppearsAtEnd = CheckIfAppearsAtEnd(kvp.Positions, rawBytes.Length)
+                };
+
+                analyzed.Add(candidate);
+            }
+
+            return analyzed;
+        }
+
+        /// <summary>
+        /// Calculates average spacing between occurrences.
+        /// </summary>
+        private double CalculateAverageSpacing(List<int> positions)
+        {
+            if (positions.Count < 2)
+                return 0;
+
+            double totalSpacing = 0;
+            for (int i = 1; i < positions.Count; i++)
+            {
+                totalSpacing += positions[i] - positions[i - 1];
+            }
+
+            return totalSpacing / (positions.Count - 1);
+        }
+
+        /// <summary>
+        /// Checks if pattern appears near the end of data blocks.
+        /// </summary>
+        private bool CheckIfAppearsAtEnd(List<int> positions, int dataLength)
+        {
+            if (positions.Count == 0)
+                return false;
+
+            // Check if last position is near end of file
+            int lastPosition = positions[positions.Count - 1];
+            return (dataLength - lastPosition) < 10; // Within 10 bytes of end
+        }
+
+        /// <summary>
+        /// STEP 3a: Classifies frame terminator (top level - separates complete messages).
+        /// </summary>
+        private TerminatorInfo ClassifyFrameTerminator(List<AnalyzedCandidate> candidates, byte[] rawBytes)
+        {
+            // Frame terminators characteristics:
+            // - Low frequency (fewer occurrences)
+            // - Longer sequences (2-4 bytes)
+            // - Regular spacing (separates frames)
+
+            var frameCandidate = candidates
+                .Where(c => c.Bytes.Length >= 2)  // At least 2 bytes
+                .Where(c => c.Count >= 2)         // At least 2 occurrences
+                .OrderBy(c => c.Count)            // Prefer FEWER occurrences (frames)
+                .ThenByDescending(c => c.Bytes.Length) // Prefer longer sequences
+                .FirstOrDefault();
+
+            if (frameCandidate != null)
+            {
+                double confidence = Math.Min(0.95, 0.7 + (frameCandidate.Count > 0 ? 0.25 : 0));
+
+                return new TerminatorInfo
+                {
+                    Bytes = frameCandidate.Bytes,
+                    String = GetEscapedString(frameCandidate.Bytes),
+                    DisplayName = GetDisplayName(frameCandidate.Bytes),
+                    Frequency = frameCandidate.Frequency,
+                    Confidence = confidence,
+                    Type = TerminatorType.Frame,
+                    Level = 1
+                };
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// STEP 3b: Classifies segment terminator (middle level - separates segments within frame).
+        /// </summary>
+        private TerminatorInfo ClassifySegmentTerminator(
+            List<AnalyzedCandidate> candidates,
+            byte[] rawBytes,
+            TerminatorInfo frameTerminator)
+        {
+            // Segment terminators characteristics:
+            // - Medium frequency (more than frames, less than fields)
+            // - 1-2 bytes typically
+            // - Often part of frame terminator (e.g., CRLF vs Double CRLF)
+
+            var segmentCandidate = candidates
+                .Where(c => c.Bytes.Length <= 2)  // 1-2 bytes
+                .Where(c => c.Count >= 5)         // At least 5 occurrences
+                .Where(c => frameTerminator == null || !ByteArrayEquals(c.Bytes, frameTerminator.Bytes)) // Not same as frame
+                .OrderByDescending(c => c.Count)  // Prefer MORE occurrences (segments)
+                .ThenBy(c => c.Bytes.Length)      // Prefer shorter
+                .FirstOrDefault();
+
+            if (segmentCandidate != null)
+            {
+                // Higher confidence if this is a subset of frame terminator
+                double confidence = 0.8;
+                if (frameTerminator != null && IsSubsequence(segmentCandidate.Bytes, frameTerminator.Bytes))
+                {
+                    confidence = 0.95; // Very confident - it's part of frame terminator
+                }
+
+                return new TerminatorInfo
+                {
+                    Bytes = segmentCandidate.Bytes,
+                    String = GetEscapedString(segmentCandidate.Bytes),
+                    DisplayName = GetDisplayName(segmentCandidate.Bytes),
+                    Frequency = segmentCandidate.Frequency,
+                    Confidence = confidence,
+                    Type = TerminatorType.Segment,
+                    Level = 2
+                };
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// STEP 3c: Classifies field delimiter (bottom level - separates fields within segment).
+        /// </summary>
+        private TerminatorInfo ClassifyFieldDelimiter(List<AnalyzedCandidate> candidates, byte[] rawBytes)
+        {
+            // Field delimiter characteristics:
+            // - High frequency (many occurrences)
+            // - Single byte (usually)
+            // - NOT line-ending characters
+
+            var fieldCandidate = candidates
+                .Where(c => c.Bytes.Length == 1)  // Single byte
+                .Where(c => c.Bytes[0] != 0x0D && c.Bytes[0] != 0x0A) // NOT CR/LF
+                .Where(c => c.Count >= 10)        // At least 10 occurrences
+                .OrderByDescending(c => c.Count)  // Prefer MOST occurrences (fields)
+                .FirstOrDefault();
+
+            if (fieldCandidate != null)
+            {
+                double confidence = Math.Min(0.95, 0.6 + (fieldCandidate.Count / (double)rawBytes.Length) * 100);
+
+                return new TerminatorInfo
+                {
+                    Bytes = fieldCandidate.Bytes,
+                    String = GetEscapedString(fieldCandidate.Bytes),
+                    DisplayName = GetDisplayName(fieldCandidate.Bytes),
+                    Frequency = fieldCandidate.Frequency,
+                    Confidence = confidence,
+                    Type = TerminatorType.Field,
+                    Level = 3
+                };
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checks if one byte array is a subsequence of another.
+        /// </summary>
+        private bool IsSubsequence(byte[] shorter, byte[] longer)
+        {
+            if (shorter.Length >= longer.Length)
+                return false;
+
+            for (int i = 0; i <= longer.Length - shorter.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < shorter.Length; j++)
+                {
+                    if (longer[i + j] != shorter[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if two byte arrays are equal.
+        /// </summary>
+        private bool ByteArrayEquals(byte[] a, byte[] b)
+        {
+            if (a == null || b == null)
+                return a == b;
+            if (a.Length != b.Length)
+                return false;
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                    return false;
+            }
+
+            return true;
+        }
+
         #endregion
 
-        #region Internal Class
+        #region Internal Classes
 
         private class TerminatorCandidate
         {
             public byte[] Bytes { get; set; }
             public int Count { get; set; }
+        }
+
+        private class ByteSequenceCandidate
+        {
+            public byte[] Bytes { get; set; }
+            public List<int> Positions { get; set; }
+            public int Count { get; set; }
+        }
+
+        private class AnalyzedCandidate
+        {
+            public byte[] Bytes { get; set; }
+            public List<int> Positions { get; set; }
+            public int Count { get; set; }
+            public double Frequency { get; set; }
+            public double AverageSpacing { get; set; }
+            public bool AppearsAtEnd { get; set; }
         }
 
         #endregion

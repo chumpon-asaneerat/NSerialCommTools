@@ -104,6 +104,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Analyzers\ProtocolDetector.cs" />
+    <Compile Include="Models\DetectionResult.cs" />
     <Compile Include="Utilities\ByteArraySplitter.cs" />
     <None Include="v1\MainWindow1.xaml">
       <Generator>MSBuild:Compile</Generator>
