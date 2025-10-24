@@ -42,6 +42,34 @@ Continue from Session 2 (2025-10-24) to implement the two-pass architecture refa
 
 **User Action**: User archived old WORK-SUMMARY files
 
+### ✅ Task 2: Fix REFACTOR-TODO-Two-Pass-Architecture.md Terminology
+**Status**: COMPLETED
+
+**Problem**: Document still used "Line Terminator" and "Message Terminator" - text-centric terminology
+
+**Corrections Made**:
+- ❌ "Message Terminator" → ✅ "Frame Terminator"
+- ❌ "Line Terminator" → ✅ "Segment Terminator"
+- Updated all 12+ occurrences throughout the document
+- Updated model definitions (DetectionResult)
+- Updated algorithm descriptions
+- Updated test cases
+- Updated JIK6CAB example
+
+**Why Important**: Binary-first thinking prevents reverting to text assumptions
+
+### ✅ Task 3: Create TODO Tracker
+**Status**: COMPLETED
+
+**Created**: 9-item TODO list tracking all phases of two-pass architecture refactor
+- Phase 1: Models (3 tasks)
+- Phase 2: ProtocolDetector (1 task)
+- Phase 3: TerminatorDetector refactor (1 task)
+- Phase 4: MessageExtractor refactor (1 task)
+- Phase 5: PatternAnalyzer update (1 task)
+- Phase 6: MainWindow pipeline (1 task)
+- Phase 7: Testing (1 task)
+
 ---
 
 ## Understanding from Previous Sessions
