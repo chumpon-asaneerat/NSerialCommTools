@@ -43,7 +43,7 @@ Test with JIK6CAB data and verify field splitting
 
 ------------------------------
 
-*** Note 3: The is information during you compact context
+*** Note 3: The is information you show to me after you compact context
 
 ------------------------------
 
