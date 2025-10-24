@@ -1,5 +1,5 @@
-Check @Prompts\NEXT-SESSION-START-HERE.md and there are some missing infor that you about to 
-create documents but session end.
+Check @Prompts\NEXT-SESSION-START-HERE.md and 
+there are some missing infor that you about to create documents but session end.
 
 ------------------------------
 
