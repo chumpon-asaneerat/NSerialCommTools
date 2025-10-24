@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using NLib.Serial.ProtocolAnalyzer.Models;
+using NLib.Serial.ProtocolAnalyzer.Utilities;
 
 #endregion
 
@@ -25,7 +26,8 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// <param name="logData">Log data containing messages</param>
         /// <param name="delimiter">Detected delimiter information</param>
         /// <param name="encoding">Detected text encoding (defaults to ASCII if null)</param>
-        public List<FieldInfo> Analyze(LogData logData, DelimiterInfo delimiter, Encoding encoding = null)
+        /// <param name="terminator">Detected line terminator (defaults to common terminators if null)</param>
+        public List<FieldInfo> Analyze(LogData logData, DelimiterInfo delimiter, Encoding encoding = null, TerminatorInfo terminator = null)
         {
             if (logData == null || logData.Messages.Count == 0)
                 return new List<FieldInfo>();
@@ -33,21 +35,21 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // Use detected encoding or fallback to ASCII
             Encoding textEncoding = encoding ?? Encoding.ASCII;
 
-            // Check if messages are multi-line (contain \r\n or \n inside)
-            bool isMultiLine = CheckIfMultiLine(logData, textEncoding);
+            // Check if messages are multi-line (contain terminators inside)
+            bool isMultiLine = CheckIfMultiLine(logData, textEncoding, terminator);
 
             if (isMultiLine)
             {
                 // Algorithm 4: Frame-based extraction
                 // Each line position is a field
-                return AnalyzeMultiLineFrames(logData, textEncoding);
+                return AnalyzeMultiLineFrames(logData, textEncoding, terminator);
             }
 
             // If delimiter is not found or confidence is low, try analyzing by lines
             if (delimiter == null || delimiter.Confidence < 0.6)
             {
                 // Still might be multi-line without good delimiters
-                return AnalyzeMultiLine(logData, textEncoding);
+                return AnalyzeMultiLine(logData, textEncoding, terminator);
             }
 
             // Single-line delimiter-based analysis
@@ -56,15 +58,19 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         /// <summary>
         /// Check if messages contain line breaks (multi-line frames)
+        /// Uses detected terminator or fallback terminators.
         /// </summary>
-        private bool CheckIfMultiLine(LogData logData, Encoding encoding)
+        private bool CheckIfMultiLine(LogData logData, Encoding encoding, TerminatorInfo terminator)
         {
+            // Get terminator bytes (use detected or fallback to common ones)
+            byte[][] terminatorBytes = GetTerminatorBytes(terminator, encoding);
+
             foreach (var message in logData.Messages)
             {
-                string text = encoding.GetString(message);
-                // Count line breaks
-                int lineBreaks = text.Count(c => c == '\n' || c == '\r');
-                if (lineBreaks > 1) // More than just trailing terminator
+                // Split by terminator to count lines
+                var lines = ByteArraySplitter.SplitByAny(message, terminatorBytes, ByteArraySplitter.SplitOptions.None);
+
+                if (lines.Count > 1) // More than one line = multi-line
                     return true;
             }
             return false;
@@ -72,17 +78,24 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         /// <summary>
         /// Algorithm 4: Extract fields from multi-line frames
-        /// Each line position is treated as a separate field
+        /// Each line position is treated as a separate field.
+        /// BINARY-SAFE: Uses byte[] splitting with detected terminator.
         /// </summary>
-        private List<FieldInfo> AnalyzeMultiLineFrames(LogData logData, Encoding encoding)
+        private List<FieldInfo> AnalyzeMultiLineFrames(LogData logData, Encoding encoding, TerminatorInfo terminator)
         {
             // STEP 1: Collect samples for each line position
             var fieldsByLineNumber = new Dictionary<int, List<string>>();
 
+            // Get terminator bytes (use detected or fallback to common ones)
+            byte[][] terminatorBytes = GetTerminatorBytes(terminator, encoding);
+
             foreach (var message in logData.Messages)
             {
-                string text = encoding.GetString(message);
-                string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+                // BINARY-SAFE SPLIT: Split bytes by detected terminator
+                List<byte[]> lineBytes = ByteArraySplitter.SplitByAny(message, terminatorBytes, ByteArraySplitter.SplitOptions.None);
+
+                // Convert each line from bytes to string using detected encoding
+                string[] lines = lineBytes.Select(bytes => encoding.GetString(bytes)).ToArray();
 
                 for (int lineNum = 0; lineNum < lines.Length; lineNum++)
                 {
@@ -330,16 +343,23 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         /// <summary>
         /// Analyzes multi-line messages where each line is a field.
+        /// BINARY-SAFE: Uses byte[] splitting with detected terminator.
         /// </summary>
-        private List<FieldInfo> AnalyzeMultiLine(LogData logData, Encoding encoding)
+        private List<FieldInfo> AnalyzeMultiLine(LogData logData, Encoding encoding, TerminatorInfo terminator)
         {
             var fieldData = new Dictionary<int, List<string>>();
+
+            // Get terminator bytes (use detected or fallback to common ones)
+            byte[][] terminatorBytes = GetTerminatorBytes(terminator, encoding);
 
             // Split each message by line breaks
             foreach (var message in logData.Messages)
             {
-                string text = encoding.GetString(message);
-                string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                // BINARY-SAFE SPLIT: Split bytes by detected terminator
+                List<byte[]> lineBytes = ByteArraySplitter.SplitByAny(message, terminatorBytes, ByteArraySplitter.SplitOptions.RemoveEmptyEntries);
+
+                // Convert to strings
+                string[] lines = lineBytes.Select(bytes => encoding.GetString(bytes)).ToArray();
 
                 for (int i = 0; i < lines.Length; i++)
                 {
@@ -381,6 +401,34 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             }
 
             return results;
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Gets terminator byte sequences (uses detected or fallback to common ones).
+        /// </summary>
+        /// <param name="terminator">Detected terminator info (may be null).</param>
+        /// <param name="encoding">Text encoding for fallback terminators.</param>
+        /// <returns>Array of possible terminator byte sequences.</returns>
+        private byte[][] GetTerminatorBytes(TerminatorInfo terminator, Encoding encoding)
+        {
+            // If we have a detected terminator with high confidence, use it
+            if (terminator != null && terminator.Bytes != null && terminator.Confidence >= 0.8)
+            {
+                return new byte[][] { terminator.Bytes };
+            }
+
+            // Fallback: Try common terminators in order of likelihood
+            // CRLF (Windows), LF (Unix), CR (Mac Classic)
+            return new byte[][]
+            {
+                encoding.GetBytes("\r\n"),  // CRLF (most common)
+                encoding.GetBytes("\n"),     // LF
+                encoding.GetBytes("\r")      // CR
+            };
         }
 
         #endregion

@@ -78,11 +78,11 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // Detect delimiters
             result.Delimiters = _delimiterDetector.Detect(logData);
 
-            // Analyze fields using the best delimiter and detected encoding
+            // Analyze fields using the best delimiter, detected encoding, and detected terminator
             var bestDelimiter = result.Delimiters.OrderByDescending(d => d.Confidence).FirstOrDefault();
             if (bestDelimiter != null)
             {
-                result.Fields = _fieldAnalyzer.Analyze(logData, bestDelimiter, result.DetectedEncoding);
+                result.Fields = _fieldAnalyzer.Analyze(logData, bestDelimiter, result.DetectedEncoding, result.Terminator);
             }
 
             // Detect relationships between fields (Phase 5)

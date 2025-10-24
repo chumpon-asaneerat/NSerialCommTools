@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NLib.Serial.ProtocolAnalyzer.Models;
+using NLib.Serial.ProtocolAnalyzer.Utilities;
 
 #endregion
 
@@ -21,15 +22,28 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
         /// <summary>
         /// Extracts messages by detecting frame markers and analyzing gaps.
         /// Algorithm 1: Message Boundary Detection
+        /// BINARY-SAFE: Uses byte[] splitting with optional terminator.
         /// </summary>
-        public LogData ExtractMessages(byte[] rawBytes)
+        /// <param name="rawBytes">Raw byte data from log file.</param>
+        /// <param name="terminator">Optional detected terminator (if null, will detect on-the-fly).</param>
+        /// <param name="encoding">Optional encoding (defaults to ASCII).</param>
+        /// <returns>LogData with extracted messages.</returns>
+        public LogData ExtractMessages(byte[] rawBytes, TerminatorInfo terminator = null, Encoding encoding = null)
         {
             if (rawBytes == null || rawBytes.Length == 0)
                 return new LogData();
 
-            // Convert to text lines for pattern analysis
-            string text = Encoding.ASCII.GetString(rawBytes);
-            string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+            // Use provided encoding or default to ASCII
+            Encoding textEncoding = encoding ?? Encoding.ASCII;
+
+            // Get terminator bytes (use provided or fallback to common ones)
+            byte[][] terminatorBytes = GetTerminatorBytes(terminator, textEncoding);
+
+            // BINARY-SAFE SPLIT: Split bytes by terminator
+            List<byte[]> lineBytes = ByteArraySplitter.SplitByAny(rawBytes, terminatorBytes, ByteArraySplitter.SplitOptions.None);
+
+            // Convert to strings for pattern analysis (only for marker detection)
+            string[] lines = lineBytes.Select(bytes => textEncoding.GetString(bytes)).ToArray();
 
             // STEP 1: Detect Start/End Markers
             var markerResult = DetectFrameMarkers(lines);
@@ -37,11 +51,35 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
             if (markerResult != null && markerResult.Confidence > 0.8)
             {
                 // Frame-based structure detected
-                return ExtractFrames(rawBytes, markerResult);
+                return ExtractFrames(rawBytes, markerResult, terminatorBytes, textEncoding);
             }
 
             // STEP 2: Fall back to single-line detection
-            return ExtractSingleLineMessages(rawBytes, lines);
+            return ExtractSingleLineMessages(lineBytes);
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Gets terminator byte sequences (uses detected or fallback to common ones).
+        /// </summary>
+        private byte[][] GetTerminatorBytes(TerminatorInfo terminator, Encoding encoding)
+        {
+            // If we have a detected terminator with high confidence, use it
+            if (terminator != null && terminator.Bytes != null && terminator.Confidence >= 0.8)
+            {
+                return new byte[][] { terminator.Bytes };
+            }
+
+            // Fallback: Try common terminators in order of likelihood
+            return new byte[][]
+            {
+                encoding.GetBytes("\r\n"),  // CRLF (Windows) - most common
+                encoding.GetBytes("\n"),     // LF (Unix)
+                encoding.GetBytes("\r")      // CR (Mac Classic)
+            };
         }
 
         #endregion
@@ -232,12 +270,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
         }
 
         /// <summary>
-        /// Extract complete frames using detected markers
+        /// Extract complete frames using detected markers.
+        /// BINARY-SAFE: Uses byte[] splitting with detected terminator.
         /// </summary>
-        private LogData ExtractFrames(byte[] rawBytes, FrameMarkerResult frameInfo)
+        private LogData ExtractFrames(byte[] rawBytes, FrameMarkerResult frameInfo, byte[][] terminatorBytes, Encoding encoding)
         {
-            string text = Encoding.ASCII.GetString(rawBytes);
-            string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+            // BINARY-SAFE SPLIT: Split bytes by terminator
+            List<byte[]> lineBytes = ByteArraySplitter.SplitByAny(rawBytes, terminatorBytes, ByteArraySplitter.SplitOptions.None);
+            string[] lines = lineBytes.Select(bytes => encoding.GetString(bytes)).ToArray();
 
             var messages = new List<byte[]>();
 
@@ -289,26 +329,37 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
         #region Private Methods - Single Line Detection
 
         /// <summary>
-        /// Extract single-line messages when no frame markers found
+        /// Extract single-line messages when no frame markers found.
+        /// BINARY-SAFE: Works with byte arrays directly.
         /// </summary>
-        private LogData ExtractSingleLineMessages(byte[] rawBytes, string[] lines)
+        private LogData ExtractSingleLineMessages(List<byte[]> lineBytes)
         {
             var messages = new List<byte[]>();
+            int totalBytes = 0;
 
-            // Filter out empty lines and convert back to bytes
-            foreach (var line in lines)
+            // Filter out empty lines
+            foreach (var line in lineBytes)
             {
-                if (!string.IsNullOrWhiteSpace(line))
+                if (line != null && line.Length > 0)
                 {
-                    byte[] lineBytes = Encoding.ASCII.GetBytes(line + "\r\n");
-                    messages.Add(lineBytes);
+                    messages.Add(line);
+                    totalBytes += line.Length;
                 }
             }
 
-            if (messages.Count == 0)
-                return new LogData { Messages = new List<byte[]> { rawBytes }, MessageCount = 1, TotalBytes = rawBytes.Length, AverageMessageLength = rawBytes.Length };
+            if (messages.Count == 0 && lineBytes.Count > 0)
+            {
+                // No valid lines - return first line as single message
+                byte[] firstLine = lineBytes[0];
+                return new LogData {
+                    Messages = new List<byte[]> { firstLine },
+                    MessageCount = 1,
+                    TotalBytes = firstLine.Length,
+                    AverageMessageLength = firstLine.Length
+                };
+            }
 
-            int totalBytes = messages.Sum(m => m.Length);
+            totalBytes = messages.Sum(m => m.Length);
             return new LogData
             {
                 Messages = messages,
