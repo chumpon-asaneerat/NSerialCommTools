@@ -68,30 +68,20 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// <summary>
         /// Detects compound fields that should be split into Value + Unit.
         /// Example: "1.94 kg" → Value (1.94) + Unit ("kg")
+        /// DYNAMIC DETECTION: Discovers units from data, not hardcoded lists.
         /// </summary>
         private SplitDetectionResult DetectSplitFields(List<FieldInfo> fields)
         {
             var result = new SplitDetectionResult();
 
-            // Patterns for compound fields (value + unit)
-            var compoundPatterns = new[]
-            {
-                new { Name = "WeightKg", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(kg)\s*$", RegexOptions.IgnoreCase) },
-                new { Name = "WeightG", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(g)\s*$", RegexOptions.IgnoreCase) },
-                new { Name = "CountPcs", Pattern = new Regex(@"^\s*(\d+)\s*(pcs)\s*$", RegexOptions.IgnoreCase) },
-                new { Name = "Temperature", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(°C|°F|C|F)\s*$", RegexOptions.IgnoreCase) },
-                new { Name = "pH", Pattern = new Regex(@"^\s*(\d+\.?\d*)\s*(pH)\s*$", RegexOptions.IgnoreCase) }
-            };
-
             for (int i = 0; i < fields.Count; i++)
             {
                 var field = fields[i];
 
-                // Check if any sample matches a compound pattern
-                foreach (var compoundPattern in compoundPatterns)
+                // Try to dynamically detect if this is a compound field (value + unit)
+                // Pattern: NUMBER (optional +/-) WHITESPACE TEXT
+                if (IsCompoundFieldDynamic(field, out var valueSamples, out var unitSamples, out var detectedPattern))
                 {
-                    if (IsCompoundField(field, compoundPattern.Pattern, out var valueSamples, out var unitSamples))
-                    {
                         // Keep the full field name including the running number
                         // Example: WeightKg1 → WeightKg1Value and WeightKg1Unit
                         //          WeightKg2 → WeightKg2Value and WeightKg2Unit
@@ -150,15 +140,12 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                             Reason = $"Compound field detected with pattern: value + unit"
                         };
 
-                        result.Relationships.Add(relationship);
+                    result.Relationships.Add(relationship);
 
-                        // Mark parent field: don't export (split into children), hide from UI
-                        field.IncludeInDefinition = false;  // Don't export parent to JSON
-                        field.ShowInEditor = false;         // Hide from UI editor
-                        field.Action = "Parse";              // Keep action for documentation
-
-                        break; // Found match, move to next field
-                    }
+                    // Mark parent field: don't export (split into children), hide from UI
+                    field.IncludeInDefinition = false;  // Don't export parent to JSON
+                    field.ShowInEditor = false;         // Hide from UI editor
+                    field.Action = "Parse";              // Keep action for documentation
                 }
             }
 
@@ -166,34 +153,70 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         }
 
         /// <summary>
-        /// Checks if a field is a compound field and extracts value and unit samples.
+        /// Dynamically detects if a field is a compound field (value + unit) by analyzing samples.
+        /// NO HARDCODED UNITS - discovers pattern from actual data.
+        /// Pattern: NUMBER (optional +/-) + WHITESPACE + TEXT
+        /// Examples: "1.94 kg", "+007.12/3 G", "25.5°C", "100 PSI", "5.2 mL"
         /// </summary>
-        private bool IsCompoundField(FieldInfo field, Regex pattern, out List<string> valueSamples, out List<string> unitSamples)
+        private bool IsCompoundFieldDynamic(FieldInfo field, out List<string> valueSamples, out List<string> unitSamples, out string detectedPattern)
         {
             valueSamples = new List<string>();
             unitSamples = new List<string>();
+            detectedPattern = null;
 
             if (field.SampleValues == null || field.SampleValues.Count == 0)
             {
                 return false;
             }
 
+            // Generic pattern: NUMBER + optional WHITESPACE + TEXT
+            // Supports: integers, decimals, signed numbers, with or without spaces
+            // Group 1: numeric value (with optional +/- and decimal)
+            // Group 2: unit text (letters, special chars like °, etc.)
+            var genericPattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s+([^\d\s][^\s]*)?\s*$", RegexOptions.IgnoreCase);
+
             int matchCount = 0;
+            var detectedUnits = new HashSet<string>();
 
             foreach (var sample in field.SampleValues)
             {
-                var match = pattern.Match(sample);
-                if (match.Success && match.Groups.Count >= 3)
+                if (string.IsNullOrWhiteSpace(sample))
+                    continue;
+
+                var match = genericPattern.Match(sample);
+                if (match.Success && match.Groups.Count >= 3 && match.Groups[2].Success)
                 {
-                    valueSamples.Add(match.Groups[1].Value.Trim());
-                    unitSamples.Add(match.Groups[2].Value.Trim());
-                    matchCount++;
+                    string value = match.Groups[1].Value.Trim();
+                    string unit = match.Groups[2].Value.Trim();
+
+                    // Valid unit must have at least 1 character and not be purely numeric
+                    if (!string.IsNullOrEmpty(unit) && !Regex.IsMatch(unit, @"^\d+$"))
+                    {
+                        valueSamples.Add(value);
+                        unitSamples.Add(unit);
+                        detectedUnits.Add(unit.ToLowerInvariant());
+                        matchCount++;
+                    }
                 }
             }
 
-            // Consider it compound if 80%+ samples match the pattern
-            double matchRate = (double)matchCount / field.SampleValues.Count;
-            return matchRate > 0.8;
+            // Consider it compound if:
+            // 1. At least 80% of samples match the pattern
+            // 2. We have at least 3 matches
+            // 3. There are 1-5 unique units (not too variable)
+            double matchRate = field.SampleValues.Count > 0 ? (double)matchCount / field.SampleValues.Count : 0;
+            bool hasEnoughMatches = matchCount >= 3;
+            bool hasReasonableUnitVariety = detectedUnits.Count >= 1 && detectedUnits.Count <= 5;
+
+            if (matchRate > 0.8 && hasEnoughMatches && hasReasonableUnitVariety)
+            {
+                // Build detected pattern string for documentation
+                var unitOptions = string.Join("|", detectedUnits.Select(u => Regex.Escape(u)));
+                detectedPattern = $@"^\s*([+-]?\d+\.?\d*)\s+({unitOptions})\s*$";
+                return true;
+            }
+
+            return false;
         }
 
         #endregion

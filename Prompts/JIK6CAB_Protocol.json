@@ -1,7 +1,7 @@
 {
   "deviceName": "Device1",
   "version": "1.0",
-  "generatedDate": "2025-10-24T02:38:26.2800459+07:00",
+  "generatedDate": "2025-10-24T18:08:02.662836+07:00",
   "description": "Auto-generated protocol definition for Device1",
   "encoding": "ASCII",
   "messageType": "multi-line-frame",
@@ -79,103 +79,49 @@
     },
     {
       "order": 3,
-      "name": "WeightKg1Value",
+      "name": "WeightKg1",
       "dataType": "decimal",
       "sampleValues": [
-        "0.00"
+        "  0.00 kg"
       ],
       "confidence": 1,
-      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
-      "formatString": "{0:F2}",
-      "alignment": "right",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Decimal",
-      "action": "Parse",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": false,
-      "minLength": 4,
-      "maxLength": 4,
-      "sampleValuesDisplay": "0.00"
-    },
-    {
-      "order": 3,
-      "name": "WeightKg1Unit",
-      "dataType": "string",
-      "sampleValues": [
-        "kg"
-      ],
-      "confidence": 1,
-      "parsePattern": "^(kg)$",
-      "formatString": "kg",
       "alignment": "left",
       "paddingChar": " ",
       "width": 0,
       "fieldPosition": "body",
-      "required": false,
-      "fieldType": "Reserved",
-      "action": "Validate",
-      "variance": 0,
+      "required": true,
+      "fieldType": "WeightKg",
+      "action": "Parse",
+      "variance": 1,
       "includeInDefinition": true,
       "showInEditor": true,
       "isConstant": true,
-      "minLength": 2,
-      "maxLength": 2,
-      "sampleValuesDisplay": "kg"
+      "minLength": 9,
+      "maxLength": 9,
+      "sampleValuesDisplay": "  0.00 kg"
     },
     {
       "order": 4,
-      "name": "WeightKg2Value",
+      "name": "WeightKg2",
       "dataType": "decimal",
       "sampleValues": [
-        "1.94"
+        "  1.94 kg"
       ],
       "confidence": 1,
-      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
-      "formatString": "{0:F2}",
-      "alignment": "right",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Decimal",
-      "action": "Parse",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": false,
-      "minLength": 4,
-      "maxLength": 4,
-      "sampleValuesDisplay": "1.94"
-    },
-    {
-      "order": 4,
-      "name": "WeightKg2Unit",
-      "dataType": "string",
-      "sampleValues": [
-        "kg"
-      ],
-      "confidence": 1,
-      "parsePattern": "^(kg)$",
-      "formatString": "kg",
       "alignment": "left",
       "paddingChar": " ",
       "width": 0,
       "fieldPosition": "body",
-      "required": false,
-      "fieldType": "Reserved",
-      "action": "Validate",
-      "variance": 0,
+      "required": true,
+      "fieldType": "WeightKg",
+      "action": "Parse",
+      "variance": 1,
       "includeInDefinition": true,
       "showInEditor": true,
       "isConstant": true,
-      "minLength": 2,
-      "maxLength": 2,
-      "sampleValuesDisplay": "kg"
+      "minLength": 9,
+      "maxLength": 9,
+      "sampleValuesDisplay": "  1.94 kg"
     },
     {
       "order": 5,
@@ -225,153 +171,72 @@
     },
     {
       "order": 7,
-      "name": "WeightKg3Value",
+      "name": "WeightKg3",
       "dataType": "decimal",
       "sampleValues": [
-        "1.94"
+        "  1.94 kg"
       ],
       "confidence": 1,
-      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
-      "formatString": "{0:F2}",
-      "alignment": "right",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Decimal",
-      "action": "Parse",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": false,
-      "minLength": 4,
-      "maxLength": 4,
-      "sampleValuesDisplay": "1.94"
-    },
-    {
-      "order": 7,
-      "name": "WeightKg3Unit",
-      "dataType": "string",
-      "sampleValues": [
-        "kg"
-      ],
-      "confidence": 1,
-      "parsePattern": "^(kg)$",
-      "formatString": "kg",
       "alignment": "left",
       "paddingChar": " ",
       "width": 0,
       "fieldPosition": "body",
-      "required": false,
-      "fieldType": "Reserved",
-      "action": "Validate",
-      "variance": 0,
+      "required": true,
+      "fieldType": "WeightKg",
+      "action": "Parse",
+      "variance": 1,
       "includeInDefinition": true,
       "showInEditor": true,
       "isConstant": true,
-      "minLength": 2,
-      "maxLength": 2,
-      "sampleValuesDisplay": "kg"
+      "minLength": 9,
+      "maxLength": 9,
+      "sampleValuesDisplay": "  1.94 kg"
     },
     {
       "order": 8,
-      "name": "WeightKg4Value",
+      "name": "WeightKg4",
       "dataType": "decimal",
       "sampleValues": [
-        "1.94"
+        "  1.94 kg"
       ],
       "confidence": 1,
-      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
-      "formatString": "{0:F2}",
-      "alignment": "right",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Decimal",
-      "action": "Parse",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": false,
-      "minLength": 4,
-      "maxLength": 4,
-      "sampleValuesDisplay": "1.94"
-    },
-    {
-      "order": 8,
-      "name": "WeightKg4Unit",
-      "dataType": "string",
-      "sampleValues": [
-        "kg"
-      ],
-      "confidence": 1,
-      "parsePattern": "^(kg)$",
-      "formatString": "kg",
       "alignment": "left",
       "paddingChar": " ",
       "width": 0,
       "fieldPosition": "body",
-      "required": false,
-      "fieldType": "Reserved",
-      "action": "Validate",
-      "variance": 0,
+      "required": true,
+      "fieldType": "WeightKg",
+      "action": "Parse",
+      "variance": 1,
       "includeInDefinition": true,
       "showInEditor": true,
       "isConstant": true,
-      "minLength": 2,
-      "maxLength": 2,
-      "sampleValuesDisplay": "kg"
+      "minLength": 9,
+      "maxLength": 9,
+      "sampleValuesDisplay": "  1.94 kg"
     },
     {
       "order": 9,
-      "name": "CountPcs1Value",
+      "name": "CountPcs1",
       "dataType": "decimal",
       "sampleValues": [
-        "0"
+        "    0 pcs"
       ],
       "confidence": 1,
-      "parsePattern": "^([\u002B-]?\\d\u002B\\.?\\d*)$",
-      "formatString": "{0:F2}",
-      "alignment": "right",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Decimal",
-      "action": "Parse",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": false,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": "0"
-    },
-    {
-      "order": 9,
-      "name": "CountPcs1Unit",
-      "dataType": "string",
-      "sampleValues": [
-        "pcs"
-      ],
-      "confidence": 1,
-      "parsePattern": "^(pcs)$",
-      "formatString": "pcs",
       "alignment": "left",
       "paddingChar": " ",
       "width": 0,
       "fieldPosition": "body",
-      "required": false,
-      "fieldType": "Reserved",
-      "action": "Validate",
-      "variance": 0,
+      "required": true,
+      "fieldType": "CountPcs",
+      "action": "Parse",
+      "variance": 1,
       "includeInDefinition": true,
       "showInEditor": true,
       "isConstant": true,
-      "minLength": 3,
-      "maxLength": 3,
-      "sampleValuesDisplay": "pcs"
+      "minLength": 9,
+      "maxLength": 9,
+      "sampleValuesDisplay": "    0 pcs"
     },
     {
       "order": 10,
@@ -467,61 +332,6 @@
     }
   ],
   "relationships": [
-    {
-      "type": "Split",
-      "sourceFields": [
-        "WeightKg1"
-      ],
-      "targetField": "WeightKg1Value,WeightKg1Unit",
-      "operation": "Split WeightKg1 into WeightKg1Value and WeightKg1Unit",
-      "confidence": 1,
-      "reason": "Compound field detected with pattern: value \u002B unit",
-      "tolerance": 0
-    },
-    {
-      "type": "Split",
-      "sourceFields": [
-        "WeightKg2"
-      ],
-      "targetField": "WeightKg2Value,WeightKg2Unit",
-      "operation": "Split WeightKg2 into WeightKg2Value and WeightKg2Unit",
-      "confidence": 1,
-      "reason": "Compound field detected with pattern: value \u002B unit",
-      "tolerance": 0
-    },
-    {
-      "type": "Split",
-      "sourceFields": [
-        "WeightKg3"
-      ],
-      "targetField": "WeightKg3Value,WeightKg3Unit",
-      "operation": "Split WeightKg3 into WeightKg3Value and WeightKg3Unit",
-      "confidence": 1,
-      "reason": "Compound field detected with pattern: value \u002B unit",
-      "tolerance": 0
-    },
-    {
-      "type": "Split",
-      "sourceFields": [
-        "WeightKg4"
-      ],
-      "targetField": "WeightKg4Value,WeightKg4Unit",
-      "operation": "Split WeightKg4 into WeightKg4Value and WeightKg4Unit",
-      "confidence": 1,
-      "reason": "Compound field detected with pattern: value \u002B unit",
-      "tolerance": 0
-    },
-    {
-      "type": "Split",
-      "sourceFields": [
-        "CountPcs1"
-      ],
-      "targetField": "CountPcs1Value,CountPcs1Unit",
-      "operation": "Split CountPcs1 into CountPcs1Value and CountPcs1Unit",
-      "confidence": 1,
-      "reason": "Compound field detected with pattern: value \u002B unit",
-      "tolerance": 0
-    },
     {
       "type": "Combine",
       "sourceFields": [
