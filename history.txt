@@ -10,8 +10,10 @@ Implements #188
 Implements #187
 - 
 
+[Commit]
 Implements #186
-- 
+- Update Protocol Analysis Project #56
+  - Add Full Hex/Text Data Log from emulator
 
 [Commit]
 Implements #185
