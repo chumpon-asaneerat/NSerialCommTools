@@ -63,9 +63,7 @@ flowchart TD
 
     G --> H[Stage 5:<br/>Relationship Detection]
 
-    H --> I[Stage 6:<br/>Validation Generation]
-
-    I --> J[Output:<br/>JSON Protocol Definition<br/>with Field Relationships]
+    H --> J[Output:<br/>JSON Protocol Definition<br/>with Field Relationships]
 
     style E2B fill:#FFE4B5
 ```
@@ -1026,102 +1024,6 @@ flowchart TD
 
 ---
 
-### Algorithm 6: Validation Rule Generation
-
-**Goal**: Auto-generate validation rules from sample data
-
-**Input**: Fields with sample values, relationships
-
-**Algorithm**:
-
-```
-FUNCTION GenerateValidationRules(fields, relationships):
-
-    rules = []
-
-    // ═══ 1. Range Validation for Numeric Fields ═══
-
-    numeric_fields = fields.Where(f => f.dataType IN ["Integer", "Decimal"])
-
-    FOR each field in numeric_fields:
-        IF field.sample_values.Count > 0:
-
-            values = field.sample_values.Select(v => ParseNumeric(v))
-
-            min_val = values.Min()
-            max_val = values.Max()
-
-            // Add 10% buffer
-            range_min = min_val - (max_val - min_val) * 0.1
-            range_max = max_val + (max_val - min_val) * 0.1
-
-            // Clamp to reasonable values (0 for weights, etc.)
-            IF field.name.Contains("Weight") OR field.name.Contains("Value"):
-                range_min = Max(0, range_min)
-
-            rules.Add({
-                name: field.name + "Range",
-                type: "Range",
-                field: field.name,
-                min_value: range_min,
-                max_value: range_max,
-                severity: "Error",
-                message: $"{field.name} must be between {range_min} and {range_max}"
-            })
-
-    // ═══ 2. DateTime Range Validation ═══
-
-    datetime_fields = fields.Where(f => f.field_type.Contains("Date"))
-
-    FOR each field in datetime_fields:
-        rules.Add({
-            name: field.name + "Valid",
-            type: "DateTimeRange",
-            field: field.name,
-            min_date: "2020-01-01",
-            max_date: "2099-12-31",
-            severity: "Error",
-            message: $"{field.name} must be between 2020 and 2099"
-        })
-
-    // ═══ 3. Formula Validation from Calculate Relationships ═══
-
-    calc_relationships = relationships.Where(r => r.type == "Calculate")
-
-    FOR each rel in calc_relationships:
-        rules.Add({
-            name: rel.target_field + "Formula",
-            type: "Formula",
-            formula: rel.operation + " = " + rel.target_field,
-            tolerance: 0.01,
-            severity: "Error",
-            message: $"Formula validation: {rel.operation} should equal {rel.target_field}"
-        })
-
-    // ═══ 4. Field Relationship Validation ═══
-
-    // For weight fields, GrossWeight >= TareWeight
-    weight_fields = fields.Where(f => f.name.Contains("Weight"))
-
-    IF weight_fields.Count >= 2:
-        // Assume first is tare, second is gross (or detect from position)
-        tare = weight_fields.FirstOrDefault(f => f.line_number < weight_fields.Max(wf => wf.line_number))
-        gross = weight_fields.FirstOrDefault(f => f.line_number > tare.line_number)
-
-        IF tare != null AND gross != null:
-            rules.Add({
-                name: "GrossVsTare",
-                type: "FieldRelationship",
-                condition: $"{gross.name} >= {tare.name}",
-                severity: "Error",
-                message: "Gross weight must be >= tare weight"
-            })
-
-    RETURN rules
-```
-
----
-
 ## Parsing Strategy Categories
 
 After pattern detection, the analyzer must select the appropriate parsing strategy. There are **5 distinct strategy types**, each suited to different protocol structures.
@@ -1446,7 +1348,7 @@ flowchart TD
 
 ## Proposed Parsing Strategy
 
-### 6-Stage Universal Pipeline
+### 5-Stage Universal Pipeline
 
 ```
 Stage 1: Byte Extraction
@@ -1479,13 +1381,7 @@ Stage 5: Relationship Detection
 ├─ Output: List<FieldRelationship>
 └─ Algorithm: Date+Time detection, formula verification, split detection
     ↓
-Stage 6: Validation Generation
-│
-├─ Input: FieldInfo + Relationships
-├─ Output: List<ValidationRule>
-└─ Algorithm: Range calculation, formula rules, relationship rules
-    ↓
-Final Output: JSON Protocol Definition
+Final Output: JSON Protocol Definition with Field Relationships
 ```
 
 ---
@@ -1598,9 +1494,9 @@ public class AnalysisWarning
 
 ---
 
-**Document Version**: 5.0
-**Last Updated**: 2025-10-21
-**Status**: Universal Algorithm Design + State Machine Strategy
+**Document Version**: 5.1
+**Last Updated**: 2025-10-24
+**Status**: Universal Algorithm Design + State Machine Strategy (ValidationRules Removed)
 **Changes**:
 - v1.0-2.1: Production code based (WRONG APPROACH)
 - v3.0: Production code integrated (STILL WRONG)
@@ -1611,3 +1507,4 @@ public class AnalysisWarning
   - 5 distinct parsing strategy categories
   - Strategy selection decision tree
   - HEX/Text format examples
+- v5.1: **REMOVED** Stage 6 (Validation Generation) - ValidationRules feature cancelled, updated pipeline to 5 stages
