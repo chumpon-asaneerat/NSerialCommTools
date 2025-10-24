@@ -1,589 +1,888 @@
-** CRITICAL: READ THESE DOCUMENTS FIRST BEFORE ANY WORK **
+Check @Prompts\NEXT-SESSION-START-HERE.md and there are some missing infor that you about to 
+create documents but session end.
 
-1. @Documents/ModernDesign/WORK-SUMMARY-2025-10-24-Session-1.md - CURRENT session summary (Parts 1-4)
-2. @Documents/ModernDesign/02-System-Architecture.md - Architecture Principles + Critical Debt (lines 716-1006)
-3. @Documents/ModernDesign/05-JSON-Schema-Design.md - See lines 1094-1183 for correct architecture
-4. @Documents/ModernDesign/00-Requirements-Specification.md - Terminal/Device requirements
+------------------------------
 
-** ⚠️ CRITICAL WARNINGS - DO NOT VIOLATE **
+*** Note 1
+During last session you create files (order by time you create)
+1. WORK-SUMMARY-2025-10-24-Session-2-FINAL.md
+2. WORK-SUMMARY-2025-10-24-Session-2-UPDATED.md
+3. WORK-SUMMARY-2025-10-24-Session-2.md
 
-1. **NO TEMPLATES** - Terminal/Device work with individual field mappings ONLY
-   - Terminal maps: field.name → dataClass.property (one-to-one)
-   - Device outputs: fields sequentially by Order/Position
-   - NO line templates, NO combining logic needed
+In last session I told you to merge these file beceuse you tend to create multiple file with no order instead of append exist file.
+But the session already end before do anything 
 
-2. **NO HARDCODING** - Must be data-driven for ANY protocol
-   - NO switch/case on field types like "WeightKg", "Temperature"
-   - Analyze actual sample data dynamically
-   - Cannot assume protocols have specific field types
+------------------------------
 
-3. **NO v1/v2 FOLDER ACCESS** - Old abandoned code/documents
-   - ❌ 09.App\NLib.Serial.Protocol.Analyzer\v1\**
-   - ❌ Documents\ModernDesign\v1\**
-   - ❌ Documents\ModernDesign\v2\**
+*** Note 2
+This is what you about todo but i interrupt before you done anything because immediately after you compact context 
+you did not response my quesion to show summary what you understand but jump to execute the below task 
 
-4. **FIELDS CAN SHARE SAME LINE** - This is the key understanding!
-   Example: Line "  0.00 kg" has TWO fields:
-   - TareWeight (position 3): parsePattern matches whole line, extracts number
-   - TareUnit (position 4): parsePattern matches whole line, extracts unit
-   Both fields parse from SAME line, map to DIFFERENT properties!
+------------------------------
 
-5. **FIELD NAMES MUST BE UNIQUE BY DEFAULT** - Critical for validation!
-   - Analyzer doesn't know semantic meaning, so uses running numbers: Date1, Date2, WeightKg1, WeightKg2
-   - Same datatype appears multiple times → needs unique names to avoid validation errors
-   - User renames ONLY the fields they need to map to data class properties
-   - Fields user doesn't need (markers, empty lines, reserved) keep default unique names
-   - Example: WeightKg1, WeightKg2, WeightKg3, WeightKg4 (all same pattern, different lines)
-   - User renames: WeightKg1→TareWeight, WeightKg2→GrossWeight, WeightKg3→NetWeight
-   - WeightKg4 stays as-is (maybe duplicate display field, user doesn't need it)
+I'll continue from where we left off. Based on the previous session, I've reviewed the tracking documents and understand we need to implement the two-pass architecture refactor. Let me start with Phase 1: creating the models.
+Update Todos
 
-** SESSION 2025-10-24 PART 1: REVERT TEMPLATE CHANGES **
+Create DetectionResult.cs model
 
-✅ **SUCCESSFULLY REVERTED ALL WRONG CHANGES FROM 2025-10-23**
+Create TerminatorHierarchy.cs model
 
-Fixed the Split relationship export bug by:
-1. ✅ Removed Template property from FieldRelationship.cs
-2. ✅ Removed GenerateLineTemplate() hardcoded method
-3. ✅ Fixed ProtocolDefinitionGenerator.cs filter - now exports all relationships
-4. ✅ Relationships are pure documentation/metadata
+Update TerminatorInfo.cs with Type and Level properties
 
----
+Create ProtocolDetector.cs class
 
-** SESSION 2025-10-24 PART 2: PROPERTY CLARIFICATION & FIXES **
+Refactor TerminatorDetector.cs for hierarchy detection
 
-## Deep Analysis of Properties
+Refactor MessageExtractor.cs to use DetectionResult
 
-### **Q1: Field Names Don't Matter for Protocol Recreation** ✅ CONFIRMED
+Update PatternAnalyzer.cs to use pre-detected patterns
 
-**User is 100% CORRECT!** Field names are irrelevant for protocol recreation:
-- Terminal: parsePattern extracts data → stores in data[field.name]
-- Device: reads data[field.name] → formats with formatString → outputs
-- Mapping to data class is Terminal's config, not protocol definition's concern
+Update MainWindow.xaml.cs pipeline
 
-Whether field is named "WeightKg1Value" or "TareWeight" - protocol recreates identically!
+Test with JIK6CAB data and verify field splitting
 
----
+------------------------------
 
-### **Q2: Missing Features Analysis**
+*** Note 3: The is information during you compact context
 
-**Found 3 properties that were misunderstood:**
+------------------------------
 
-#### **1. Action Property - CLARIFIED** ✅
+This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me chronologically analyze this extensive conversation about protocol analyzer refactoring:
 
-**What it actually does:**
-- NOT for Terminal/Device logic
-- Used ONLY for UI filtering in Protocol Analyzer app
-- `Action = "Skip"` meant "hide from UI editor"
+## Message Flow Analysis:
 
-**Values:**
-- `"Parse"` = Extract data from protocol (for Terminal)
-- `"Validate"` = Check value matches expected (for Terminal)
-- `"Skip"` = **Hide from UI editor** (old usage, now replaced)
+1. **Initial Request**: User asked to check `@Prompts/last_session.txt` - I read and summarized the previous session's work on 2025-10-24, which included:
+   - Revert of template changes
+   - Property clarification (IsSkipped → ShowInEditor)
+   - Empty line export fixes
+   - Discovery of 4 critical architectural TODOs
 
-**Bug found:** Empty lines had `Action = "Skip"` which hid them from UI AND prevented export!
+2. **User chose option 1**: Update documentation to sync with code changes
+   - I updated `04-Data-Models-Design.md` (removed ValidationRules, updated properties)
+   - I updated `03-Parsing-Strategy-Analysis.md` (removed Stage 6)
 
----
+3. **User selected "continue next task"**: I recommended starting with TODO-004 (easiest quick win)
 
-#### **2. Width Property - NOT NEEDED** ❌
+4. **User agreed ("ok")**: I implemented TODO-004 - Dynamic Unit Detection
+   - Replaced hardcoded unit patterns with dynamic detection
+   - Modified `RelationshipDetector.cs` with `IsCompoundFieldDynamic()` method
 
-**User is CORRECT!** Width is NOT needed for modern architecture:
-- Only used in old v1 abandoned code
-- Modern approach uses parsePattern (regex) not positional parsing
-- Device reconstructs by formatting each field individually
-- All exports show `width: 0` because analysis not implemented (and not needed!)
+5. **User agreed to continue ("ok")**: I started TODO-003 - Encoding Detector
+   - Created `EncodingDetector.cs` (440 lines)
+   - Added BOM detection and pattern analysis
+   - Integrated into `PatternAnalyzer.cs`, `FieldAnalyzer.cs`, `ProtocolDefinitionGenerator.cs`
 
-**Conclusion:** Width can stay 0 or be removed entirely
+6. **CRITICAL USER FEEDBACK**: "before that it clean rebuild an run you code. The output is in @Prompts/JIK6CAB_Protocol.json check is the definition file can recreate protocol back"
+   - User tested the code and found it produces same output as before
+   - User identified that split relationships aren't being exported correctly
+   - **IMPORTANT**: User then made critical observation: "from what i see you use regex to parse value so the last task will overwrite all code we work until now. Let dont check it now may be we should complete tasks first"
+   - User advised to defer testing until after completing all refactors
 
----
+7. **User agreed to continue ("ok")**: I started TODO-001/002 - Byte[] Processing
+   - Created `ByteArraySplitter.cs` utility class
+   - Updated `FieldAnalyzer.cs` to accept TerminatorInfo and use byte[] splitting
+   - Updated `MessageExtractor.cs` to use byte[] splitting
+   - Updated `PatternAnalyzer.cs` to pass terminator
 
-#### **3. ValidationRules - DOCUMENTATION ONLY** ✅
+8. **CRITICAL USER REQUEST**: "Let me confirm how it work show me detail process that start from you get filename until complete analyze i want to check your understanding"
+   - I provided detailed pipeline flow from file loading through JSON export
+   - User identified FUNDAMENTAL ARCHITECTURAL FLAW
 
-**User is CORRECT!** ValidationRules are auto-generated suggestions:
-- Min/Max calculated from sample data with +10% buffer
-- NOT enforced by Terminal/Device
-- Purpose: Show developer "expected ranges" during development
-- Actual production validation is in user's application code
+9. **USER'S CRITICAL FEEDBACK**: "I build and try code the result is same as previous code (before change to byte[]) but still has problem to split fields. let note that but i want to make adjustment before fix that problem. The logic that you show me i dont think it should be like that because you must analyze file first to find all message block terminator (if you want to make a quick check but if it can analyze each field terminator in one go is perfect). So your current code may be not properly extract another protocols correctly"
+   - **KEY INSIGHT**: We're splitting BEFORE detecting terminators (wrong order!)
+   - User correctly identified circular dependency problem
 
-**Conclusion:** Keep in JSON as reference, but user's validation is separate
+10. **I confirmed understanding**: "Yes that seem correct way for at least by logical view"
+    - I proposed two-pass architecture: Detect → Split → Analyze
 
----
+11. **USER REQUEST**: "let upadte work summary and create tracking todo file first. I afraid you will missing if not take note and session end"
+    - Created `REFACTOR-TODO-Two-Pass-Architecture.md` (complete implementation plan)
+    - Created `WORK-SUMMARY-2025-10-24-Session-2-UPDATED.md`
+    - Created `NEXT-SESSION-START-HERE.md` (quick reference)
 
-## Major Fix: Renamed IsSkipped → ShowInEditor
+12. **USER FEEDBACK**: "Why you create multiple WORK-SUMMARY files if it in same session you should update exist file. But do it later i still feel you terminator category a bit weird. Now we work with byte[] right? It should has no concepts of line terminator right?. only field termitor are not enuogh?"
+    - User pointed out I shouldn't create multiple summary files
+    - **CRITICAL CORRECTION**: User questioned the "line terminator" concept
+    - User suggested maybe only frame terminator and field terminator are needed
 
-**Problem:** `IsSkipped` property existed but was confusing and unused
+13. **I explained three-level hierarchy**: Frame → Line → Field
+    - User challenged this
 
-**User's brilliant suggestion:** "Add property for UI to know which fields to display"
+14. **USER CORRECTION**: "The Strategy B: State Machine (JIK6CAB) each line are not one field but it can be multiple fields"
+    - I had misunderstood - each line can contain MULTIPLE fields
+    - So three levels ARE needed: Frame → Segments → Fields
 
-**Solution:** Rename `IsSkipped` → `ShowInEditor` for clarity!
+15. **CRITICAL USER FEEDBACK**: "let do not use line work let use sub frame or another work instead. It will lead you to revert to think it as text that is wrong"
+    - User correctly identified that "line" is a TEXT concept
+    - We're working with byte[], not text
+    - Terminology should be binary-first
 
-### **Changes Made:**
+16. **I proposed "segment"**: User approved ("Use segment sound nice let use it")
+    - Final terminology: Frame → Segment → Field
+    - All binary-first thinking, no text concepts
 
-#### **1. Models/FieldInfo.cs**
-```csharp
-// RENAMED property:
-public bool ShowInEditor { get; set; }  // Was: IsSkipped
+17. **Summary request**: User asked for detailed conversation summary
 
-// Constructor default:
-ShowInEditor = true;  // By default, show all fields
-```
+## Key Technical Decisions:
+- Completed TODO-003 (Encoding Detector) and TODO-004 (Dynamic Units)
+- Attempted TODO-001/002 but discovered architectural flaw
+- Architecture must be: Detect (all terminators) → Split (using detected) → Analyze
+- Terminology: Frame/Segment/Field (NOT line - binary-first thinking)
 
-**Clear semantics:**
-- `ShowInEditor = true` → Show in UI field editor (user can rename)
-- `ShowInEditor = false` → Hide from UI (system field)
+## User Feedback Patterns:
+- User correctly identified circular dependency problem
+- User emphasized "analyze first, split second"
+- User corrected text-centric thinking ("line" → "segment")
+- User advised deferring testing until architecture is fixed
+- User requested thorough documentation before session ends
 
----
+Summary:
+## 1. Primary Request and Intent:
 
-#### **2. Analyzers/FieldAnalyzer.cs (line 183-184)**
+The user's primary requests evolved through the session:
 
-**Empty lines now correctly handled:**
-```csharp
-if (samples.All(s => string.IsNullOrWhiteSpace(s)))
-{
-    fieldInfo.FieldType = "Empty";
-    fieldInfo.Action = "Validate";      // ✅ Validate line is empty
-    fieldInfo.ShowInEditor = false;     // ✅ Hide from UI
-    fieldInfo.IncludeInDefinition = true;  // ✅ EXPORT to JSON!
-}
-```
+1. **Initial**: Review previous session's work and continue with architectural debt reduction (4 critical TODOs)
+2. **Documentation Sync**: Update documentation files to match code changes from previous session (remove ValidationRules, update properties)
+3. **TODO-004**: Implement dynamic unit detection (remove hardcoded unit patterns)
+4. **TODO-003**: Implement encoding detector (support UTF-8, UTF-16, international characters)
+5. **TODO-001/002**: Implement byte[] processing throughout (binary-safe architecture)
+6. **CRITICAL PIVOT**: After testing, user identified fundamental architectural flaw - code splits data BEFORE detecting terminators
+7. **Architecture Redesign**: User requested proper two-pass architecture: "you must analyze file first to find all message block terminator"
+8. **Documentation**: Create comprehensive tracking files before session ends to preserve work
+9. **Terminology Correction**: User insisted on binary-first thinking - replace "line" with "segment" to avoid text-centric concepts
 
-**Before:** Action="Skip" → hidden from UI AND not exported ❌
-**After:** Action="Validate" + ShowInEditor=false → exported but hidden ✅
-
----
-
-#### **3. Analyzers/RelationshipDetector.cs (line 156-158)**
-
-**Split parent fields now correctly handled:**
-```csharp
-// After splitting WeightKg1 → WeightKg1Value + WeightKg1Unit:
-field.IncludeInDefinition = false;  // Don't export parent
-field.ShowInEditor = false;         // Hide from UI
-field.Action = "Parse";             // Keep for documentation
-```
-
-**Clear separation of concerns:**
-- `IncludeInDefinition` = controls JSON export
-- `ShowInEditor` = controls UI visibility
-- `Action` = documents what field was used for
+**User's Core Intent**: Fix protocol analyzer to work with ANY protocol by:
+- Detecting patterns from data (not hardcoding)
+- Using binary-safe byte[] processing throughout
+- Analyzing FIRST to find terminators, then splitting (not the reverse)
+- Thinking in binary terms (Frame→Segment→Field), not text terms
 
 ---
 
-#### **4. MainWindow.xaml.cs (line 383, 401)**
+## 2. Key Technical Concepts:
 
-**UI filtering updated:**
-```csharp
-// Analysis Results tab:
-var activeFields = _currentAnalysis.Fields
-    .Where(f => f.ShowInEditor)  // Was: f.Action != "Skip"
-    .ToList();
-
-// Field Editor tab:
-_fields = _currentAnalysis.Fields
-    .Where(f => f.ShowInEditor)  // Clear intent!
-    .ToList();
-```
-
----
-
-## Behavior Matrix After Fix
-
-| Field Type | Action | ShowInEditor | IncludeInDefinition | In JSON? | In UI? |
-|------------|--------|--------------|---------------------|----------|--------|
-| Empty line | Validate | ❌ false | ✅ true | ✅ YES | ❌ NO |
-| Split parent | Parse | ❌ false | ❌ false | ❌ NO | ❌ NO |
-| Split child (Value) | Parse | ✅ true | ✅ true | ✅ YES | ✅ YES |
-| Split child (Unit) | Validate | ✅ true | ✅ true | ✅ YES | ✅ YES |
-| Data field | Parse | ✅ true | ✅ true | ✅ YES | ✅ YES |
-| Marker | Validate | ✅ true | ✅ true | ✅ YES | ✅ YES |
+- **Protocol Analyzer Architecture**: Tool to analyze serial device log files and generate JSON protocol definitions
+- **Byte[] Processing**: Binary-safe data handling throughout pipeline (no premature string conversion)
+- **Encoding Detection**: Auto-detect text encoding (ASCII, UTF-8, UTF-16 LE/BE, UTF-32 LE/BE) using BOM detection and pattern analysis
+- **Dynamic Pattern Detection**: Discover patterns from actual data instead of hardcoding assumptions
+- **Terminator Hierarchy**: Three-level structure for protocol parsing:
+  - **Frame Terminator**: Separates complete protocol messages (e.g., double CRLF, frame markers)
+  - **Segment Terminator**: Separates segments within a frame (e.g., single CRLF in JIK6CAB) - NOT "line terminator" (text concept)
+  - **Field Delimiter**: Separates fields within a segment (e.g., space, comma, tab)
+- **Two-Pass Architecture** (proposed fix):
+  - **Pass 1 (Detection)**: Analyze raw bytes to detect ALL terminators, encoding, markers
+  - **Pass 2 (Extraction)**: Split using detected patterns (no guessing)
+  - **Pass 3 (Analysis)**: Analyze structured data, generate JSON
+- **Circular Dependency Problem**: Current code splits before detecting (MessageExtractor needs terminator but runs before TerminatorDetector)
+- **Binary-First Thinking**: All operations on byte[], string conversion only for display/analysis
+- **Data-Driven Design**: No hardcoded assumptions - discover everything from data
+- **.NET Framework 4.7.2**: Target framework
+- **BOM (Byte Order Mark)**: Special byte sequences indicating encoding (EF BB BF for UTF-8, etc.)
+- **Confidence Scoring**: 0.0-1.0 scores for detection results
 
 ---
 
-## Files Modified in Session
+## 3. Files and Code Sections:
 
-1. ✅ `Models/FieldInfo.cs` - Renamed IsSkipped → ShowInEditor, added default
-2. ✅ `Analyzers/FieldAnalyzer.cs` - Fixed empty lines: Action="Validate", ShowInEditor=false
-3. ✅ `Analyzers/RelationshipDetector.cs` - Fixed split parents: ShowInEditor=false, Action="Parse"
-4. ✅ `MainWindow.xaml.cs` - Updated UI filtering to use ShowInEditor (2 locations)
+### Files Read:
 
----
+#### `d:\Projects\NET\Production\Softbase\Tools\NSerialCommTools\Prompts\last_session.txt`
+- **Why**: User requested review of previous session's work
+- **Content**: Comprehensive summary of 2025-10-24 work including:
+  - Revert of template-based changes
+  - Property clarifications (IsSkipped → ShowInEditor)
+  - Empty line export fixes
+  - Discovery of 4 critical architectural TODOs
+  - Warnings about hardcoded terminators, string-based processing, missing encoding detector
 
-## What This Fixes
+#### `Documents\ModernDesign\04-Data-Models-Design.md`
+- **Why**: Documentation sync - remove ValidationRules references
+- **Changes Made**: 
+  - Removed ValidationRule class entirely
+  - Removed ValidationType and ValidationSeverity enums
+  - Added `Width` and `ShowInEditor` properties to LineDefinition
+  - Updated version to 2.1
 
-✅ **Empty lines now export to JSON** (position counting works)
-✅ **Empty lines hidden from UI editor** (user doesn't see Empty1, Empty2)
-✅ **Split parent fields stay hidden** (user only sees Value+Unit children)
-✅ **Clear separation of concerns** (ShowInEditor=UI, IncludeInDefinition=export, Action=logic)
-✅ **Better code readability** (`if (field.ShowInEditor)` vs `if (field.Action != "Skip")`)
+#### `Documents\ModernDesign\03-Parsing-Strategy-Analysis.md`
+- **Why**: Documentation sync - remove validation stage
+- **Changes Made**:
+  - Removed Algorithm 6 (Validation Rule Generation)
+  - Changed from 6-stage to 5-stage pipeline
+  - Updated version to 5.1
 
----
-
-## Next Steps for Testing
-
-1. Build Protocol Analyzer in Visual Studio
-2. Load JIK6CAB log file
-3. Verify Analysis Results tab shows child fields (not parents or empty lines)
-4. Verify Field Editor shows only editable fields
-5. Export to JSON
-6. Verify JSON contains:
-   - ✅ Empty fields (Empty1, Empty2)
-   - ✅ Split child fields (WeightKg1Value, WeightKg1Unit)
-   - ✅ Split relationships
-   - ❌ Split parent fields (WeightKg1)
-
----
-
-** REMEMBER **
-
-- **ShowInEditor** = controls UI visibility only
-- **IncludeInDefinition** = controls JSON export only
-- **Action** = tells Terminal what to do (Parse/Validate)
-- Field names don't affect protocol recreation - only property mapping
-- Width property not needed for modern regex-based architecture
-- ValidationRules are suggestions only, not enforced
-
----
-
-** SESSION 2025-10-24 PART 3: EMPTY LINE EXPORT FIX & ARCHITECTURAL DEBT **
-
-## The Journey Through Four Layers of Bugs
-
-User reported: Empty lines detected (Raw tab shows 24 rows) but not exported to JSON (only 17 fields)
-
-### Discovery 1: Line Skip Logic Too Aggressive
-**Location**: FieldAnalyzer.cs:86
-**Bug**: Skipped last 2 lines instead of only trailing artifact
-```csharp
-// BEFORE (WRONG):
-if (lineNum >= lines.Length - 2 && string.IsNullOrWhiteSpace(line))
-    continue;  // Skipped last 2 lines!
-
-// AFTER (CORRECT):
-if (lineNum == lines.Length - 1 && line.Length == 0)
-    continue;  // Only skip final empty artifact
-```
-
----
-
-### Discovery 2: Export Using Filtered List (3 Locations!)
-**Location**: MainWindow.xaml.cs (lines 247, 499, 530)
-**Bug**: THREE export functions replaced complete field list with filtered list
-
-**User's Brilliant Insight:**
-> "Are objects in _fields same as objects in _currentAnalysis.Fields? If same when user edit via DataGrid it show update direct to same field object right?"
-
-**User was 100% CORRECT!**
-- `.ToList()` creates NEW list
-- BUT objects inside are SHARED REFERENCES
-- User edits in DataGrid → automatically update objects in _currentAnalysis.Fields
-- No merge code needed!
-
-**Fix:** Remove list replacement entirely
-```csharp
-// REMOVED from all 3 functions:
-_currentAnalysis.Fields = _fields;  // ❌ This was replacing complete with filtered!
-
-// Just use _currentAnalysis.Fields directly - objects are already updated!
-```
-
----
-
-### Discovery 3: Export Filter Check Order Wrong
-**Location**: ProtocolDefinitionGenerator.cs:389
-**Bug**: Checked IncludeInDefinition BEFORE Empty type
-
-```csharp
-// BEFORE (WRONG ORDER):
-if (!f.IncludeInDefinition)  // Checked this first
-    return false;
-if (f.FieldType == "Empty")  // Never reached!
-    return true;
-
-// AFTER (CORRECT ORDER):
-if (f.FieldType == "Empty")  // Check Empty FIRST
-    return true;
-if (!f.IncludeInDefinition)  // Then check include flag
-    return false;
-```
-
-**Why this matters:** Empty fields should ALWAYS export, regardless of IncludeInDefinition flag
-
----
-
-### Results After All Fixes ✅
-
-**Before:**
-- JSON had 17 fields
-- Orders: 0-9, then jumped to 12-13
-- Missing: Empty1 (order 10), Empty2 (order 11)
-
-**After:**
-- JSON has 19 fields
-- Orders: 0-13 complete sequence
-- ✅ Empty1 at order 10
-- ✅ Empty2 at order 11
-- ✅ Position counting works correctly
-- ✅ Protocol structure complete
-
----
-
-## CRITICAL ARCHITECTURAL ISSUES DISCOVERED
-
-### Issue 1: Hardcoded Terminators (CRITICAL)
-
-**User's exact observation:**
-> "I see FieldAnalyzer has some line like `string[] lines = text.Split(new[] { "\r\n", "\n", "\r" })`. I already tell you that you cannot use "\r\n", "\n", "\r" check terminator because some protocol may not use the newline chars to split fields. You already has statistic class you must used that to determine what byte value to use."
-
-**Location**: FieldAnalyzer.cs:79
-```csharp
-string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
-```
-
-**Problem:**
-- Ignores TerminatorDetector results completely
-- Cannot handle protocols with custom delimiters
-- Violates "no hardcoding" principle
-- TerminatorInfo.Bytes property exists but is UNUSED!
-
-**Should use:**
-```csharp
-byte[] terminator = detectedTerminator.Bytes;  // From TerminatorDetector
-List<byte[]> frames = SplitByTerminator(rawBytes, terminator);
-```
-
-**Impact:** Cannot analyze protocols with:
-- Custom terminators (e.g., `\x83\r`, `\x03`)
-- Binary sequences as delimiters
-- Non-standard line breaks
-
----
-
-### Issue 2: String-Based Processing (CRITICAL)
-
-**User's insight:**
-> "Also i see you heavy use string to work. I think you should work with byte[] instead"
-
-**Problem:**
-```
-byte[] → string → Split → Analyze → Export
-         ^^^^^^
-         Loses binary data here!
-```
-
-**Should be:**
-```
-byte[] → Split by terminator → Analyze bytes → Export
-         ^^^^^^^^^^^^^^^^^^^^^^
-         Binary-safe throughout
-
-Convert to string ONLY for display:
-byte[] frame → DetectedEncoding.GetString(frame) → UI display
-```
-
-**Why this matters:**
-- Binary protocols may contain `\x00` (null) bytes → lost in string conversion
-- Protocol terminators may be custom binary sequences (e.g., `\x83\r`)
-- Different encodings (UTF-16, Shift-JIS) require proper detection
-- TerminatorInfo has `byte[] Bytes` property but it's unused!
-
-**Scope:** Major refactoring required (3-5 days)
-
----
-
-### Issue 3: Hardcoded Unit Detection (HIGH)
-
-**User's observation:**
-> "Also i see you detect Kg text what if it is g or another unit your code will not work so dont use hardcode to detect"
-
-**Location**: RelationshipDetector.cs:77-84
+#### `09.App\NLib.Serial.Protocol.Analyzer\Analyzers\RelationshipDetector.cs`
+- **Why**: Implement TODO-004 (dynamic unit detection)
+- **Original Code** (lines 77-84 - REMOVED):
 ```csharp
 var compoundPatterns = new[]
 {
-    new { Name = "WeightKg", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(kg)\s*$") },
-    new { Name = "WeightG", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(g)\s*$") },
-    new { Name = "CountPcs", Pattern = new Regex(@"^\s*(\d+)\s*(pcs)\s*$") },
-    new { Name = "Temperature", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(°C|C)\s*$") },
-    new { Name = "pH", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(pH)\s*$") }
+    new { Name = "WeightKg", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(kg)\s*$", RegexOptions.IgnoreCase) },
+    new { Name = "WeightG", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(g)\s*$", RegexOptions.IgnoreCase) },
+    new { Name = "CountPcs", Pattern = new Regex(@"^\s*(\d+)\s*(pcs)\s*$", RegexOptions.IgnoreCase) },
+    new { Name = "Temperature", Pattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s*(°C|°F|C|F)\s*$", RegexOptions.IgnoreCase) },
+    new { Name = "pH", Pattern = new Regex(@"^\s*(\d+\.?\d*)\s*(pH)\s*$", RegexOptions.IgnoreCase) }
 };
 ```
-
-**Problem:**
-- Cannot detect unknown units (lb, oz, mL, cm, PSI, etc.)
-- Violates "no hardcoding" principle
-- Assumes specific field semantics
-
-**Should be:**
+- **New Code** (dynamic detection method):
 ```csharp
-// Sample data: "1.94 kg", "2.01 kg", "0.00 kg"
-// Detect pattern: NUMBER + SPACE + TEXT
-// Extract unit from actual data: "kg"
-// Generate generic Split: ValueField + UnitField
-// NOT specific to WeightKg/Temperature/etc.
+private bool IsCompoundFieldDynamic(FieldInfo field, out List<string> valueSamples, out List<string> unitSamples, out string detectedPattern)
+{
+    valueSamples = new List<string>();
+    unitSamples = new List<string>();
+    detectedPattern = null;
+
+    if (field.SampleValues == null || field.SampleValues.Count == 0)
+        return false;
+
+    // Generic pattern: NUMBER + optional WHITESPACE + TEXT
+    var genericPattern = new Regex(@"^\s*([+-]?\d+\.?\d*)\s+([^\d\s][^\s]*)?\s*$", RegexOptions.IgnoreCase);
+
+    int matchCount = 0;
+    var detectedUnits = new HashSet<string>();
+
+    foreach (var sample in field.SampleValues)
+    {
+        if (string.IsNullOrWhiteSpace(sample))
+            continue;
+
+        var match = genericPattern.Match(sample);
+        if (match.Success && match.Groups.Count >= 3 && match.Groups[2].Success)
+        {
+            string value = match.Groups[1].Value.Trim();
+            string unit = match.Groups[2].Value.Trim();
+
+            if (!string.IsNullOrEmpty(unit) && !Regex.IsMatch(unit, @"^\d+$"))
+            {
+                valueSamples.Add(value);
+                unitSamples.Add(unit);
+                detectedUnits.Add(unit.ToLowerInvariant());
+                matchCount++;
+            }
+        }
+    }
+
+    double matchRate = field.SampleValues.Count > 0 ? (double)matchCount / field.SampleValues.Count : 0;
+    bool hasEnoughMatches = matchCount >= 3;
+    bool hasReasonableUnitVariety = detectedUnits.Count >= 1 && detectedUnits.Count <= 5;
+
+    if (matchRate > 0.8 && hasEnoughMatches && hasReasonableUnitVariety)
+    {
+        var unitOptions = string.Join("|", detectedUnits.Select(u => Regex.Escape(u)));
+        detectedPattern = $@"^\s*([+-]?\d+\.?\d*)\s+({unitOptions})\s*$";
+        return true;
+    }
+
+    return false;
+}
 ```
 
-**Impact:** Works with ANY unit system, discovers unknown units automatically
+### Files Created:
+
+#### `09.App\NLib.Serial.Protocol.Analyzer\Analyzers\EncodingDetector.cs` (NEW - 440 lines)
+- **Why**: Implement TODO-003 (encoding detection)
+- **Key Methods**:
+```csharp
+public class EncodingDetector
+{
+    public EncodingInfo DetectEncoding(byte[] data)
+    {
+        // Priority 1: Check for BOM (100% confidence)
+        var bomResult = DetectByBOM(data);
+        if (bomResult.Confidence >= 1.0)
+            return bomResult;
+
+        // Priority 2: Analyze byte patterns
+        var patternResults = new List<EncodingInfo>
+        {
+            AnalyzeAsASCII(data),
+            AnalyzeAsUTF8(data),
+            AnalyzeAsUTF16LE(data),
+            AnalyzeAsUTF16BE(data)
+        };
+
+        return patternResults.OrderByDescending(r => r.Confidence).First();
+    }
+
+    private EncodingInfo DetectByBOM(byte[] data)
+    {
+        // UTF-8: EF BB BF
+        if (data.Length >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF)
+            return new EncodingInfo { Encoding = Encoding.UTF8, EncodingName = "UTF-8", Confidence = 1.0 };
+        
+        // UTF-16 LE: FF FE
+        if (data.Length >= 2 && data[0] == 0xFF && data[1] == 0xFE)
+            return new EncodingInfo { Encoding = Encoding.Unicode, EncodingName = "UTF-16LE", Confidence = 1.0 };
+        
+        // ... more BOM checks
+    }
+}
+```
+
+#### `09.App\NLib.Serial.Protocol.Analyzer\Utilities\ByteArraySplitter.cs` (NEW - 280 lines)
+- **Why**: Binary-safe byte array splitting utility for TODO-001/002
+- **Key Method**:
+```csharp
+public static class ByteArraySplitter
+{
+    public static List<byte[]> Split(byte[] data, byte[] terminator, SplitOptions options = SplitOptions.None)
+    {
+        if (data == null || data.Length == 0)
+            return new List<byte[]>();
+
+        if (terminator == null || terminator.Length == 0)
+            return new List<byte[]> { data };
+
+        var result = new List<byte[]>();
+        int startIndex = 0;
+
+        for (int i = 0; i <= data.Length - terminator.Length; i++)
+        {
+            if (MatchesAt(data, terminator, i))
+            {
+                int segmentLength = i - startIndex;
+                
+                if (segmentLength > 0 || options == SplitOptions.None)
+                {
+                    byte[] segment = new byte[segmentLength];
+                    if (segmentLength > 0)
+                        Array.Copy(data, startIndex, segment, 0, segmentLength);
+                    result.Add(segment);
+                }
+
+                startIndex = i + terminator.Length;
+                i += terminator.Length - 1;
+            }
+        }
+
+        // Add remaining data
+        if (startIndex < data.Length)
+        {
+            int remainingLength = data.Length - startIndex;
+            byte[] remaining = new byte[remainingLength];
+            Array.Copy(data, startIndex, remaining, 0, remainingLength);
+            if (remainingLength > 0 || options == SplitOptions.None)
+                result.Add(remaining);
+        }
+
+        return result;
+    }
+}
+```
+
+#### `Documents\ModernDesign\REFACTOR-TODO-Two-Pass-Architecture.md` (NEW)
+- **Why**: User requested tracking document before session ends
+- **Content**: Complete implementation plan for two-pass architecture including:
+  - Problem explanation (circular dependency)
+  - Correct architecture design (Detect → Split → Analyze)
+  - Implementation checklist (7 phases)
+  - Terminator detection algorithm
+  - Test cases and success criteria
+
+#### `Documents\ModernDesign\WORK-SUMMARY-2025-10-24-Session-2-UPDATED.md` (NEW)
+- **Why**: Document session work
+- **Content**: Comprehensive summary of completed work, architectural flaw discovery, next steps
+
+#### `Prompts\NEXT-SESSION-START-HERE.md` (NEW)
+- **Why**: Quick reference for next session
+- **Content**: What's working, what's broken, implementation checklist, test data location
+
+### Files Modified:
+
+#### `Models\AnalysisResult.cs`
+- **Why**: Store encoding detection results
+- **Changes**:
+```csharp
+public class AnalysisResult
+{
+    // ... existing properties ...
+    
+    // NEW - Encoding detection results
+    public System.Text.Encoding DetectedEncoding { get; set; }
+    public string EncodingName { get; set; }
+    public double EncodingConfidence { get; set; }
+}
+```
+
+#### `Analyzers\PatternAnalyzer.cs`
+- **Why**: Integrate encoding detection (Phase 0)
+- **Changes**:
+```csharp
+public AnalysisResult Analyze(LogData logData)
+{
+    var result = new AnalysisResult { MessageCount = logData.MessageCount };
+    
+    // Phase 0: Encoding detection (NEW)
+    if (logData.Messages.Count > 0)
+    {
+        var encodingInfo = _encodingDetector.DetectEncoding(logData.Messages[0]);
+        result.DetectedEncoding = encodingInfo.Encoding;
+        result.EncodingName = encodingInfo.EncodingName;
+        result.EncodingConfidence = encodingInfo.Confidence;
+    }
+    
+    // ... rest of analysis ...
+}
+```
+
+#### `Analyzers\FieldAnalyzer.cs`
+- **Why**: Use detected encoding and terminator for byte[] splitting
+- **Changes**:
+```csharp
+// Updated signature
+public List<FieldInfo> Analyze(LogData logData, DelimiterInfo delimiter, 
+                                Encoding encoding = null, TerminatorInfo terminator = null)
+{
+    Encoding textEncoding = encoding ?? Encoding.ASCII;
+    
+    // Check multi-line using detected terminator
+    bool isMultiLine = CheckIfMultiLine(logData, textEncoding, terminator);
+    
+    if (isMultiLine)
+        return AnalyzeMultiLineFrames(logData, textEncoding, terminator);
+    // ...
+}
+
+// Binary-safe splitting
+private List<FieldInfo> AnalyzeMultiLineFrames(LogData logData, Encoding encoding, TerminatorInfo terminator)
+{
+    byte[][] terminatorBytes = GetTerminatorBytes(terminator, encoding);
+    
+    foreach (var message in logData.Messages)
+    {
+        // BINARY-SAFE: Split bytes by detected terminator
+        List<byte[]> lineBytes = ByteArraySplitter.SplitByAny(message, terminatorBytes, ...);
+        
+        // Convert to string ONLY after splitting
+        string[] lines = lineBytes.Select(bytes => encoding.GetString(bytes)).ToArray();
+        
+        // ... analyze fields ...
+    }
+}
+
+private byte[][] GetTerminatorBytes(TerminatorInfo terminator, Encoding encoding)
+{
+    // Use detected terminator if confidence >= 0.8
+    if (terminator != null && terminator.Bytes != null && terminator.Confidence >= 0.8)
+        return new byte[][] { terminator.Bytes };
+    
+    // Fallback to common terminators
+    return new byte[][]
+    {
+        encoding.GetBytes("\r\n"),
+        encoding.GetBytes("\n"),
+        encoding.GetBytes("\r")
+    };
+}
+```
+
+#### `Parsers\MessageExtractor.cs`
+- **Why**: Accept terminator parameter and use byte[] splitting
+- **Changes**:
+```csharp
+public LogData ExtractMessages(byte[] rawBytes, TerminatorInfo terminator = null, Encoding encoding = null)
+{
+    Encoding textEncoding = encoding ?? Encoding.ASCII;
+    byte[][] terminatorBytes = GetTerminatorBytes(terminator, textEncoding);
+    
+    // BINARY-SAFE: Split bytes by terminator
+    List<byte[]> lineBytes = ByteArraySplitter.SplitByAny(rawBytes, terminatorBytes, ...);
+    
+    // Convert to strings ONLY for marker detection
+    string[] lines = lineBytes.Select(bytes => textEncoding.GetString(bytes)).ToArray();
+    
+    // ... rest of extraction ...
+}
+```
+
+#### `Analyzers\ProtocolDefinitionGenerator.cs`
+- **Why**: Export detected encoding to JSON
+- **Changes**:
+```csharp
+private void GenerateMetadata(ProtocolDefinition definition, string deviceName, AnalysisResult analysis)
+{
+    definition.DeviceName = deviceName;
+    definition.Version = "1.0";
+    definition.GeneratedDate = DateTime.Now;
+    
+    // Use detected encoding (NEW)
+    definition.Encoding = analysis.EncodingName ?? "ASCII";
+    
+    definition.Description = $"Auto-generated protocol definition for {definition.DeviceName}";
+}
+```
+
+#### `Documents\ModernDesign\02-System-Architecture.md`
+- **Why**: Mark TODO-003 and TODO-004 as complete
+- **Changes**: Updated TODO sections to show completed status with implementation details
 
 ---
 
-## ValidationRules Feature REMOVED
+## 4. Errors and Fixes:
 
-**User's decision:** "yes remove it"
+### Error 1: Architectural Flaw - Circular Dependency
+- **Description**: Code splits data BEFORE detecting terminators
+  - MessageExtractor runs first, needs to split by terminator
+  - TerminatorDetector runs second, analyzes already-split data
+  - MessageExtractor has to GUESS terminators (\r\n, \n, \r)
+- **How Discovered**: User tested code after TODO-001/002 implementation and found same broken output
+- **User Feedback**: "The logic that you show me i dont think it should be like that because you must analyze file first to find all message block terminator"
+- **Root Cause**: Wrong order - should be Detect → Split, not Split → Detect
+- **Fix Planned**: Two-pass architecture:
+  - Pass 1: Detect all terminators from raw bytes
+  - Pass 2: Split using detected terminators
+  - Pass 3: Analyze structured data
 
-**Reasons:**
-- ❌ Not used by Terminal/Device runtime code
-- ❌ Auto-generated ranges unreliable (based on limited sample data)
-- ❌ Hardcoded assumptions (e.g., "Gross >= Tare") don't apply universally
-- ❌ Added complexity with zero runtime benefit
-- ✅ Users implement actual validation in their application layer
+### Error 2: Text-Centric Terminology
+- **Description**: Using "line terminator" concept when working with byte[]
+- **User Feedback**: "let do not use line work let use sub frame or another work instead. It will lead you to revert to think it as text that is wrong"
+- **Why Wrong**: "Line" is a text concept, we're working with binary data
+- **Fix Applied**: Changed terminology to binary-first thinking:
+  - "Line terminator" → "Segment terminator"
+  - "Line" → "Segment"
+  - All operations on byte[], string only for display
 
-**What was removed:**
-1. ✅ `ValidationRules` property from AnalysisResult.cs
-2. ✅ `ValidationRules` property from ProtocolDefinition.cs
-3. ✅ ValidationRuleGenerator call from PatternAnalyzer.cs
-4. ✅ ExportValidationRules method from ProtocolDefinitionGenerator.cs
-5. ✅ UI display of rule counts in MainWindow.xaml.cs
-6. ✅ JSON no longer contains "validationRules" section
+### Error 3: Multiple Work Summary Files
+- **Description**: Created both `WORK-SUMMARY-2025-10-24-Session-2-FINAL.md` and `WORK-SUMMARY-2025-10-24-Session-2-UPDATED.md`
+- **User Feedback**: "Why you create multiple WORK-SUMMARY files if it in same session you should update exist file"
+- **Fix Needed**: Consolidate into single summary file (deferred per user's "do it later")
 
-**ValidationRuleGenerator class still exists** for reference but is not called
+### Error 4: Misunderstanding JIK6CAB Structure
+- **Initial Understanding**: Each segment (line) is ONE field
+- **User Correction**: "The Strategy B: State Machine (JIK6CAB) each line are not one field but it can be multiple fields"
+- **Correct Understanding**: 
+  - Frame → 10 segments (split by CRLF)
+  - Each segment → multiple fields (split by space)
+  - Example: "  0.00 kg" → 2 fields (value="0.00", unit="kg")
+- **Fix Applied**: Updated architecture to three-level hierarchy: Frame → Segment → Field
 
----
-
-## Documentation Updates
-
-### Updated: 02-System-Architecture.md
-
-**Added Section: Architecture Principles**
-1. No Hardcoding Protocol Assumptions
-   - Documents hardcoded terminator issue
-   - Documents hardcoded unit pattern issue
-   - Shows correct approach
-2. Byte-Level Processing Required
-   - Explains why string-based processing is wrong
-   - Shows correct byte[] approach
-3. Data-Driven Field Detection
-   - No assumptions about field semantics
-4. Separation of Concerns
-   - ShowInEditor → UI visibility
-   - IncludeInDefinition → JSON export
-   - Action → Terminal logic
-5. ValidationRules Removed
-   - Documents removal decision
-   - Explains why it was removed
-
-**Added Section: Critical Architectural Debt**
-- TODO-001: Use detected terminator (CRITICAL)
-- TODO-002: Byte[] processing redesign (CRITICAL)
-- TODO-003: Encoding detector (HIGH)
-- TODO-004: Remove hardcoded units (HIGH)
-- TODO-005: Width analysis (LOW/DEFERRED)
+### Error 5: Premature Implementation
+- **Description**: Started implementing byte[] processing (TODO-001/002) without fixing architecture
+- **User Feedback**: "from what i see you use regex to parse value so the last task will overwrite all code we work until now. Let dont check it now may be we should complete tasks first"
+- **User Wisdom**: Defer testing until architecture is correct
+- **Lesson**: Fix root cause (architecture) before adding features
 
 ---
 
-## Key Insights from This Session
+## 5. Problem Solving:
 
-### 1. Object References Matter
-**User's insight saved unnecessary work!**
-- `.ToList()` creates new list but shares object references
-- DataGrid edits → automatically update shared objects
-- No merge code needed
+### Problems Solved:
 
-### 2. Check Order Matters
-- Filter conditions should check special cases FIRST
-- Empty fields need special treatment before general rules
+1. **TODO-004: Dynamic Unit Detection** ✅
+   - Problem: Hardcoded unit patterns (only kg, g, pcs, °C, pH)
+   - Solution: Generic regex pattern that detects ANY unit from data
+   - Pattern: `^\s*([+-]?\d+\.?\d*)\s+([^\d\s][^\s]*)?\s*Analysis:
+Let me chronologically analyze this extensive conversation about protocol analyzer refactoring:
 
-### 3. Byte[] vs String Architecture
-**Critical flaw identified:**
-- Current: byte[] → string → process → export
-- Should be: byte[] → process → export (string only for display)
+## Message Flow Analysis:
 
-### 4. Use Detected Values, Don't Hardcode
-**Three violations found:**
-1. Terminators: Uses `"\r\n", "\n", "\r"` instead of detected terminator
-2. Units: Hardcoded "kg", "g", "pcs" instead of extracting from data
-3. Encoding: Assumes ASCII instead of detecting
+1. **Initial Request**: User asked to check `@Prompts/last_session.txt` - I read and summarized the previous session's work on 2025-10-24, which included:
+   - Revert of template changes
+   - Property clarification (IsSkipped → ShowInEditor)
+   - Empty line export fixes
+   - Discovery of 4 critical architectural TODOs
 
-### 5. Property Separation is Critical
-- `ShowInEditor` → UI visibility only
-- `IncludeInDefinition` → JSON export control
-- `Action` → Terminal logic (Parse/Validate)
+2. **User chose option 1**: Update documentation to sync with code changes
+   - I updated `04-Data-Models-Design.md` (removed ValidationRules, updated properties)
+   - I updated `03-Parsing-Strategy-Analysis.md` (removed Stage 6)
+
+3. **User selected "continue next task"**: I recommended starting with TODO-004 (easiest quick win)
+
+4. **User agreed ("ok")**: I implemented TODO-004 - Dynamic Unit Detection
+   - Replaced hardcoded unit patterns with dynamic detection
+   - Modified `RelationshipDetector.cs` with `IsCompoundFieldDynamic()` method
+
+5. **User agreed to continue ("ok")**: I started TODO-003 - Encoding Detector
+   - Created `EncodingDetector.cs` (440 lines)
+   - Added BOM detection and pattern analysis
+   - Integrated into `PatternAnalyzer.cs`, `FieldAnalyzer.cs`, `ProtocolDefinitionGenerator.cs`
+
+6. **CRITICAL USER FEEDBACK**: "before that it clean rebuild an run you code. The output is in @Prompts/JIK6CAB_Protocol.json check is the definition file can recreate protocol back"
+   - User tested the code and found it produces same output as before
+   - User identified that split relationships aren't being exported correctly
+   - **IMPORTANT**: User then made critical observation: "from what i see you use regex to parse value so the last task will overwrite all code we work until now. Let dont check it now may be we should complete tasks first"
+   - User advised to defer testing until after completing all refactors
+
+7. **User agreed to continue ("ok")**: I started TODO-001/002 - Byte[] Processing
+   - Created `ByteArraySplitter.cs` utility class
+   - Updated `FieldAnalyzer.cs` to accept TerminatorInfo and use byte[] splitting
+   - Updated `MessageExtractor.cs` to use byte[] splitting
+   - Updated `PatternAnalyzer.cs` to pass terminator
+
+8. **CRITICAL USER REQUEST**: "Let me confirm how it work show me detail process that start from you get filename until complete analyze i want to check your understanding"
+   - I provided detailed pipeline flow from file loading through JSON export
+   - User identified FUNDAMENTAL ARCHITECTURAL FLAW
+
+9. **USER'S CRITICAL FEEDBACK**: "I build and try code the result is same as previous code (before change to byte[]) but still has problem to split fields. let note that but i want to make adjustment before fix that problem. The logic that you show me i dont think it should be like that because you must analyze file first to find all message block terminator (if you want to make a quick check but if it can analyze each field terminator in one go is perfect). So your current code may be not properly extract another protocols correctly"
+   - **KEY INSIGHT**: We're splitting BEFORE detecting terminators (wrong order!)
+   - User correctly identified circular dependency problem
+
+10. **I confirmed understanding**: "Yes that seem correct way for at least by logical view"
+    - I proposed two-pass architecture: Detect → Split → Analyze
+
+11. **USER REQUEST**: "let upadte work summary and create tracking todo file first. I afraid you will missing if not take note and session end"
+    - Created `REFACTOR-TODO-Two-Pass-Architecture.md` (complete implementation plan)
+    - Created `WORK-SUMMARY-2025-10-24-Session-2-UPDATED.md`
+    - Created `NEXT-SESSION-START-HERE.md` (quick reference)
+
+12. **USER FEEDBACK**: "Why you create multiple WORK-SUMMARY files if it in same session you should update exist file. But do it later i still feel you terminator category a bit weird. Now we work with byte[] right? It should has no concepts of line terminator right?. only field termitor are not enuogh?"
+    - User pointed out I shouldn't create multiple summary files
+    - **CRITICAL CORRECTION**: User questioned the "line terminator" concept
+    - User suggested maybe only frame terminator and field terminator are needed
+
+13. **I explained three-level hierarchy**: Frame → Line → Field
+    - User challenged this
+
+14. **USER CORRECTION**: "The Strategy B: State Machine (JIK6CAB) each line are not one field but it can be multiple fields"
+    - I had misunderstood - each line can contain MULTIPLE fields
+    - So three levels ARE needed: Frame → Segments → Fields
+
+15. **CRITICAL USER FEEDBACK**: "let do not use line work let use sub frame or another work instead. It will lead you to revert to think it as text that is wrong"
+    - User correctly identified that "line" is a TEXT concept
+    - We're working with byte[], not text
+    - Terminology should be binary-first
+
+16. **I proposed "segment"**: User approved ("Use segment sound nice let use it")
+    - Final terminology: Frame → Segment → Field
+    - All binary-first thinking, no text concepts
+
+17. **Summary request**: User asked for detailed conversation summary
+
+## Key Technical Decisions:
+- Completed TODO-003 (Encoding Detector) and TODO-004 (Dynamic Units)
+- Attempted TODO-001/002 but discovered architectural flaw
+- Architecture must be: Detect (all terminators) → Split (using detected) → Analyze
+- Terminology: Frame/Segment/Field (NOT line - binary-first thinking)
+
+## User Feedback Patterns:
+- User correctly identified circular dependency problem
+- User emphasized "analyze first, split second"
+- User corrected text-centric thinking ("line" → "segment")
+- User advised deferring testing until architecture is fixed
+- User requested thorough documentation before session ends
+
+   - Validation: 80%+ match rate, 3+ samples, 1-5 unique units
+   - Result: Works with lb, oz, mL, PSI, bar, custom units automatically
+
+2. **TODO-003: Encoding Detection** ✅
+   - Problem: Hardcoded ASCII assumption everywhere
+   - Solution: EncodingDetector class with BOM detection and pattern analysis
+   - Detects: ASCII, UTF-8, UTF-16 LE/BE, UTF-32 LE/BE
+   - Confidence scoring: 1.0 for BOM, 0.95+ for pattern analysis
+   - Result: Can handle international characters (Chinese, Japanese, Arabic)
+
+3. **Documentation Sync** ✅
+   - Problem: Docs out of sync with code (ValidationRules removed, properties changed)
+   - Solution: Updated docs to v2.1 and v5.1 with correct information
+
+### Ongoing Troubleshooting:
+
+1. **Architectural Refactor - Two-Pass System** (BLOCKED - needs implementation)
+   - Problem: Circular dependency (split before detect)
+   - Current State: Architecture designed, documented, ready to implement
+   - Blocking Issue: Cannot properly split fields until architecture is fixed
+   - Next Steps: Implement in phases per `REFACTOR-TODO-Two-Pass-Architecture.md`
+
+2. **Field Splitting Not Working** (BLOCKED by architecture)
+   - Observed: JIK6CAB fields not splitting correctly
+   - Root Cause: Wrong terminator detection order
+   - Status: Deferred until two-pass architecture implemented
+
+3. **Terminator Hierarchy Definition** (IN PROGRESS - terminology refined)
+   - Challenge: Define proper levels for protocol parsing
+   - Solution Evolved:
+     - Level 1: Frame terminator (message boundaries)
+     - Level 2: Segment terminator (chunks within frame) - NOT "line"
+     - Level 3: Field delimiter (fields within segment)
+   - Status: Terminology agreed upon, implementation pending
 
 ---
 
-## Files Modified in Part 3
+## 6. All User Messages:
 
-1. ✅ `FieldAnalyzer.cs` - Fixed line skip logic (line 87)
-2. ✅ `MainWindow.xaml.cs` - Removed list replacement (3 locations: 247, 499, 530)
-3. ✅ `ProtocolDefinitionGenerator.cs` - Fixed filter check order (line 389)
-4. ✅ `AnalysisResult.cs` - Removed ValidationRules property
-5. ✅ `ProtocolDefinition.cs` - Removed ValidationRules property
-6. ✅ `PatternAnalyzer.cs` - Removed ValidationRuleGenerator call
-7. ✅ `ProtocolDefinitionGenerator.cs` - Removed ExportValidationRules method
-8. ✅ `MainWindow.xaml.cs` - Removed rule count from status message
-9. ✅ `Documents/ModernDesign/02-System-Architecture.md` - Added Architecture Principles + Critical Architectural Debt sections
-
----
-
-## REMEMBER FOR NEXT SESSION
-
-1. **Object References:** `.ToList()` creates new list but objects are shared
-2. **Byte[] Processing:** Need major refactoring to work with byte[] throughout
-3. **Use Detected Values:** Don't hardcode terminators, encodings, or units
-4. **Property Separation:** ShowInEditor (UI), IncludeInDefinition (export), Action (logic)
-5. **ValidationRules Removed:** Users implement validation in application layer
-6. **Check Order:** Special cases (Empty) should be checked FIRST in filters
+1. "Check @Prompts/last_session.txt"
+2. "1" (chose option to update documentation)
+3. "continue next task"
+4. "ok" (agreed to TODO-004)
+5. "ok" (agreed to TODO-003)
+6. "before that it clean rebuild an run you code. The output is in @Prompts/JIK6CAB_Protocol.json check is the definition file can recreate protocol back"
+7. "Wait from what i see you use regex to parse value so the last task will overwrite all code we work until now. Let dont check it now may be we should complete tasks first"
+8. "ok" (agreed to continue with TODO-001/002)
+9. "Let me confirm how it work show me detail process that start from you get filename until complete analyze i want to check your understanding"
+10. "I build and try code the result is same as previous code (before change to byte[]) but still has problem to split fields. let note that but i want to make adjustment before fix that problem. The logic that you show me i dont think it should be like that because you must analyze file first to find all message block terminator (if you want to make a quick check but if it can analyze each field terminator in one go is perfect). So your current code may be not properly extract another protocols correctly"
+11. "Yes that seem correct way for at least by logical view"
+12. "let upadte work summary and create tracking todo file first. I afraid you will missing if not take note and session end"
+13. "Why you create multiple WORK-SUMMARY files if it in same session you should update exist file. But do it later i still feel you terminator category a bit weird. Now we work with byte[] right? It should has no concepts of line terminator right?. only field termitor are not enuogh?"
+14. "The Strategy B: State Machine (JIK6CAB) each line are not one field but it can be multiple fields"
+15. "let do not use line work let use sub frame or another work instead. It will lead you to revert to think it as text that is wrong"
+16. "Use segment sound nice let use it (sub frame is too long)" followed by summary request
 
 ---
 
-## TODO Items for Future Sessions
+## 7. Pending Tasks:
 
-**CRITICAL Priority:**
-- TODO-001: Use detected terminator instead of hardcoded split
-- TODO-002: Redesign for byte[] processing throughout
+1. **CRITICAL: Implement Two-Pass Architecture** (documented in `REFACTOR-TODO-Two-Pass-Architecture.md`)
+   - Phase 1: Create Models (DetectionResult, TerminatorHierarchy)
+   - Phase 2: Create ProtocolDetector class (Pass 1 - Detection)
+   - Phase 3: Refactor TerminatorDetector (detect ALL terminators from raw bytes)
+   - Phase 4: Refactor MessageExtractor (use DetectionResult, no guessing)
+   - Phase 5: Update PatternAnalyzer (use pre-detected patterns)
+   - Phase 6: Update MainWindow pipeline (Detect → Extract → Analyze)
+   - Phase 7: Test with JIK6CAB data
 
-**HIGH Priority:**
-- TODO-003: Add encoding detector and use detected encoding
-- TODO-004: Remove hardcoded unit detection patterns
+2. **Consolidate Work Summary Files** (user said "do it later")
+   - Remove duplicate summary file
+   - Keep single comprehensive version
 
-**LOW Priority:**
-- TODO-005: Width analysis (deferred - not needed for current architecture)
-
----
-
-## User's Key Feedback Throughout Session
-
-1. Confirmed field names don't matter for protocol recreation ✅
-2. Caught object reference sharing (saved unnecessary merge code) ✅
-3. Identified hardcoded terminator issues ✅
-4. Suggested byte[] processing instead of string ✅
-5. Pointed out hardcoded unit detection ✅
-6. Decided to remove ValidationRules entirely ✅
-7. Questioned document organization (update existing vs create new) ✅
+3. **Verify All TODOs After Refactor**
+   - Re-test TODO-003 (encoding detection)
+   - Re-test TODO-004 (dynamic unit detection)
+   - Verify byte[] processing is binary-safe
+   - Verify terminators are detected, not guessed
+   - Verify fields split correctly in JIK6CAB
 
 ---
 
-## 🔔 IMPORTANT: Design Documents Need Updates
+## 8. Current Work:
 
-**CRITICAL**: The following design documents are OUT OF SYNC with the code after this session's changes:
+**Immediately before summary request**, I was finalizing the terminology correction with the user regarding the three-level hierarchy for protocol parsing.
 
-### Must Update in Next Session:
+**Context**: After discovering the architectural flaw and creating documentation, the user challenged my use of "line terminator" as being too text-centric for binary data processing.
 
-**1. Documents/ModernDesign/04-Data-Models-Design.md** (CRITICAL - 8 locations)
-- Line 911: Remove `ValidationRules` property from ProtocolDefinition
-- Line 935: Remove from constructor
-- Lines 1306-1400: Remove entire ValidationRule class definition
-- Line 1937: Remove from feature list
-- Line 1971: Update version history
-- Add deprecation note
-- Note: `IsSkipped` renamed to `ShowInEditor`
-- Note: Width property is optional
+**Final Agreement Reached**:
+```csharp
+// Three-level hierarchy using binary-first terminology:
+public class DetectionResult
+{
+    // Encoding (for display only, not splitting)
+    public Encoding DetectedEncoding { get; set; }
+    
+    // Level 1: Frame boundaries (separates complete messages)
+    public byte[] FrameTerminator { get; set; }
+    
+    // Level 2: Segment boundaries (chunks within frame) - NOT "line"
+    public byte[] SegmentTerminator { get; set; }
+    public bool HasSegmentStructure { get; set; }
+    
+    // Level 3: Field boundaries (data within segment)
+    public byte[] FieldDelimiter { get; set; }
+    public bool HasFieldDelimiter { get; set; }
+    
+    public ProtocolStructure Structure { get; set; }
+}
 
-**2. Documents/ModernDesign/03-Parsing-Strategy-Analysis.md** (MINOR - 2 locations)
-- Line 1038-1040: Remove GenerateValidationRules function
-- Line 1484-1486: Remove ValidationRule from output
-- Add note about validation being user responsibility
+public enum ProtocolStructure
+{
+    FlatDelimited,           // CSV: Frame only, split by delimiter
+    SegmentedDelimited,      // JIK6CAB: Frame→Segments→Fields
+    FlatFixedPosition,       // Frame only, fixed positions
+    SegmentedFixedPosition,  // Frame→Segments, fixed positions
+    Binary                   // Pure binary, no delimiters
+}
+```
 
-**Already Updated**:
-- ✅ 02-System-Architecture.md (Architecture Principles + Critical Debt)
-- ✅ 05-JSON-Schema-Design.md (no changes needed)
-- ✅ 06-Protocol-Analyzer-Complete-UI.md (no changes needed)
+**User's Quote Accepting This**: "Use segment sound nice let use it (sub frame is too long)"
 
-**Reference**: See WORK-SUMMARY-2025-10-24-Session-1.md lines 1218-1273 for complete details
+**What Was Being Worked On**: Refining the data model for the two-pass architecture refactor, specifically correcting terminology from text-centric ("line") to binary-centric ("segment") concepts.
+
+**Why This Matters**: The terminology directly affects how we think about the problem. "Line" implies text processing, while "segment" correctly represents binary data chunks. This correction prevents reverting to text-first thinking during implementation.
+
+**JIK6CAB Example with Correct Terminology**:
+```
+byte[] rawBytes (5000 bytes)
+  ↓ Split by FrameTerminator: [0x0D, 0x0A, 0x0D, 0x0A] (double CRLF)
+List<byte[]> frames (5 frames of ~120 bytes each)
+  ↓ Split by SegmentTerminator: [0x0D, 0x0A] (single CRLF)
+List<List<byte[]>> segments per frame (10 segments per frame)
+  ↓ Split by FieldDelimiter: [0x20] (space)
+List<List<List<byte[]>>> fields per segment per frame
+
+Result for Frame 0:
+  Segment 0: ["  0.00", "kg"]   ← 2 fields
+  Segment 1: ["  1.94", "kg"]   ← 2 fields
+  ...
+  Segment 9: ["  1.94", "kg"]   ← 2 fields
+```
+
+---
+
+## 9. Optional Next Step:
+
+**DO NOT proceed with implementation yet** - the user requested a summary, which suggests they may be ending the session or need to review the current state.
+
+**If continuing**, the next step would be:
+
+**Phase 1 of Two-Pass Architecture Refactor**: Create the DetectionResult model
+
+**Direct Quote from Most Recent Work**:
+From my last response before summary: "Using 'segment' instead of 'line' keeps us in binary-first thinking: **Frame**: Complete message, **Segment/Sub-Frame**: Chunk within frame, **Field**: Data within segment. All splitting happens on `byte[]`, using byte patterns. String conversion only happens AFTER splitting for display/analysis."
+
+**Specific Next Action**: Create `Models\DetectionResult.cs` with the agreed-upon structure:
+```csharp
+public class DetectionResult
+{
+    public Encoding DetectedEncoding { get; set; }
+    public string EncodingName { get; set; }
+    public double EncodingConfidence { get; set; }
+    
+    public byte[] FrameTerminator { get; set; }
+    public double FrameTerminatorConfidence { get; set; }
+    
+    public byte[] SegmentTerminator { get; set; }
+    public double SegmentTerminatorConfidence { get; set; }
+    public bool HasSegmentStructure { get; set; }
+    
+    public byte[] FieldDelimiter { get; set; }
+    public double FieldDelimiterConfidence { get; set; }
+    public bool HasFieldDelimiter { get; set; }
+    
+    public ProtocolStructure Structure { get; set; }
+    public double OverallConfidence { get; set; }
+}
+```
+
+**However**, given that the user requested a summary, it's likely they want to pause here and review the comprehensive documentation that was created (`REFACTOR-TODO-Two-Pass-Architecture.md`, `NEXT-SESSION-START-HERE.md`) before proceeding with the refactor..
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.
+
+------------------------------
+
+*** Note 4
+
+- This is from your last discussion with me to summary about my question 
+Q: I still feel you terminator category a bit weird. Now we work with byte[] right? It should has no concepts of line terminator right?. only field termitor are not enuogh?
+
+So final summary is 
+
+Binary-First Mental Model
+Three-Level Hierarchy:
+Frame - Complete protocol message (one transmission cycle)
+Segment - Chunk within a frame (NOT "line" - that's text-thinking)
+Field - Individual data element within a segment
+Key Principles:
+Work with byte[] throughout the pipeline
+Convert to string ONLY for display/analysis, NOT for splitting
+Detect patterns from raw bytes BEFORE splitting
+Use detected byte patterns for splitting (no guessing)
+Architecture Flow:
+Pass 1: DETECT
+  Raw bytes → Analyze patterns → DetectionResult
+  (Find frame terminator, segment terminator, field delimiter, encoding)
+
+Pass 2: SPLIT  
+  Raw bytes + DetectionResult → Split into structured data
+  (Use detected patterns, no hardcoding)
+
+Pass 3: ANALYZE
+  Structured data → Generate protocol definition
+JIK6CAB Example:
+Frame terminator: [0x0D, 0x0A, 0x0D, 0x0A] (double CRLF)
+Segment terminator: [0x0D, 0x0A] (single CRLF)
+Field delimiter: [0x20] (space)
+Structure: Frame → 10 Segments → Multiple Fields per Segment
+Current Problem:
+Code splits BEFORE detecting (wrong order)
+MessageExtractor guesses terminators instead of using detected ones
+This causes field splitting to fail
+
+------------------------------
