@@ -15,6 +15,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
     {
         #region Internal Variables
 
+        private readonly EncodingDetector _encodingDetector;
         private readonly TerminatorDetector _terminatorDetector;
         private readonly DelimiterDetector _delimiterDetector;
         private readonly FieldAnalyzer _fieldAnalyzer;
@@ -30,6 +31,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// </summary>
         public PatternAnalyzer()
         {
+            _encodingDetector = new EncodingDetector();
             _terminatorDetector = new TerminatorDetector();
             _delimiterDetector = new DelimiterDetector();
             _fieldAnalyzer = new FieldAnalyzer();
@@ -54,17 +56,33 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 MessageCount = logData.MessageCount
             };
 
+            // Detect encoding from raw byte data (Phase 0 - before any string conversions)
+            if (logData.Messages.Count > 0)
+            {
+                var encodingInfo = _encodingDetector.DetectEncoding(logData.Messages[0]);
+                result.DetectedEncoding = encodingInfo.Encoding;
+                result.EncodingName = encodingInfo.EncodingName;
+                result.EncodingConfidence = encodingInfo.Confidence;
+            }
+            else
+            {
+                // Fallback to ASCII if no data
+                result.DetectedEncoding = System.Text.Encoding.ASCII;
+                result.EncodingName = "ASCII";
+                result.EncodingConfidence = 0.5;
+            }
+
             // Detect terminator
             result.Terminator = _terminatorDetector.Detect(logData);
 
             // Detect delimiters
             result.Delimiters = _delimiterDetector.Detect(logData);
 
-            // Analyze fields using the best delimiter
+            // Analyze fields using the best delimiter and detected encoding
             var bestDelimiter = result.Delimiters.OrderByDescending(d => d.Confidence).FirstOrDefault();
             if (bestDelimiter != null)
             {
-                result.Fields = _fieldAnalyzer.Analyze(logData, bestDelimiter);
+                result.Fields = _fieldAnalyzer.Analyze(logData, bestDelimiter, result.DetectedEncoding);
             }
 
             // Detect relationships between fields (Phase 5)

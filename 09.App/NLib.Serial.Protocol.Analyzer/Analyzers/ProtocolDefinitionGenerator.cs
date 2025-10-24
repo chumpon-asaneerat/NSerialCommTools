@@ -163,7 +163,10 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             definition.DeviceName = string.IsNullOrWhiteSpace(deviceName) ? "UnknownDevice" : deviceName;
             definition.Version = "1.0";
             definition.GeneratedDate = DateTime.Now;
-            definition.Encoding = "ASCII"; // Default, could be detected from log data
+
+            // Use detected encoding from analysis (defaults to ASCII if not detected)
+            definition.Encoding = analysis.EncodingName ?? "ASCII";
+
             definition.Description = $"Auto-generated protocol definition for {definition.DeviceName}";
         }
 

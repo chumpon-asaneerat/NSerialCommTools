@@ -81,6 +81,23 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         /// </summary>
         public List<FieldRelationship> Relationships { get; set; }
 
+        /// <summary>
+        /// Gets or sets the detected text encoding (ASCII, UTF-8, UTF-16, etc.).
+        /// Used for byte-to-string conversions during parsing.
+        /// </summary>
+        public System.Text.Encoding DetectedEncoding { get; set; }
+
+        /// <summary>
+        /// Gets or sets the detected encoding name (e.g., "ASCII", "UTF-8", "UTF-16LE").
+        /// Human-readable encoding identifier for display and JSON export.
+        /// </summary>
+        public string EncodingName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the confidence score (0.0 to 1.0) for the detected encoding.
+        /// 1.0 = BOM detected, 0.95+ = high confidence from pattern analysis.
+        /// </summary>
+        public double EncodingConfidence { get; set; }
 
         #endregion
     }

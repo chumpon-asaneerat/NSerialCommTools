@@ -22,40 +22,46 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// Analyzes fields based on the message structure.
         /// Following Algorithm 4: Multi-Line Frame Field Extraction
         /// </summary>
-        public List<FieldInfo> Analyze(LogData logData, DelimiterInfo delimiter)
+        /// <param name="logData">Log data containing messages</param>
+        /// <param name="delimiter">Detected delimiter information</param>
+        /// <param name="encoding">Detected text encoding (defaults to ASCII if null)</param>
+        public List<FieldInfo> Analyze(LogData logData, DelimiterInfo delimiter, Encoding encoding = null)
         {
             if (logData == null || logData.Messages.Count == 0)
                 return new List<FieldInfo>();
 
+            // Use detected encoding or fallback to ASCII
+            Encoding textEncoding = encoding ?? Encoding.ASCII;
+
             // Check if messages are multi-line (contain \r\n or \n inside)
-            bool isMultiLine = CheckIfMultiLine(logData);
+            bool isMultiLine = CheckIfMultiLine(logData, textEncoding);
 
             if (isMultiLine)
             {
                 // Algorithm 4: Frame-based extraction
                 // Each line position is a field
-                return AnalyzeMultiLineFrames(logData);
+                return AnalyzeMultiLineFrames(logData, textEncoding);
             }
 
             // If delimiter is not found or confidence is low, try analyzing by lines
             if (delimiter == null || delimiter.Confidence < 0.6)
             {
                 // Still might be multi-line without good delimiters
-                return AnalyzeMultiLine(logData);
+                return AnalyzeMultiLine(logData, textEncoding);
             }
 
             // Single-line delimiter-based analysis
-            return AnalyzeDelimiterBased(logData, delimiter);
+            return AnalyzeDelimiterBased(logData, delimiter, textEncoding);
         }
 
         /// <summary>
         /// Check if messages contain line breaks (multi-line frames)
         /// </summary>
-        private bool CheckIfMultiLine(LogData logData)
+        private bool CheckIfMultiLine(LogData logData, Encoding encoding)
         {
             foreach (var message in logData.Messages)
             {
-                string text = Encoding.ASCII.GetString(message);
+                string text = encoding.GetString(message);
                 // Count line breaks
                 int lineBreaks = text.Count(c => c == '\n' || c == '\r');
                 if (lineBreaks > 1) // More than just trailing terminator
@@ -68,14 +74,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// Algorithm 4: Extract fields from multi-line frames
         /// Each line position is treated as a separate field
         /// </summary>
-        private List<FieldInfo> AnalyzeMultiLineFrames(LogData logData)
+        private List<FieldInfo> AnalyzeMultiLineFrames(LogData logData, Encoding encoding)
         {
             // STEP 1: Collect samples for each line position
             var fieldsByLineNumber = new Dictionary<int, List<string>>();
 
             foreach (var message in logData.Messages)
             {
-                string text = Encoding.ASCII.GetString(message);
+                string text = encoding.GetString(message);
                 string[] lines = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
 
                 for (int lineNum = 0; lineNum < lines.Length; lineNum++)
@@ -276,7 +282,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// <summary>
         /// Delimiter-based field analysis for single-line messages
         /// </summary>
-        private List<FieldInfo> AnalyzeDelimiterBased(LogData logData, DelimiterInfo delimiter)
+        private List<FieldInfo> AnalyzeDelimiterBased(LogData logData, DelimiterInfo delimiter, Encoding encoding)
         {
             char delim = delimiter.Character;
             var fieldData = new Dictionary<int, List<string>>();
@@ -284,7 +290,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // Split each message by the delimiter
             foreach (var message in logData.Messages)
             {
-                string text = Encoding.ASCII.GetString(message).Trim();
+                string text = encoding.GetString(message).Trim();
                 string[] parts = text.Split(delim);
 
                 for (int i = 0; i < parts.Length; i++)
@@ -325,14 +331,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// <summary>
         /// Analyzes multi-line messages where each line is a field.
         /// </summary>
-        private List<FieldInfo> AnalyzeMultiLine(LogData logData)
+        private List<FieldInfo> AnalyzeMultiLine(LogData logData, Encoding encoding)
         {
             var fieldData = new Dictionary<int, List<string>>();
 
             // Split each message by line breaks
             foreach (var message in logData.Messages)
             {
-                string text = Encoding.ASCII.GetString(message);
+                string text = encoding.GetString(message);
                 string[] lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
                 for (int i = 0; i < lines.Length; i++)
