@@ -25,11 +25,13 @@ namespace NLib
 
         private LogData _currentLogData;
         private AnalysisResult _currentAnalysis;
+        private DetectionResult _currentDetection; // NEW - from Pass 1
         private List<FieldInfo> _fields;
 
-        private readonly PatternAnalyzer _analyzer;
+        private readonly ProtocolDetector _protocolDetector;   // NEW - Pass 1
+        private readonly PatternAnalyzer _analyzer;            // Pass 3
         private readonly HexLogParser _hexLogParser;
-        private readonly MessageExtractor _messageExtractor;
+        private readonly MessageExtractor _messageExtractor;   // Pass 2
 
         #endregion
 
@@ -42,10 +44,12 @@ namespace NLib
         {
             InitializeComponent();
 
-            _analyzer = new PatternAnalyzer();
-            _hexLogParser = new HexLogParser();
-            _messageExtractor = new MessageExtractor();
+            // TWO-PASS ARCHITECTURE: Initialize all three passes
+            _protocolDetector = new ProtocolDetector();   // Pass 1: Detection
+            _messageExtractor = new MessageExtractor();   // Pass 2: Extraction
+            _analyzer = new PatternAnalyzer();            // Pass 3: Analysis
 
+            _hexLogParser = new HexLogParser();
             _fields = new List<FieldInfo>();
 
             // Set default output folder
@@ -317,16 +321,24 @@ namespace NLib
 
             txtFilePath.Text = filePath;
 
-            // Parse the log file
+            // Parse the log file (get raw bytes)
             byte[] rawBytes = _hexLogParser.ParseLogFile(filePath);
 
-            // Extract messages
-            _currentLogData = _messageExtractor.ExtractMessages(rawBytes);
+            // TWO-PASS ARCHITECTURE:
+
+            // PASS 1: DETECT - Analyze raw bytes to find ALL patterns (encoding, terminators, structure)
+            UpdateStatus("Pass 1: Detecting protocol structure...");
+            _currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes);
+
+            // PASS 2: EXTRACT - Split using detected patterns (NO GUESSING!)
+            UpdateStatus("Pass 2: Extracting messages...");
+            _currentLogData = _messageExtractor.ExtractMessages(rawBytes, _currentDetection);
 
             // Show preview
             ShowFilePreview(rawBytes);
 
-            UpdateStatus($"Loaded {_currentLogData.MessageCount} messages ({_currentLogData.TotalBytes} bytes)");
+            UpdateStatus($"Loaded {_currentLogData.MessageCount} messages ({_currentLogData.TotalBytes} bytes) - " +
+                        $"Structure: {_currentDetection.Structure}, Confidence: {_currentDetection.OverallConfidence:P0}");
         }
 
         private void ShowFilePreview(byte[] rawBytes)
@@ -360,16 +372,24 @@ namespace NLib
 
         private void PerformAnalysis()
         {
-            UpdateStatus("Analyzing protocol...");
+            // PASS 3: ANALYZE - Use pre-detected patterns from Pass 1
+            UpdateStatus("Pass 3: Analyzing fields and relationships...");
 
-            _currentAnalysis = _analyzer.Analyze(_currentLogData);
+            _currentAnalysis = _analyzer.Analyze(_currentLogData, _currentDetection);
 
-            // Update Terminator section
+            // Update Terminator section (use segment terminator from detection)
             if (_currentAnalysis.Terminator != null)
             {
                 txtTerminatorType.Text = _currentAnalysis.Terminator.DisplayName;
                 txtTerminatorBytes.Text = BitConverter.ToString(_currentAnalysis.Terminator.Bytes).Replace("-", " ");
                 txtTerminatorConfidence.Text = $"{(_currentAnalysis.Terminator.Confidence * 100):F0}%";
+            }
+            else if (_currentDetection.FrameTerminator != null)
+            {
+                // Fallback: show frame terminator if no segment terminator
+                txtTerminatorType.Text = _currentDetection.FrameTerminator.DisplayName + " (Frame)";
+                txtTerminatorBytes.Text = BitConverter.ToString(_currentDetection.FrameTerminator.Bytes).Replace("-", " ");
+                txtTerminatorConfidence.Text = $"{(_currentDetection.FrameTerminator.Confidence * 100):F0}%";
             }
 
             // Update Delimiters section
@@ -385,7 +405,8 @@ namespace NLib
 
             dgFieldsDetected.ItemsSource = activeFields;
 
-            UpdateStatus($"Analysis complete - Raw: {_currentAnalysis.Fields.Count} fields, Processed: {activeFields.Count} fields");
+            UpdateStatus($"Analysis complete - Raw: {_currentAnalysis.Fields.Count} fields, Processed: {activeFields.Count} fields, " +
+                        $"Overall Confidence: {_currentAnalysis.Confidence:P0}");
         }
 
         #endregion

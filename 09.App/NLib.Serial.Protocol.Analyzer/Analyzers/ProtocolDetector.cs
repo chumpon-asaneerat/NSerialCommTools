@@ -98,7 +98,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 // STEP 5: Calculate Overall Confidence
                 result.OverallConfidence = CalculateOverallConfidence(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // If detection fails, return safe defaults with low confidence
                 result.OverallConfidence = 0.0;

@@ -192,7 +192,7 @@
     <Compile Include="Analyzers\RelationshipDetector.cs" />
     <Compile Include="Analyzers\StrategySelector.cs" />
     <Compile Include="Analyzers\TerminatorDetector.cs" />
-    <Compile Include="Analyzers\ValidationRuleGenerator.cs" />
+    <None Include="Analyzers\ValidationRuleGenerator.cs" />
     <Compile Include="Models\AnalysisResult.cs" />
     <Compile Include="Models\DelimiterInfo.cs" />
     <Compile Include="Models\FieldInfo.cs" />

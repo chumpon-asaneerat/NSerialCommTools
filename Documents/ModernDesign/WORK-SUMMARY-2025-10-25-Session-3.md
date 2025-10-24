@@ -183,6 +183,428 @@ Continue from Session 2 (2025-10-24) to implement the two-pass architecture refa
 **Key Innovation**:
 This solves the circular dependency! Now we can detect terminators BEFORE splitting, which was the entire point of the two-pass architecture.
 
+### ✅ Task 7: Phase 4 - Refactor MessageExtractor
+**Status**: COMPLETED
+**Time**: ~15 minutes
+
+**File**: `Parsers\MessageExtractor.cs` (COMPLETE REWRITE - 139 lines)
+
+**OLD Approach** (WRONG):
+- Accepted optional terminator parameter
+- Fell back to GUESSING (\r\n, \n, \r) if not provided
+- Complex frame marker detection logic
+- Mixed string and byte[] processing
+
+**NEW Approach** (CORRECT - TWO-PASS):
+- Requires DetectionResult parameter (from Pass 1)
+- NO GUESSING - uses detected frame terminator
+- Throws exception if DetectionResult not provided
+- Pure byte[] processing throughout
+- Simple and clean - 139 lines vs 412 lines (66% reduction!)
+
+**Key Method**:
+```csharp
+public LogData ExtractMessages(byte[] rawBytes, DetectionResult detection)
+{
+    // Uses detection.FrameTerminator.Bytes - NO GUESSING!
+    List<byte[]> frames = ByteArraySplitter.Split(rawBytes, frameTerminatorBytes, ...);
+    return new LogData { Messages = frames, ... };
+}
+```
+
+**Benefits**:
+- Much simpler code (removed 273 lines of complex marker detection)
+- Binary-safe throughout
+- No fallback guessing
+- Clear error messages if used incorrectly
+
+### ✅ Task 8: Phase 5 - Update PatternAnalyzer
+**Status**: COMPLETED
+**Time**: ~20 minutes
+
+**File**: `Analyzers\PatternAnalyzer.cs` (COMPLETE REWRITE - 235 lines)
+
+**OLD Approach** (WRONG):
+- Created EncodingDetector internally (redundant!)
+- Created TerminatorDetector internally (redundant!)
+- Ran detection in Analyze() method (too late - data already split!)
+- No access to detection results
+
+**NEW Approach** (CORRECT - TWO-PASS):
+- Requires DetectionResult parameter (from Pass 1)
+- NO redundant detection
+- Uses pre-detected encoding, terminators, structure
+- Maps DetectionResult.Structure to ProtocolType
+- Generates parsing strategy from detected structure
+
+**Key Changes**:
+- Removed `_encodingDetector` field (uses detection.DetectedEncoding)
+- Removed `_terminatorDetector` field (uses detection.SegmentTerminator)
+- Updated `Analyze()` signature: `Analyze(LogData logData, DetectionResult detection)`
+- Added `MapProtocolStructureToType()` helper
+- Added `GenerateParsingStrategy()` helper
+- Added `CreateDelimiterInfoFromTerminator()` converter
+
+**Confidence Calculation**:
+```csharp
+// Weighted average: Detection (70%), Field Analysis (30%)
+return (detectionConfidence * 0.7) + (fieldConf * 0.3);
+```
+
+### ✅ Task 9: Phase 6 - Update MainWindow Pipeline
+**Status**: COMPLETED
+**Time**: ~15 minutes
+
+**File**: `MainWindow.xaml.cs` (UPDATED - pipeline refactor)
+
+**Changes Made**:
+
+1. **Added new field**: `private DetectionResult _currentDetection;`
+2. **Added new detector**: `private readonly ProtocolDetector _protocolDetector;`
+3. **Updated Constructor**: Initialize ProtocolDetector
+
+4. **Updated LoadLogFile() - THREE-PASS PIPELINE**:
+```csharp
+// OLD (WRONG):
+byte[] rawBytes = _hexLogParser.ParseLogFile(filePath);
+_currentLogData = _messageExtractor.ExtractMessages(rawBytes); // GUESSES!
+
+// NEW (CORRECT):
+byte[] rawBytes = _hexLogParser.ParseLogFile(filePath);
+
+// PASS 1: DETECT
+_currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes);
+
+// PASS 2: EXTRACT
+_currentLogData = _messageExtractor.ExtractMessages(rawBytes, _currentDetection);
+```
+
+5. **Updated PerformAnalysis() - PASS 3**:
+```csharp
+// OLD (WRONG):
+_currentAnalysis = _analyzer.Analyze(_currentLogData); // Redundant detection!
+
+// NEW (CORRECT):
+_currentAnalysis = _analyzer.Analyze(_currentLogData, _currentDetection); // Uses pre-detected!
+```
+
+6. **Enhanced UI Status Messages**:
+- "Pass 1: Detecting protocol structure..."
+- "Pass 2: Extracting messages..."
+- "Pass 3: Analyzing fields and relationships..."
+- Shows detected structure and confidence in status bar
+
+**User Experience Improvement**:
+User can now see the three-pass architecture in action through clear status messages.
+
+---
+
+## Session 3 Summary
+
+### What Was Accomplished
+
+**Phases Completed**: 6 out of 7 (Phase 7 is user testing)
+
+1. ✅ **Phase 1**: Created all models (DetectionResult, updated TerminatorInfo)
+2. ✅ **Phase 2**: Created ProtocolDetector (Pass 1 orchestrator)
+3. ✅ **Phase 3**: Refactored TerminatorDetector (CRITICAL - detects ALL levels from raw bytes)
+4. ✅ **Phase 4**: Refactored MessageExtractor (Pass 2 - uses detected patterns, no guessing)
+5. ✅ **Phase 5**: Updated PatternAnalyzer (Pass 3 - no redundant detection)
+6. ✅ **Phase 6**: Updated MainWindow pipeline (three-pass architecture integrated)
+
+### Files Summary
+
+**Created** (3 new files):
+1. `Models\DetectionResult.cs` - 221 lines
+2. `Analyzers\ProtocolDetector.cs` - 237 lines
+3. Helper classes in ProtocolDetector (TerminatorHierarchyResult, etc.)
+
+**Modified** (4 files):
+1. `Models\TerminatorInfo.cs` - Added Type/Level enum
+2. `Analyzers\TerminatorDetector.cs` - Added ~340 lines (DetectTerminatorHierarchy method)
+3. `Parsers\MessageExtractor.cs` - Complete rewrite (139 lines, 66% reduction)
+4. `Analyzers\PatternAnalyzer.cs` - Complete rewrite (235 lines)
+5. `MainWindow.xaml.cs` - Updated pipeline to three-pass architecture
+
+**Updated Documentation**:
+1. `REFACTOR-TODO-Two-Pass-Architecture.md` - Fixed terminology (Line→Segment)
+2. `WORK-SUMMARY-2025-10-25-Session-3.md` - Complete session documentation
+
+**Total New/Modified Code**: ~1200 lines
+
+### Architecture Achievement
+
+**SOLVED**: The circular dependency problem!
+
+**OLD (BROKEN) Flow**:
+```
+File Load → MessageExtractor (GUESSES terminator) → TerminatorDetector (too late!)
+```
+
+**NEW (CORRECT) Flow**:
+```
+File Load → PASS 1: ProtocolDetector (detects ALL patterns)
+          → PASS 2: MessageExtractor (uses detected patterns)
+          → PASS 3: PatternAnalyzer (analyzes structured data)
+```
+
+### Key Innovations
+
+1. **Binary-First Thinking**: Frame → Segment → Field (not Line!)
+2. **No Guessing**: All terminators detected from raw data
+3. **Confidence Scoring**: Every detection has 0.0-1.0 confidence
+4. **Hierarchy Detection**: Detects all three levels in ONE analysis pass
+5. **Protocol Structure Detection**: FlatDelimited, SegmentedDelimited, Binary, etc.
+
+### Code Quality Improvements
+
+- **Cleaner**: MessageExtractor reduced from 412 to 139 lines (66% less complexity)
+- **Clearer**: Three-pass architecture is explicit and documented
+- **Safer**: No fallback guessing - fails fast with clear errors
+- **Faster**: Detection happens once, not redundantly
+- **Binary-safe**: All splitting on byte[], string only for display
+
+### Unused Files Identified
+
+**File**: `Analyzers\ValidationRuleGenerator.cs`
+- No longer used (ValidationRules feature was removed in Session 1)
+- Only referenced in .csproj file
+- **Recommendation**: User should remove from project during compilation/cleanup
+
+### ✅ Task 10: Bug Fix and MAJOR Improvement - Proper Binary-First Naming
+**Status**: COMPLETED
+
+**Issue Found by User**:
+1. `PatternAnalyzer.MapProtocolStructureToType()` referenced `ProtocolType.Binary` which didn't exist
+2. User correctly pointed out that mapping to `ProtocolType.MultiLine` is misleading - **text-thinking!**
+3. User suggested the correct solution: **"Why not be SingleSegment and MultiSegment?"**
+
+**Original ProtocolType enum had**:
+- Unknown
+- SingleLine ❌ (text-thinking!)
+- MultiLine ❌ (text-thinking!)
+- CommandResponse
+
+**Problem**: "Line" is a text-centric term that leads to text-thinking mistakes!
+
+**SOLUTION - Complete Rename to Binary-First Terminology**:
+
+**File Updated**: `Models\AnalysisResult.cs`
+```csharp
+public enum ProtocolType
+{
+    Unknown,
+    SingleSegment,   // Single-segment frame (flat structure)
+    MultiSegment,    // Multi-segment frame (hierarchical structure)
+    CommandResponse,
+    Binary           // Binary protocol with control characters
+}
+```
+
+**PatternAnalyzer Updated**: `Analyzers\PatternAnalyzer.cs`
+```csharp
+private ProtocolType MapProtocolStructureToType(ProtocolStructure structure)
+{
+    switch (structure)
+    {
+        case ProtocolStructure.FlatDelimited:
+        case ProtocolStructure.FlatFixedPosition:
+            return ProtocolType.SingleSegment; // Was: SingleLine ❌
+
+        case ProtocolStructure.SegmentedDelimited:
+        case ProtocolStructure.SegmentedFixedPosition:
+            return ProtocolType.MultiSegment; // Was: MultiLine ❌
+
+        case ProtocolStructure.Binary:
+            return ProtocolType.Binary; // NEW ✅
+
+        default:
+            return ProtocolType.Unknown;
+    }
+}
+```
+
+**Why This Is CRITICAL**:
+- ✅ **No more "Line" terminology** - completely eliminated text-thinking
+- ✅ **Clear hierarchy**: Frame → Segment → Field (consistent throughout)
+- ✅ **SingleSegment** = flat structure (one segment per frame)
+- ✅ **MultiSegment** = hierarchical structure (multiple segments per frame, like JIK6CAB)
+- ✅ **Binary** = binary protocols with control characters
+- ✅ **Future-proof** - developers won't be tempted to revert to text-based logic
+
+**User's Contribution**:
+This was a **critical catch** by the user! The suggested naming is perfect and completes the binary-first transformation of the codebase.
+
+### ✅ Task 11: CRITICAL Bug Fix - Double-Counting Overlapping Patterns
+**Status**: COMPLETED
+
+**Issue Found During Testing**:
+User tested with JIK6CAB data and found fields NOT splitting correctly. The generated JSON showed incorrect field structure.
+
+**Root Cause Analysis**:
+The `FindRepeatingSequences()` method was double-counting overlapping patterns!
+
+**Example of the Bug**:
+```
+Data: 0x0D 0x0A 0x0D 0x0A (double CRLF)
+
+When searching:
+1. Double CRLF [0x0D 0x0A 0x0D 0x0A] - Found at position 0 (count: 1)
+2. Single CRLF [0x0D 0x0A] - Found at positions 0 AND 2 (count: 2!)
+
+Result: Single CRLF has HIGHER count than double CRLF!
+Result: ClassifyFrameTerminator selects single CRLF (WRONG!)
+Result: Frames not split correctly, fields all wrong!
+```
+
+**The Fix**:
+
+**File**: `Analyzers\TerminatorDetector.cs`
+
+1. **Reordered patterns by LENGTH (longest first)**:
+```csharp
+var patternsToCheck = new List<byte[]>
+{
+    // 4-byte patterns (check FIRST!)
+    new byte[] { 0x0D, 0x0A, 0x0D, 0x0A },  // Double CRLF
+
+    // 2-byte patterns
+    new byte[] { 0x0D, 0x0A },               // CRLF
+
+    // 1-byte patterns
+    new byte[] { 0x20 }, // Space
+    // ... etc
+};
+```
+
+2. **Added exclusion tracking**:
+```csharp
+var excludedPositions = new HashSet<int>();
+
+foreach (var pattern in patternsToCheck)
+{
+    var positions = FindAllOccurrences(rawBytes, pattern, excludedPositions);
+
+    // Mark these positions as used so shorter patterns skip them
+    foreach (int pos in positions)
+    {
+        for (int offset = 0; offset < pattern.Length; offset++)
+        {
+            excludedPositions.Add(pos + offset);
+        }
+    }
+}
+```
+
+3. **Updated FindAllOccurrences** to skip excluded positions:
+```csharp
+private List<int> FindAllOccurrences(byte[] data, byte[] pattern, HashSet<int> excludedPositions)
+{
+    for (int i = 0; i <= data.Length - pattern.Length; i++)
+    {
+        // Skip if this position is already part of a longer pattern
+        if (excludedPositions != null && excludedPositions.Contains(i))
+            continue;
+
+        // ... rest of matching logic
+    }
+}
+```
+
+**How It Works Now**:
+1. Check double CRLF first → Find all occurrences, mark positions 0-3 as used
+2. Check single CRLF → Skip positions 0-3 (already used by double CRLF)
+3. Result: Double CRLF gets correct exclusive count
+4. Result: ClassifyFrameTerminator correctly selects double CRLF!
+
+**Why This Was CRITICAL**:
+- This bug caused the ENTIRE two-pass architecture to fail for JIK6CAB
+- Without correct frame detection, everything downstream is wrong
+- Fields can't split correctly if frames aren't identified first
+
+**Expected Outcome After Fix**:
+- JIK6CAB: Double CRLF detected as frame terminator (5 frames)
+- Single CRLF detected as segment terminator (50 segments, 10 per frame)
+- Space detected as field delimiter
+- Fields: WeightKg1Value, WeightKg1Unit, etc. (properly split!)
+
+---
+
+## Next Steps (Phase 7 - User Task)
+
+### Build and Test
+
+1. **Compile the project**
+   - Visual Studio should build successfully
+   - Check for any compilation errors
+   - May need to remove `ValidationRuleGenerator.cs` from .csproj if errors
+
+2. **Test with JIK6CAB data**
+   - File: `Documents\LuckyTex Devices\JIK6CAB\20241021_capture.txt`
+   - Load file and check status messages show three passes
+   - Click Analyze button
+   - Verify fields split correctly (value and unit separate)
+
+3. **Expected Output**
+   - Frame Terminator: Double CRLF (confidence ~95%)
+   - Segment Terminator: Single CRLF (confidence ~95%)
+   - Field Delimiter: Space (confidence ~80%)
+   - Fields: WeightKg1Value, WeightKg1Unit, etc. (split correctly!)
+
+4. **Export JSON and verify**
+   - Generate protocol definition JSON
+   - Check encoding is detected correctly
+   - Check terminators are exported correctly
+   - Check fields are split (not compound "0.00 kg")
+
+### If Errors Occur
+
+1. **Compilation Errors**:
+   - Check for missing using statements
+   - Check ProtocolType enum exists (should be in Models)
+   - Check ByteArraySplitter exists (should be in Utilities)
+
+2. **Runtime Errors**:
+   - Check that DetectionResult is not null
+   - Check that TerminatorHierarchyResult is properly returned
+   - Add breakpoints in ProtocolDetector.DetectProtocolStructure()
+
+3. **Wrong Detection**:
+   - Check confidence scores in UI
+   - If low confidence, algorithm may need tuning
+   - Check raw data structure matches expectations
+
+### Success Criteria
+
+✅ Code compiles without errors
+✅ JIK6CAB file loads without crash
+✅ Three passes complete successfully
+✅ Fields split correctly (value and unit separate)
+✅ Confidence scores are reasonable (>70%)
+✅ JSON exports with correct structure
+
+---
+
+## Session Statistics
+
+- **Duration**: ~3 hours
+- **Phases Completed**: 6 of 6 coding phases
+- **Files Created**: 3
+- **Files Modified**: 5
+- **Documentation Updated**: 2
+- **Lines Written**: ~1200
+- **Lines Removed**: ~350 (from simplification)
+- **Net Code**: +850 lines
+- **Complexity Reduction**: 66% in MessageExtractor
+- **Architecture**: FIXED (circular dependency eliminated)
+
+---
+
+**Document Version**: 1.0 (Final)
+**Last Updated**: 2025-10-25
+**Status**: Implementation Complete - Ready for User Testing
+**Next Action**: User compiles and tests with JIK6CAB data
+
 ---
 
 ## Understanding from Previous Sessions

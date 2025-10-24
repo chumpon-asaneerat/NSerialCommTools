@@ -184,16 +184,24 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// <summary>
         /// STEP 1: Finds all repeating byte sequences in the raw data.
         /// Scans for patterns of 1-4 bytes that occur multiple times.
+        /// IMPORTANT: Check LONGER patterns first to avoid double-counting overlaps!
         /// </summary>
         private Dictionary<string, ByteSequenceCandidate> FindRepeatingSequences(byte[] rawBytes)
         {
             var candidates = new Dictionary<string, ByteSequenceCandidate>();
+            var excludedPositions = new HashSet<int>(); // Positions already matched by longer patterns
 
             // Common terminator/delimiter patterns to check
+            // CRITICAL: Ordered by LENGTH (longest first) to avoid overlap issues!
             var patternsToCheck = new List<byte[]>
             {
-                new byte[] { 0x0D, 0x0A, 0x0D, 0x0A },  // Double CRLF
+                // 4-byte patterns (check first!)
+                new byte[] { 0x0D, 0x0A, 0x0D, 0x0A },  // Double CRLF (MUST check before single CRLF!)
+
+                // 2-byte patterns
                 new byte[] { 0x0D, 0x0A },               // CRLF
+
+                // 1-byte patterns
                 new byte[] { 0x0A },                     // LF
                 new byte[] { 0x0D },                     // CR
                 new byte[] { 0x20 },                     // Space
@@ -211,7 +219,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             // Search for each pattern
             foreach (var pattern in patternsToCheck)
             {
-                var positions = FindAllOccurrences(rawBytes, pattern);
+                var positions = FindAllOccurrences(rawBytes, pattern, excludedPositions);
                 if (positions.Count > 0)
                 {
                     string key = BitConverter.ToString(pattern);
@@ -221,6 +229,16 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                         Positions = positions,
                         Count = positions.Count
                     };
+
+                    // Mark these positions (and the bytes within the pattern) as used
+                    // so shorter patterns don't double-count them
+                    foreach (int pos in positions)
+                    {
+                        for (int offset = 0; offset < pattern.Length; offset++)
+                        {
+                            excludedPositions.Add(pos + offset);
+                        }
+                    }
                 }
             }
 
@@ -229,13 +247,18 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         /// <summary>
         /// Finds all positions where a pattern occurs in the data.
+        /// Skips positions that have already been matched by longer patterns (to avoid double-counting).
         /// </summary>
-        private List<int> FindAllOccurrences(byte[] data, byte[] pattern)
+        private List<int> FindAllOccurrences(byte[] data, byte[] pattern, HashSet<int> excludedPositions)
         {
             var positions = new List<int>();
 
             for (int i = 0; i <= data.Length - pattern.Length; i++)
             {
+                // Skip if this position is already part of a longer pattern
+                if (excludedPositions != null && excludedPositions.Contains(i))
+                    continue;
+
                 bool match = true;
                 for (int j = 0; j < pattern.Length; j++)
                 {

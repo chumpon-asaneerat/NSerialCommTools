@@ -9,18 +9,18 @@ using NLib.Serial.ProtocolAnalyzer.Models;
 namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 {
     /// <summary>
-    /// Main pattern analyzer that coordinates all sub-analyzers.
+    /// PASS 3: Pattern Analysis Phase
+    /// Main pattern analyzer that coordinates field analysis and relationship detection.
+    /// Uses pre-detected patterns from Pass 1 (DetectionResult) - NO redundant detection.
+    /// Based on Document: REFACTOR-TODO-Two-Pass-Architecture.md
     /// </summary>
     public class PatternAnalyzer
     {
         #region Internal Variables
 
-        private readonly EncodingDetector _encodingDetector;
-        private readonly TerminatorDetector _terminatorDetector;
         private readonly DelimiterDetector _delimiterDetector;
         private readonly FieldAnalyzer _fieldAnalyzer;
         private readonly RelationshipDetector _relationshipDetector;
-        private readonly ValidationRuleGenerator _validationRuleGenerator;
 
         #endregion
 
@@ -31,12 +31,9 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         /// </summary>
         public PatternAnalyzer()
         {
-            _encodingDetector = new EncodingDetector();
-            _terminatorDetector = new TerminatorDetector();
             _delimiterDetector = new DelimiterDetector();
             _fieldAnalyzer = new FieldAnalyzer();
             _relationshipDetector = new RelationshipDetector();
-            _validationRuleGenerator = new ValidationRuleGenerator();
         }
 
         #endregion
@@ -44,65 +41,94 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         #region Public Methods
 
         /// <summary>
-        /// Analyzes the log data and returns complete analysis results.
+        /// Analyzes the log data using pre-detected patterns (TWO-PASS ARCHITECTURE).
+        /// This is PASS 3 - uses patterns from Pass 1, NO redundant detection.
         /// </summary>
-        public AnalysisResult Analyze(LogData logData)
+        /// <param name="logData">Extracted messages from Pass 2 (MessageExtractor).</param>
+        /// <param name="detection">Detection results from Pass 1 (ProtocolDetector).</param>
+        /// <returns>Complete analysis results with fields and relationships.</returns>
+        public AnalysisResult Analyze(LogData logData, DetectionResult detection)
         {
             if (logData == null || logData.Messages.Count == 0)
-                return null;
+            {
+                return new AnalysisResult
+                {
+                    MessageCount = 0,
+                    Confidence = 0.0
+                };
+            }
+
+            if (detection == null)
+            {
+                throw new ArgumentNullException(nameof(detection),
+                    "DetectionResult is required. Run ProtocolDetector.DetectProtocolStructure() first (PASS 1).");
+            }
 
             var result = new AnalysisResult
             {
                 MessageCount = logData.MessageCount
             };
 
-            // Detect encoding from raw byte data (Phase 0 - before any string conversions)
-            if (logData.Messages.Count > 0)
+            // Copy pre-detected encoding from Pass 1 (NO redundant detection)
+            result.DetectedEncoding = detection.DetectedEncoding;
+            result.EncodingName = detection.EncodingName;
+            result.EncodingConfidence = detection.EncodingConfidence;
+
+            // Copy pre-detected terminator from Pass 1 (NO redundant detection)
+            result.Terminator = detection.SegmentTerminator; // Use segment terminator for line parsing
+
+            // Detect delimiters (still needed for backward compatibility)
+            // TODO: This could also be replaced with detection.FieldDelimiter in future
+            result.Delimiters = _delimiterDetector.Detect(logData);
+
+            // If we have a detected field delimiter from Pass 1, create DelimiterInfo for it
+            DelimiterInfo bestDelimiter = null;
+            if (detection.FieldDelimiter != null && detection.FieldDelimiter.Confidence >= 0.5)
             {
-                var encodingInfo = _encodingDetector.DetectEncoding(logData.Messages[0]);
-                result.DetectedEncoding = encodingInfo.Encoding;
-                result.EncodingName = encodingInfo.EncodingName;
-                result.EncodingConfidence = encodingInfo.Confidence;
+                // Use detected field delimiter from Pass 1
+                bestDelimiter = CreateDelimiterInfoFromTerminator(detection.FieldDelimiter);
+            }
+            else if (result.Delimiters != null && result.Delimiters.Count > 0)
+            {
+                // Fall back to delimiter detector results
+                bestDelimiter = result.Delimiters.OrderByDescending(d => d.Confidence).FirstOrDefault();
+            }
+
+            // Analyze fields using detected encoding, segment terminator, and field delimiter
+            if (bestDelimiter != null)
+            {
+                result.Fields = _fieldAnalyzer.Analyze(
+                    logData,
+                    bestDelimiter,
+                    detection.DetectedEncoding,
+                    detection.SegmentTerminator
+                );
             }
             else
             {
-                // Fallback to ASCII if no data
-                result.DetectedEncoding = System.Text.Encoding.ASCII;
-                result.EncodingName = "ASCII";
-                result.EncodingConfidence = 0.5;
+                // No delimiter - try field analysis without delimiter
+                result.Fields = _fieldAnalyzer.Analyze(
+                    logData,
+                    null,
+                    detection.DetectedEncoding,
+                    detection.SegmentTerminator
+                );
             }
 
-            // Detect terminator
-            result.Terminator = _terminatorDetector.Detect(logData);
-
-            // Detect delimiters
-            result.Delimiters = _delimiterDetector.Detect(logData);
-
-            // Analyze fields using the best delimiter, detected encoding, and detected terminator
-            var bestDelimiter = result.Delimiters.OrderByDescending(d => d.Confidence).FirstOrDefault();
-            if (bestDelimiter != null)
-            {
-                result.Fields = _fieldAnalyzer.Analyze(logData, bestDelimiter, result.DetectedEncoding, result.Terminator);
-            }
-
-            // Detect relationships between fields (Phase 5)
+            // Detect relationships between fields (compound fields, etc.)
             if (result.Fields != null && result.Fields.Count > 0)
             {
                 result.Relationships = _relationshipDetector.DetectRelationships(result.Fields);
             }
 
-            // Validation rules removed - user implements validation in their application layer
-
-            // Determine protocol type
-            result.ProtocolType = DetectProtocolType(result);
+            // Determine protocol type based on detected structure
+            result.ProtocolType = MapProtocolStructureToType(detection.Structure);
 
             // Calculate overall confidence
-            result.Confidence = CalculateOverallConfidence(result);
+            result.Confidence = CalculateOverallConfidence(result, detection);
 
-            // Suggest parsing strategy
-            result.SuggestedStrategy = bestDelimiter != null
-                ? $"Split by '{bestDelimiter.Character}'"
-                : "Line-based parsing";
+            // Suggest parsing strategy based on detected structure
+            result.SuggestedStrategy = GenerateParsingStrategy(detection, bestDelimiter);
 
             return result;
         }
@@ -111,33 +137,100 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         #region Private Methods
 
-        private ProtocolType DetectProtocolType(AnalysisResult result)
+        /// <summary>
+        /// Creates a DelimiterInfo from a TerminatorInfo (for field delimiter).
+        /// </summary>
+        private DelimiterInfo CreateDelimiterInfoFromTerminator(TerminatorInfo terminator)
         {
-            // Simple heuristic based on message structure
-            // If we have many fields (lines), it's likely a multi-line package
-            if (result.Fields.Count > 5)
-            {
-                return ProtocolType.MultiLine;
-            }
-            else if (result.Fields.Count > 0)
-            {
-                return ProtocolType.SingleLine;
-            }
+            if (terminator == null || terminator.Bytes == null || terminator.Bytes.Length == 0)
+                return null;
 
-            return ProtocolType.Unknown;
+            // Convert byte to character (assumes single-byte delimiter)
+            char delimiterChar = terminator.Bytes.Length == 1
+                ? (char)terminator.Bytes[0]
+                : ' '; // Default to space if multi-byte
+
+            return new DelimiterInfo
+            {
+                Character = delimiterChar,
+                Frequency = terminator.Frequency,
+                Confidence = terminator.Confidence
+            };
         }
 
-        private double CalculateOverallConfidence(AnalysisResult result)
+        /// <summary>
+        /// Maps DetectionResult.Structure to ProtocolType enum.
+        /// Uses binary-first terminology: SingleSegment, MultiSegment, Binary.
+        /// </summary>
+        private ProtocolType MapProtocolStructureToType(ProtocolStructure structure)
         {
-            double terminatorConf = result.Terminator?.Confidence ?? 0.5;
-            double delimiterConf = result.Delimiters.Any()
-                ? result.Delimiters.Max(d => d.Confidence)
-                : 0.5;
-            double fieldConf = result.Fields.Any()
+            switch (structure)
+            {
+                case ProtocolStructure.FlatDelimited:
+                case ProtocolStructure.FlatFixedPosition:
+                    // Single-segment frame - flat structure
+                    return ProtocolType.SingleSegment;
+
+                case ProtocolStructure.SegmentedDelimited:
+                case ProtocolStructure.SegmentedFixedPosition:
+                    // Multi-segment frame - hierarchical structure
+                    return ProtocolType.MultiSegment;
+
+                case ProtocolStructure.Binary:
+                    // Binary protocol with control characters
+                    return ProtocolType.Binary;
+
+                default:
+                    return ProtocolType.Unknown;
+            }
+        }
+
+        /// <summary>
+        /// Calculates overall confidence from all detection components.
+        /// </summary>
+        private double CalculateOverallConfidence(AnalysisResult result, DetectionResult detection)
+        {
+            // Use overall confidence from Pass 1 (primary)
+            double detectionConfidence = detection.OverallConfidence;
+
+            // Add field analysis confidence if available
+            double fieldConf = result.Fields != null && result.Fields.Any()
                 ? result.Fields.Average(f => f.Confidence)
                 : 0.5;
 
-            return (terminatorConf + delimiterConf + fieldConf) / 3.0;
+            // Weighted average: Detection (70%), Field Analysis (30%)
+            return (detectionConfidence * 0.7) + (fieldConf * 0.3);
+        }
+
+        /// <summary>
+        /// Generates parsing strategy description based on detected structure.
+        /// </summary>
+        private string GenerateParsingStrategy(DetectionResult detection, DelimiterInfo delimiter)
+        {
+            switch (detection.Structure)
+            {
+                case ProtocolStructure.FlatDelimited:
+                    return delimiter != null
+                        ? $"Single-line delimited (split by '{delimiter.Character}')"
+                        : "Single-line delimited";
+
+                case ProtocolStructure.SegmentedDelimited:
+                    return delimiter != null
+                        ? $"Multi-segment delimited (segments by {detection.SegmentTerminator?.DisplayName}, fields by '{delimiter.Character}')"
+                        : $"Multi-segment (segments by {detection.SegmentTerminator?.DisplayName})";
+
+                case ProtocolStructure.FlatFixedPosition:
+                    return "Single-line fixed-position";
+
+                case ProtocolStructure.SegmentedFixedPosition:
+                    return $"Multi-segment fixed-position (segments by {detection.SegmentTerminator?.DisplayName})";
+
+                case ProtocolStructure.Binary:
+                    return "Binary protocol";
+
+                default:
+                    return "Unknown structure - manual analysis required";
+            }
         }
 
         #endregion

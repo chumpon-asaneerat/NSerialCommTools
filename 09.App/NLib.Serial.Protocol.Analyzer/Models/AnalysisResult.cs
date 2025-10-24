@@ -104,6 +104,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
 
     /// <summary>
     /// Enumeration of protocol types.
+    /// Binary-first terminology: Frame → Segment → Field hierarchy.
     /// </summary>
     public enum ProtocolType
     {
@@ -113,18 +114,30 @@ namespace NLib.Serial.ProtocolAnalyzer.Models
         Unknown,
 
         /// <summary>
-        /// Single-line streaming protocol.
+        /// Single-segment frame protocol (flat structure).
+        /// Each frame contains exactly one segment.
+        /// Example: Simple CSV, single-record messages.
         /// </summary>
-        SingleLine,
+        SingleSegment,
 
         /// <summary>
-        /// Multi-line package protocol.
+        /// Multi-segment frame protocol (hierarchical structure).
+        /// Each frame contains multiple segments.
+        /// Example: JIK6CAB (10 segments per frame), multi-record messages.
         /// </summary>
-        MultiLine,
+        MultiSegment,
 
         /// <summary>
         /// Command-response protocol.
+        /// Request-reply pattern with paired messages.
         /// </summary>
-        CommandResponse
+        CommandResponse,
+
+        /// <summary>
+        /// Binary protocol with control characters.
+        /// Uses binary terminators (STX, ETX, etc.) not text terminators.
+        /// Example: Protocols with 0x02 (STX), 0x03 (ETX) markers.
+        /// </summary>
+        Binary
     }
 }

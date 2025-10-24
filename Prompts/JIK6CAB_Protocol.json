@@ -1,19 +1,22 @@
 {
   "deviceName": "Device1",
   "version": "1.0",
-  "generatedDate": "2025-10-24T18:31:52.5001409+07:00",
+  "generatedDate": "2025-10-25T00:47:10.3964681+07:00",
   "description": "Auto-generated protocol definition for Device1",
   "encoding": "ASCII",
-  "messageType": "multi-line-frame",
-  "frameStart": "\\^KJIK000",
-  "frameEnd": "~P1",
+  "messageType": "single-line",
+  "entryTerminator": " ",
   "fields": [
     {
       "order": 0,
       "name": "StartMarker",
       "dataType": "string",
       "sampleValues": [
-        "^KJIK000"
+        "^KJIK000",
+        "2023-11-07",
+        "17:19:26",
+        "",
+        "0"
       ],
       "confidence": 1,
       "alignment": "left",
@@ -23,20 +26,20 @@
       "required": true,
       "fieldType": "StartMarker",
       "action": "Validate",
-      "variance": 1,
+      "variance": 0.5,
       "includeInDefinition": true,
       "showInEditor": true,
-      "isConstant": true,
-      "minLength": 8,
-      "maxLength": 8,
-      "sampleValuesDisplay": "^KJIK000"
+      "isConstant": false,
+      "minLength": 0,
+      "maxLength": 10,
+      "sampleValuesDisplay": "^KJIK000, 2023-11-07, 17:19:26, , 0"
     },
     {
       "order": 1,
-      "name": "Date1",
-      "dataType": "DateTime",
+      "name": "Empty1",
+      "dataType": "string",
       "sampleValues": [
-        "2023-11-07"
+        ""
       ],
       "confidence": 1,
       "alignment": "left",
@@ -44,87 +47,67 @@
       "width": 0,
       "fieldPosition": "body",
       "required": true,
-      "fieldType": "Date",
-      "action": "Parse",
-      "variance": 1,
+      "fieldType": "Empty",
+      "action": "Validate",
+      "variance": 0,
       "includeInDefinition": true,
-      "showInEditor": true,
+      "showInEditor": false,
       "isConstant": true,
-      "minLength": 10,
-      "maxLength": 10,
-      "sampleValuesDisplay": "2023-11-07"
+      "minLength": 0,
+      "maxLength": 0,
+      "sampleValuesDisplay": ""
     },
     {
       "order": 2,
-      "name": "Time1",
-      "dataType": "TimeSpan",
+      "name": "Field2",
+      "dataType": "string",
       "sampleValues": [
-        "17:19:26"
+        "0.00",
+        "1.94",
+        ""
       ],
-      "confidence": 1,
+      "confidence": 0.5,
       "alignment": "left",
       "paddingChar": " ",
       "width": 0,
       "fieldPosition": "body",
       "required": true,
-      "fieldType": "Time",
+      "fieldType": "Unknown",
       "action": "Parse",
-      "variance": 1,
+      "variance": 0.59999999999999998,
       "includeInDefinition": true,
       "showInEditor": true,
-      "isConstant": true,
-      "minLength": 8,
-      "maxLength": 8,
-      "sampleValuesDisplay": "17:19:26"
+      "isConstant": false,
+      "minLength": 0,
+      "maxLength": 4,
+      "sampleValuesDisplay": "0.00, 1.94, "
     },
     {
       "order": 3,
-      "name": "WeightKg1",
-      "dataType": "decimal",
+      "name": "Field3",
+      "dataType": "string",
       "sampleValues": [
-        "  0.00 kg"
+        "kg",
+        ""
       ],
-      "confidence": 1,
+      "confidence": 0.5,
       "alignment": "left",
       "paddingChar": " ",
       "width": 0,
       "fieldPosition": "body",
       "required": true,
-      "fieldType": "WeightKg",
+      "fieldType": "Unknown",
       "action": "Parse",
-      "variance": 1,
+      "variance": 0.40000000000000002,
       "includeInDefinition": true,
       "showInEditor": true,
-      "isConstant": true,
-      "minLength": 9,
-      "maxLength": 9,
-      "sampleValuesDisplay": "  0.00 kg"
+      "isConstant": false,
+      "minLength": 0,
+      "maxLength": 2,
+      "sampleValuesDisplay": "kg, "
     },
     {
       "order": 4,
-      "name": "WeightKg2",
-      "dataType": "decimal",
-      "sampleValues": [
-        "  1.94 kg"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "WeightKg",
-      "action": "Parse",
-      "variance": 1,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": true,
-      "minLength": 9,
-      "maxLength": 9,
-      "sampleValuesDisplay": "  1.94 kg"
-    },
-    {
-      "order": 5,
       "name": "Marker1",
       "dataType": "string",
       "sampleValues": [
@@ -147,172 +130,11 @@
       "sampleValuesDisplay": "0"
     },
     {
-      "order": 6,
-      "name": "Marker2",
-      "dataType": "string",
-      "sampleValues": [
-        "0"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Marker",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": true,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": "0"
-    },
-    {
-      "order": 7,
-      "name": "WeightKg3",
-      "dataType": "decimal",
-      "sampleValues": [
-        "  1.94 kg"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "WeightKg",
-      "action": "Parse",
-      "variance": 1,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": true,
-      "minLength": 9,
-      "maxLength": 9,
-      "sampleValuesDisplay": "  1.94 kg"
-    },
-    {
-      "order": 8,
-      "name": "WeightKg4",
-      "dataType": "decimal",
-      "sampleValues": [
-        "  1.94 kg"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "WeightKg",
-      "action": "Parse",
-      "variance": 1,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": true,
-      "minLength": 9,
-      "maxLength": 9,
-      "sampleValuesDisplay": "  1.94 kg"
-    },
-    {
-      "order": 9,
-      "name": "CountPcs1",
-      "dataType": "decimal",
-      "sampleValues": [
-        "    0 pcs"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "CountPcs",
-      "action": "Parse",
-      "variance": 1,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": true,
-      "minLength": 9,
-      "maxLength": 9,
-      "sampleValuesDisplay": "    0 pcs"
-    },
-    {
-      "order": 10,
-      "name": "Empty1",
-      "dataType": "string",
-      "sampleValues": [
-        " "
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Empty",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": false,
-      "isConstant": true,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": " "
-    },
-    {
-      "order": 11,
-      "name": "Empty2",
-      "dataType": "string",
-      "sampleValues": [
-        " "
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Empty",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": false,
-      "isConstant": true,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": " "
-    },
-    {
-      "order": 12,
-      "name": "Marker3",
-      "dataType": "string",
-      "sampleValues": [
-        "E"
-      ],
-      "confidence": 1,
-      "alignment": "left",
-      "paddingChar": " ",
-      "width": 0,
-      "fieldPosition": "body",
-      "required": true,
-      "fieldType": "Marker",
-      "action": "Validate",
-      "variance": 0,
-      "includeInDefinition": true,
-      "showInEditor": true,
-      "isConstant": true,
-      "minLength": 1,
-      "maxLength": 1,
-      "sampleValuesDisplay": "E"
-    },
-    {
-      "order": 13,
+      "order": 5,
       "name": "EndMarker",
       "dataType": "string",
       "sampleValues": [
-        "~P1"
+        "pcs"
       ],
       "confidence": 1,
       "alignment": "left",
@@ -328,21 +150,8 @@
       "isConstant": true,
       "minLength": 3,
       "maxLength": 3,
-      "sampleValuesDisplay": "~P1"
+      "sampleValuesDisplay": "pcs"
     }
   ],
-  "relationships": [
-    {
-      "type": "Combine",
-      "sourceFields": [
-        "Date1",
-        "Time1"
-      ],
-      "targetField": "DateTime",
-      "operation": "Date1.Date \u002B Time1",
-      "confidence": 1,
-      "reason": "Adjacent Date and Time fields detected",
-      "tolerance": 0
-    }
-  ]
+  "relationships": []
 }
