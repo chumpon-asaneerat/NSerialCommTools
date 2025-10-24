@@ -115,6 +115,7 @@
     <None Include="v1\Analyzers\PatternAnalyzer.cs" />
     <None Include="v1\Analyzers\RelationshipDetector.cs" />
     <None Include="v1\Analyzers\TerminatorDetector.cs" />
+    <Compile Include="Analyzers\EncodingDetector.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
