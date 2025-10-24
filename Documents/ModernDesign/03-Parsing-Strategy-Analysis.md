@@ -65,7 +65,7 @@ flowchart TD
 
     H --> I[Stage 6:<br/>Validation Generation]
 
-    I --> J[Output:<br/>JSON Protocol Definition]
+    I --> J[Output:<br/>JSON Protocol Definition<br/>with Field Relationships]
 
     style E2B fill:#FFE4B5
 ```

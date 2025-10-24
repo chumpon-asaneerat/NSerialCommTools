@@ -902,15 +902,6 @@ public class ProtocolDefinition
 
     #endregion
 
-    #region Validation Rules (Optional)
-
-    /// <summary>
-    /// Validation rules for data integrity (optional).
-    /// Used to validate parsed/serialized data.
-    /// </summary>
-    public List<ValidationRule> ValidationRules { get; set; }
-
-    #endregion
 
     #region Field Relationships (Optional)
 
@@ -932,7 +923,6 @@ public class ProtocolDefinition
         Fields = new List<FieldDefinition>();
         Messages = new List<MessageDefinition>();
         Commands = new List<CommandDefinition>();
-        ValidationRules = new List<ValidationRule>();
         FieldRelationships = new List<FieldRelationship>();
     }
 
@@ -1303,107 +1293,6 @@ public class LogFile
 
 ---
 
-### ValidationRule Class
-
-**Purpose**: Defines validation rules for data integrity checks.
-
-```csharp
-/// <summary>
-/// Validation rule for data integrity.
-/// Applied to parsed or serialized data to ensure correctness.
-/// </summary>
-public class ValidationRule
-{
-    /// <summary>
-    /// Rule name (unique identifier).
-    /// </summary>
-    public string Name { get; set; }
-
-    /// <summary>
-    /// Validation type.
-    /// </summary>
-    public ValidationType Type { get; set; }
-
-    /// <summary>
-    /// Field name to validate (for single-field rules).
-    /// </summary>
-    public string Field { get; set; }
-
-    /// <summary>
-    /// Formula for calculation-based validation (e.g., "GrossWeight - TareWeight = NetWeight").
-    /// Used when Type = Formula.
-    /// </summary>
-    public string Formula { get; set; }
-
-    /// <summary>
-    /// Tolerance for formula validation (e.g., 0.01 for decimal comparisons).
-    /// </summary>
-    public double? Tolerance { get; set; }
-
-    /// <summary>
-    /// Minimum value (for range validation).
-    /// </summary>
-    public object MinValue { get; set; }
-
-    /// <summary>
-    /// Maximum value (for range validation).
-    /// </summary>
-    public object MaxValue { get; set; }
-
-    /// <summary>
-    /// Custom condition expression (for custom validation).
-    /// Example: "GrossWeight >= TareWeight"
-    /// </summary>
-    public string Condition { get; set; }
-
-    /// <summary>
-    /// Validation severity.
-    /// </summary>
-    public ValidationSeverity Severity { get; set; }
-
-    /// <summary>
-    /// Error/warning message to display if validation fails.
-    /// </summary>
-    public string Message { get; set; }
-
-    /// <summary>
-    /// Is this rule enabled?
-    /// </summary>
-    public bool Enabled { get; set; }
-
-    public ValidationRule()
-    {
-        Type = ValidationType.Unknown;
-        Severity = ValidationSeverity.Error;
-        Enabled = true;
-    }
-
-    /// <summary>
-    /// Validates the rule configuration itself.
-    /// </summary>
-    public List<string> Validate()
-    {
-        List<string> errors = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(Name))
-            errors.Add("ValidationRule: Name is required");
-
-        if (Type == ValidationType.Unknown)
-            errors.Add($"ValidationRule {Name}: Type must be specified");
-
-        if (Type == ValidationType.Range && (MinValue == null || MaxValue == null))
-            errors.Add($"ValidationRule {Name}: MinValue and MaxValue required for Range validation");
-
-        if (Type == ValidationType.Formula && string.IsNullOrWhiteSpace(Formula))
-            errors.Add($"ValidationRule {Name}: Formula is required for Formula validation");
-
-        return errors;
-    }
-}
-```
-
----
-
 ### FieldRelationship Class
 
 **Purpose**: Defines relationships between fields (combining, splitting, calculating).
@@ -1560,6 +1449,17 @@ public class LineDefinition
     public string Pattern { get; set; }
 
     /// <summary>
+    /// Total width after padding (output formatting).
+    /// </summary>
+    public int? Width { get; set; }
+
+    /// <summary>
+    /// Should this line be shown in the editor UI?
+    /// True = show in editor, False = hide from editor (internal/reserved)
+    /// </summary>
+    public bool ShowInEditor { get; set; }
+
+    /// <summary>
     /// Is this line required?
     /// </summary>
     public bool Required { get; set; }
@@ -1573,6 +1473,7 @@ public class LineDefinition
     {
         Action = LineAction.Parse;
         Required = true;
+        ShowInEditor = true;
     }
 }
 ```
@@ -1756,39 +1657,6 @@ public enum TextAlignment
 }
 ```
 
-### ValidationType Enum
-
-```csharp
-/// <summary>
-/// Validation rule types.
-/// </summary>
-public enum ValidationType
-{
-    Unknown = 0,
-    Range = 1,              // Field value must be within min-max range
-    Formula = 2,            // Formula calculation must match (e.g., GW - TW = NW)
-    DateTimeRange = 3,      // DateTime must be within date range
-    Custom = 4,             // Custom condition expression
-    RequiredField = 5,      // Field must have a value
-    FieldRelationship = 6,  // Relationship between fields (e.g., Field1 >= Field2)
-    Pattern = 7             // Field must match regex pattern
-}
-```
-
-### ValidationSeverity Enum
-
-```csharp
-/// <summary>
-/// Validation severity levels.
-/// </summary>
-public enum ValidationSeverity
-{
-    Info = 0,       // Informational only
-    Warning = 1,    // Warning but accepts data
-    Error = 2       // Error - prevents data acceptance
-}
-```
-
 ### RelationshipType Enum
 
 ```csharp
@@ -1934,23 +1802,22 @@ This document defines all data models needed for the Protocol Analyzer:
 - **FieldDefinition** - Field in definition
 - **ParseConfiguration** - How to parse
 - **SerializeConfiguration** - How to serialize
-- **ValidationRule** - Data integrity validation rules ⭐ NEW
-- **FieldRelationship** - Combined/calculated fields ⭐ NEW
+- **FieldRelationship** - Combined/calculated fields
 
 ### State Machine Models:
-- **LineSequenceConfig** - Sequential line parsing configuration ⭐ NEW
-- **LineDefinition** - Single line in sequence ⭐ NEW
+- **LineSequenceConfig** - Sequential line parsing configuration
+- **LineDefinition** - Single line in sequence with Width and ShowInEditor properties
 
 ### Supporting Models:
-- **17 enumerations** for type safety (6 new enums added)
+- **13 enumerations** for type safety
 - Statistics and confidence scoring classes
 - Validation methods
 
-### New Features Supported:
-- ✅ **Validation Rules** - Formula, range, datetime, custom validations
+### Features Supported:
 - ✅ **Field Relationships** - Combine Date+Time, split Value+Unit, calculate fields
 - ✅ **State Machine Parsing** - Sequential line-by-line parsing (JIK6CAB pattern)
 - ✅ **Skip Lines** - Mark lines as parse/skip/validate
+- ✅ **Editor Visibility** - ShowInEditor property controls UI display
 - ✅ **Multi-Field Units** - Separate value and unit fields
 
 All models are:
@@ -1963,9 +1830,10 @@ All models are:
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: 2025-10-21
-**Status**: Complete - Enhanced with Validation & State Machine Support
+**Document Version**: 2.1
+**Last Updated**: 2025-10-24
+**Status**: Complete - State Machine Support (ValidationRules Removed)
 **Changes**:
 - v1.0: Initial complete data models
 - v2.0: Added ValidationRule, FieldRelationship, LineSequenceConfig, 6 new enums
+- v2.1: **REMOVED ValidationRules** (feature cancelled), Updated LineDefinition with Width and ShowInEditor properties
