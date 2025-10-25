@@ -2,7 +2,7 @@
 
 **Purpose**: Define algorithms to **automatically detect** parsing strategies from unknown log files using pure pattern analysis.
 
-**Core Principle**: The Protocol Analyzer knows **nothing** about devices beforehand. All strategies must be derived from **statistical analysis** and **pattern detection** of raw log data.
+**Core Principle**: The Protocol Analyzer knows **nothing** about devices beforehand. All strategies must be derived from **pure statistical analysis** of raw byte data (0x00-0xFF). **NO hardcoded assumptions** about characters, terminators, or patterns.
 
 **Related Documents**:
 - **00-Requirements-Specification.md** - Requirements
@@ -70,11 +70,13 @@ flowchart TD
 
 ### Key Insight
 
-Parsing strategies are detected through:
-- **Frequency analysis** (delimiters, terminators, markers)
-- **Position analysis** (fixed vs variable field locations)
-- **Pattern analysis** (regex matching, content variance)
-- **Structure analysis** (single-line vs multi-line messages)
+Parsing strategies are detected through **pure statistical analysis**:
+- **Byte Frequency Distribution** (0x00-0xFF) - identify delimiters, terminators, markers
+- **Position Variance Analysis** (σ, CV) - detect fixed vs variable field locations
+- **Interval Regularity** (σ ≈ 0) - find frame boundaries and repeating patterns
+- **Low-Frequency Detection** (<2%) - identify structural markers vs data
+- **Entropy Analysis** - distinguish fixed fields from variable data
+- **No hardcoded assumptions** - all patterns discovered from data
 
 ---
 
@@ -165,135 +167,221 @@ TEXT: +009.20/1 G S\r\n
 
 ## Pattern Detection Algorithms
 
-### Algorithm 1: Message Boundary Detection
+### Algorithm 1: Message Boundary Detection (Statistical)
 
-**Goal**: Determine where one message ends and another begins
+**Goal**: Determine where one message ends and another begins using **pure byte statistics**
 
-**Input**: List of file lines (strings)
+**Input**: Raw byte array (entire file as bytes 0x00-0xFF)
 
 **Algorithm**:
 
 ```
-FUNCTION DetectMessageBoundaries(lines):
+FUNCTION DetectMessageBoundaries(byte_data):
 
-    // ═══ STEP 1: Analyze Terminators ═══
-    terminator_patterns = []
+    // ═══ STEP 1: Byte Frequency Analysis ═══
 
-    FOR each line in lines:
-        last_bytes = GetLastBytes(line, 4)  // Check last 4 bytes
-        terminator_patterns.Add(last_bytes)
+    byte_frequency = [256]  // Array for all possible byte values
 
-    // Find most common terminator
-    common_terminator = MostFrequent(terminator_patterns)
-    terminator_frequency = Count(common_terminator) / lines.Count
+    FOR each byte in byte_data:
+        byte_frequency[byte]++
 
-    // ═══ STEP 2: Detect Start/End Markers ═══
+    total_bytes = byte_data.Length
 
-    potential_markers = []
+    // Convert to percentages
+    FOR i = 0 TO 255:
+        byte_frequency[i] = byte_frequency[i] / total_bytes
 
-    FOR each line in lines:
-        first_char = line[0]
+    // ═══ STEP 2: Detect Low-Frequency Bytes (Potential Markers) ═══
 
-        // Check for special characters at start (^, ~, <, >, etc.)
-        IF first_char IN ['^', '~', '<', '>', '@', '#', '$']:
-            pattern = ExtractPattern(line)  // e.g., "^KJIK\d{3}"
+    // Statistical Principle: Bytes appearing <2% are likely structural, NOT data
+    low_frequency_threshold = 0.02  // 2%
 
-            IF pattern NOT IN potential_markers:
-                potential_markers[pattern] = {
-                    count: 0,
-                    positions: [],
-                    line_samples: []
-                }
+    potential_marker_bytes = []
 
-            potential_markers[pattern].count++
-            potential_markers[pattern].positions.Add(line_number)
-            potential_markers[pattern].line_samples.Add(line)
+    FOR each byte_value = 0 TO 255:
+        IF byte_frequency[byte_value] > 0 AND byte_frequency[byte_value] < low_frequency_threshold:
+            // This byte is RARE - might be a marker
+            potential_marker_bytes.Add({
+                byte_value: byte_value,
+                frequency: byte_frequency[byte_value],
+                positions: FindAllPositions(byte_data, byte_value)
+            })
 
-    // ═══ STEP 3: Analyze Marker Positions ═══
+    // ═══ STEP 3: Analyze Position Regularity (Interval Analysis) ═══
 
-    FOR each marker in potential_markers:
-        positions = marker.positions
-        gaps = CalculateGaps(positions)  // Distance between occurrences
+    FOR each marker_candidate in potential_marker_bytes:
+        positions = marker_candidate.positions
 
-        // Check if gaps are consistent
-        gap_stddev = StandardDeviation(gaps)
-        gap_average = Average(gaps)
+        IF positions.Count < 2:
+            CONTINUE  // Need at least 2 occurrences
 
-        marker.confidence = 1.0 - gap_stddev / gap_average
-        marker.expected_lines = gap_average
+        // Calculate intervals between occurrences
+        intervals = []
+        FOR i = 0 TO positions.Count - 2:
+            gap = positions[i+1] - positions[i]
+            intervals.Add(gap)
 
-        // Check for corresponding end marker
-        IF marker.pattern starts with '^' or '<':
-            // This might be a start marker
-            // Look for end marker at position + gap_average - 1
+        // Statistical regularity test
+        mean_interval = Average(intervals)
+        stddev_interval = StandardDeviation(intervals)
 
-            FOR each position in marker.positions:
-                expected_end_line = position + gap_average - 1
+        // Coefficient of Variation (CV) = σ/μ
+        // Low CV means highly regular pattern
+        IF mean_interval > 0:
+            cv = stddev_interval / mean_interval
+            marker_candidate.regularity = 1.0 - cv  // Higher = more regular
+            marker_candidate.interval = mean_interval
+        ELSE:
+            marker_candidate.regularity = 0
 
-                IF expected_end_line < lines.Count:
-                    potential_end = lines[expected_end_line]
+    // ═══ STEP 4: Detect 2-Byte Sequence Terminators ═══
 
-                    // Check if this line has marker characteristics
-                    IF potential_end.StartsWith('~') OR
-                       potential_end.Length < 5:
-                        marker.end_marker = potential_end
-                        marker.is_frame = true
+    sequence_patterns = {}
 
-    // ═══ STEP 4: Decision Tree ═══
+    FOR i = 0 TO byte_data.Length - 2:
+        two_byte_seq = [byte_data[i], byte_data[i+1]]
 
-    best_marker = potential_markers.MaxBy(m => m.confidence)
+        IF two_byte_seq NOT IN sequence_patterns:
+            sequence_patterns[two_byte_seq] = {
+                count: 0,
+                positions: []
+            }
 
-    IF best_marker.confidence > 0.9 AND best_marker.expected_lines > 1:
-        // Multi-line frame with markers detected
+        sequence_patterns[two_byte_seq].count++
+        sequence_patterns[two_byte_seq].positions.Add(i)
+
+    // Find sequences with perfect regularity (potential terminators)
+    terminator_candidates = []
+
+    FOR each sequence in sequence_patterns:
+        IF sequence.count < 5:
+            CONTINUE  // Need multiple samples
+
+        positions = sequence.positions
+        intervals = CalculateIntervals(positions)
+
+        mean_interval = Average(intervals)
+        stddev_interval = StandardDeviation(intervals)
+
+        IF stddev_interval < 0.1:  // Nearly perfect regularity
+            terminator_candidates.Add({
+                bytes: sequence.bytes,
+                count: sequence.count,
+                interval: mean_interval,
+                regularity: 1.0 - (stddev_interval / mean_interval),
+                positions: positions
+            })
+
+    // ═══ STEP 5: Detect Start/End Marker Pairs ═══
+
+    // Find low-frequency bytes that appear in pairs with consistent gaps
+    frame_patterns = []
+
+    FOR each start_candidate in potential_marker_bytes:
+        IF start_candidate.regularity < 0.95:
+            CONTINUE  // Not regular enough
+
+        start_interval = start_candidate.interval
+
+        // Look for potential end marker
+        FOR each end_candidate in potential_marker_bytes:
+            IF end_candidate.byte_value == start_candidate.byte_value:
+                CONTINUE  // Must be different bytes
+
+            IF end_candidate.regularity < 0.95:
+                CONTINUE  // Not regular enough
+
+            // Check if end marker appears at consistent offset from start
+            start_positions = start_candidate.positions
+            end_positions = end_candidate.positions
+
+            IF start_positions.Count != end_positions.Count:
+                CONTINUE  // Must have same number of occurrences
+
+            // Calculate offsets between start and end
+            offsets = []
+            FOR i = 0 TO start_positions.Count - 1:
+                offset = end_positions[i] - start_positions[i]
+                offsets.Add(offset)
+
+            offset_mean = Average(offsets)
+            offset_stddev = StandardDeviation(offsets)
+
+            IF offset_stddev < 1.0:  // Very consistent offset
+                frame_patterns.Add({
+                    start_byte: start_candidate.byte_value,
+                    end_byte: end_candidate.byte_value,
+                    frame_size: offset_mean,
+                    frame_count: start_positions.Count,
+                    confidence: 1.0 - (offset_stddev / offset_mean)
+                })
+
+    // ═══ STEP 6: Decision Tree (Statistical) ═══
+
+    // Sort by confidence
+    best_terminator = terminator_candidates.MaxBy(t => t.regularity)
+    best_frame = frame_patterns.MaxBy(f => f.confidence)
+
+    // Decision criteria based on STATISTICS ONLY
+    IF best_frame != null AND best_frame.confidence > 0.98:
+        // Frame-based protocol detected (high confidence)
         RETURN {
             structure: "FrameBased",
-            start_marker: best_marker.pattern,
-            end_marker: best_marker.end_marker,
-            lines_per_message: best_marker.expected_lines,
-            confidence: best_marker.confidence
+            start_byte: best_frame.start_byte,
+            end_byte: best_frame.end_byte,
+            frame_size: best_frame.frame_size,
+            confidence: best_frame.confidence,
+            reasoning: "Start/end bytes with regular intervals (σ≈0)"
         }
 
-    ELSE IF terminator_frequency > 0.95:
-        // Single line per message
+    ELSE IF best_terminator != null AND best_terminator.regularity > 0.98:
+        // Single-line messages with regular terminator
         RETURN {
             structure: "SingleLine",
-            terminator: common_terminator,
-            confidence: terminator_frequency
+            terminator_bytes: best_terminator.bytes,
+            message_length: best_terminator.interval,
+            confidence: best_terminator.regularity,
+            reasoning: "Regular terminator sequence detected"
         }
 
     ELSE:
-        // Content-based or variable structure
+        // Variable structure or content-based
         RETURN {
             structure: "ContentBased",
-            confidence: 0.7
+            confidence: 0.7,
+            reasoning: "No regular patterns detected"
         }
 ```
 
-**Example Results**:
+**Example Results** (Statistical Analysis):
 
-| Log File | Detected Structure | Confidence | Reasoning |
-|----------|-------------------|-----------|-----------|
-| Log 1 | SingleLine | 1.0 | Every line ends with CRLF, no markers |
-| Log 2 | FrameBased | 1.0 | "^KJIK000" at line 1, 15, 29... Gap=14, End="~P1" |
-| Log 3 | SingleLine | 1.0 | Every line ends with CRLF, no markers |
+| Log File | Detected Structure | Confidence | Statistical Evidence |
+|----------|-------------------|-----------|---------------------|
+| Log 1 | SingleLine | 1.0 | 0x0D 0x0A at 16-byte intervals, σ=0 |
+| Log 2 | FrameBased | 1.0 | 0x5E (freq=1%, regularity=1.0, interval=140), 0x7E at offset 137 |
+| Log 3 | SingleLine | 1.0 | 0x0D 0x0A sequence, regularity >0.98 |
 
-**Flowchart: Message Boundary Detection Algorithm**
+**Flowchart: Message Boundary Detection Algorithm (Statistical)**
 
 ```mermaid
 flowchart TD
-    Start([Start: List of Lines]) --> Step1["<b>STEP 1: Analyze Terminators</b><br/>Extract last 4 bytes from each line<br/>Find most common terminator pattern"]
+    Start([Start: Raw Byte Array]) --> Step1["<b>STEP 1: Byte Frequency</b><br/>Analyze all bytes 0x00-0xFF<br/>Calculate frequency %<br/>for each byte value"]
 
-    Step1 --> Step2["<b>STEP 2: Detect Start/End Markers</b><br/>Look for special chars at start<br/>^, ~, <, >, @, #, $<br/>Track pattern, count, positions"]
+    Step1 --> Step2["<b>STEP 2: Low-Frequency Detection</b><br/>Find bytes with freq < 2%<br/>These are likely structural<br/>(markers, not data)"]
 
-    Step2 --> Step3["<b>STEP 3: Analyze Marker Positions</b><br/>Calculate gaps between occurrences<br/>Check gap consistency<br/>Look for end markers"]
+    Step2 --> Step3["<b>STEP 3: Position Regularity</b><br/>For each low-freq byte:<br/>Calculate intervals between occurrences<br/>Compute σ (standard deviation)<br/>CV = σ/μ"]
 
-    Step3 --> Decide{"Decision Tree:<br/>What's the<br/>Terminator Freq & <br/>Marker Confidence?"}
+    Step3 --> Step4["<b>STEP 4: Terminator Sequences</b><br/>Find 2-byte sequences<br/>with perfect regularity<br/>(σ < 0.1)"]
 
-    Decide -->|High confidence marker<br/>Consistent gaps| Return1["<b>RETURN FrameBased</b><br/>✓ Multi-line frames detected<br/>✓ Start/end markers found<br/>✓ Consistent line count"]
+    Step4 --> Step5["<b>STEP 5: Marker Pairs</b><br/>Find byte pairs with:<br/>• Same occurrence count<br/>• Consistent offset<br/>• High regularity (>0.95)"]
 
-    Decide -->|No markers<br/>High terminator freq| Return2["<b>RETURN SingleLine</b><br/>✓ Every line ends with<br/>same terminator<br/>✓ One message per line"]
+    Step5 --> Decide{"Statistical Decision:<br/>Best Pattern Type?"}
 
-    Decide -->|Uncertain patterns| Return3["<b>RETURN ContentBased</b><br/>✓ Low confidence<br/>✓ Needs content analysis"]
+    Decide -->|Frame pattern<br/>confidence > 0.98| Return1["<b>RETURN FrameBased</b><br/>✓ Start/end bytes detected<br/>✓ Regular intervals (σ≈0)<br/>✓ Consistent frame size"]
+
+    Decide -->|Terminator pattern<br/>regularity > 0.98| Return2["<b>RETURN SingleLine</b><br/>✓ Regular terminator found<br/>✓ Fixed message length<br/>✓ σ ≈ 0"]
+
+    Decide -->|No regular patterns| Return3["<b>RETURN ContentBased</b><br/>✓ Variable structure<br/>✓ Low statistical confidence"]
 
     Return1 --> End([End])
     Return2 --> End
@@ -309,92 +397,134 @@ flowchart TD
 
 ---
 
-### Algorithm 2: Delimiter Detection
+### Algorithm 2: Delimiter Detection (Statistical)
 
-**Goal**: Find what separates fields within a line/message
+**Goal**: Find what separates fields within a line/message using **byte frequency analysis**
 
-**Input**: List of message lines
+**Input**: List of messages (byte arrays)
 
 **Algorithm**:
 
 ```
 FUNCTION DetectDelimiters(messages):
 
-    delimiter_candidates = {
-        ' ': 0,     // Space
-        '\t': 0,    // Tab
-        ',': 0,     // Comma
-        ';': 0,     // Semicolon
-        ':': 0,     // Colon
-        '/': 0,     // Slash
-        '|': 0      // Pipe
-    }
+    // ═══ STEP 1: Byte Frequency Per Message ═══
 
-    // ═══ STEP 1: Count Occurrences ═══
+    // Instead of hardcoded list, analyze ALL bytes (0x00-0xFF)
+    byte_stats = [256]  // For each possible byte value
 
-    FOR each message in messages:
-        FOR each candidate_char in delimiter_candidates:
-            count = CountOccurrences(message, candidate_char)
-            delimiter_candidates[candidate_char] += count
-
-    // ═══ STEP 2: Calculate Consistency ═══
-
-    FOR each delimiter in delimiter_candidates:
-        occurrences_per_message = []
-
-        FOR each message in messages:
-            count = CountOccurrences(message, delimiter)
-            occurrences_per_message.Add(count)
-
-        // Check consistency (should be same count per message)
-        avg = Average(occurrences_per_message)
-        stddev = StandardDeviation(occurrences_per_message)
-
-        IF avg > 0:
-            delimiter.consistency = 1.0 - (stddev / avg)
-            delimiter.frequency = avg
-        ELSE:
-            delimiter.consistency = 0
-            delimiter.frequency = 0
-
-    // ═══ STEP 3: Detect Hierarchical Delimiters ═══
-
-    // Check if multiple delimiters exist with high consistency
-    high_consistency_delimiters = delimiter_candidates
-        .Where(d => d.consistency > 0.8 AND d.frequency > 0)
-        .OrderByDescending(d => d.frequency)
-
-    IF high_consistency_delimiters.Count > 1:
-        // Potential hierarchical delimiter structure
-        RETURN {
-            type: "Hierarchical",
-            primary: high_consistency_delimiters[0],
-            secondary: high_consistency_delimiters[1],
-            confidence: Min(high_consistency_delimiters[0].consistency,
-                           high_consistency_delimiters[1].consistency)
+    FOR i = 0 TO 255:
+        byte_stats[i] = {
+            byte_value: i,
+            total_count: 0,
+            occurrences_per_message: [],
+            frequency_percent: 0
         }
 
-    ELSE IF high_consistency_delimiters.Count == 1:
+    // Count occurrences for each byte in each message
+    FOR each message in messages:
+        byte_counts_in_message = [256]  // Local count for this message
+
+        FOR each byte in message:
+            byte_counts_in_message[byte]++
+
+        // Add to global stats
+        FOR i = 0 TO 255:
+            count = byte_counts_in_message[i]
+            byte_stats[i].total_count += count
+            byte_stats[i].occurrences_per_message.Add(count)
+
+    total_bytes = Sum(byte_stats, s => s.total_count)
+
+    // Calculate frequency percentages
+    FOR i = 0 TO 255:
+        byte_stats[i].frequency_percent = byte_stats[i].total_count / total_bytes
+
+    // ═══ STEP 2: Statistical Consistency Analysis ═══
+
+    delimiter_candidates = []
+
+    FOR each byte_stat in byte_stats:
+        IF byte_stat.total_count == 0:
+            CONTINUE  // Byte never appears
+
+        occurrences = byte_stat.occurrences_per_message
+
+        // Calculate statistical measures
+        mean = Average(occurrences)
+        stddev = StandardDeviation(occurrences)
+
+        // Consistency score (Coefficient of Variation inverse)
+        // High consistency = low variation
+        IF mean > 0:
+            cv = stddev / mean  // Coefficient of Variation
+            consistency = 1.0 - Min(cv, 1.0)  // Invert to get consistency score
+        ELSE:
+            consistency = 0
+
+        // Delimiter criteria (statistical):
+        // 1. Appears in most messages (mean > 0.5)
+        // 2. Consistent occurrences (high consistency)
+        // 3. Not too rare (frequency > 2%)
+        // 4. Not too common (frequency < 60% - likely data, not delimiter)
+
+        IF mean > 0.5 AND
+           consistency > 0.8 AND
+           byte_stat.frequency_percent > 0.02 AND
+           byte_stat.frequency_percent < 0.60:
+
+            delimiter_candidates.Add({
+                byte_value: byte_stat.byte_value,
+                mean_occurrences: mean,
+                consistency: consistency,
+                frequency_percent: byte_stat.frequency_percent
+            })
+
+    // Sort by consistency (most consistent first)
+    delimiter_candidates.Sort(by: consistency, descending)
+
+    // ═══ STEP 3: Detect Hierarchical Delimiters (Statistical) ═══
+
+    // Multiple high-consistency bytes = hierarchical structure
+    high_confidence = delimiter_candidates.Where(d => d.consistency > 0.95)
+
+    IF high_confidence.Count >= 2:
+        // Potential hierarchical delimiter structure
+        // Primary = most consistent, Secondary = second most consistent
+        RETURN {
+            type: "Hierarchical",
+            primary_byte: high_confidence[0].byte_value,
+            secondary_byte: high_confidence[1].byte_value,
+            primary_mean: high_confidence[0].mean_occurrences,
+            secondary_mean: high_confidence[1].mean_occurrences,
+            confidence: Min(high_confidence[0].consistency, high_confidence[1].consistency)
+        }
+
+    ELSE IF high_confidence.Count == 1:
+        // Single delimiter
         RETURN {
             type: "Simple",
-            delimiter: high_consistency_delimiters[0],
-            confidence: high_consistency_delimiters[0].consistency
+            delimiter_byte: high_confidence[0].byte_value,
+            mean_occurrences: high_confidence[0].mean_occurrences,
+            confidence: high_confidence[0].consistency
         }
 
     ELSE:
+        // No delimiters with high confidence
         RETURN {
             type: "None",
-            confidence: 0
+            confidence: 0,
+            reasoning: "No bytes meet delimiter criteria"
         }
 ```
 
-**Example Results**:
+**Example Results** (Statistical Analysis):
 
-| Log File | Primary Delimiter | Secondary | Type | Confidence |
-|----------|------------------|-----------|------|-----------|
-| Log 1 | Space (multiple) | None | Simple | 0.95 |
-| Log 2 | None detected | None | None | 0 |
-| Log 3 | "/" (1 per line) | Space (2 per line) | Hierarchical | 1.0 |
+| Log File | Primary Delimiter | Secondary | Type | Statistical Evidence |
+|----------|------------------|-----------|------|---------------------|
+| Log 1 | 0x20 (space) | None | Simple | Mean=8, Consistency=0.95, Freq=40% |
+| Log 2 | None detected | None | None | No bytes meet criteria |
+| Log 3 | 0x2F ('/') | 0x20 (space) | Hierarchical | 0x2F: mean=1, σ=0; 0x20: mean=2, σ=0 |
 
 **Flowchart: Delimiter Detection Algorithm**
 
