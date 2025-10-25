@@ -4,7 +4,80 @@
 **Date**: 2025-10-26
 **Session**: 4
 **Duration**: In Progress
-**Status**: Major Bug Fixes - Protocol Detection Algorithm
+**Status**: Debugging Protocol Detection Algorithm - Multiple Failed Attempts
+
+**CURRENT STATE**: Algorithm NOT working. Dynamic pattern discovery failing to detect actual markers.
+
+---
+
+## Latest Diagnostic Results (Critical Finding)
+
+**Test File**: `jik_emu_1.txt` (4815 bytes, should contain 26 messages)
+
+**Detection Output**:
+```
+START MARKER: None ❌
+END MARKER: None ❌
+FRAME TERMINATOR: 30-2D-32-30-32-35-0D-0A-30-31-3A-32-35-3A-31-36 (16 bytes)
+  Decoded: "0-2025\r\n01:25:16" (part of date/time field - WRONG!)
+  Confidence: 95%
+SEGMENT TERMINATOR: 0D-0A (CRLF)
+  Confidence: 95%
+```
+
+**What This Means**:
+1. Dynamic pattern discovery is finding RANDOM long sequences (date/time fragments)
+2. `^KJIK000` is NOT being found as StartMarker at all
+3. The 16-byte "0-2025\r\n01:25:16" pattern is being used as frame boundary (completely wrong)
+4. This results in only 3 messages instead of 26
+
+**Root Cause**: The `DiscoverRepeatingPatterns()` algorithm is broken - it's finding coincidental repetitions instead of structural markers.
+
+---
+
+## Failed Attempts Log
+
+### Attempt 1: Remove Auto Detect UI
+**Change**: Removed "Auto Detect" radio button, kept only Single/Multi Message modes
+**Files**: `MainWindow.xaml`, `MainWindow.xaml.cs`
+**Result**: UI simplified but didn't fix core detection issue
+**Status**: Kept (UI improvement)
+
+### Attempt 2: Fix HexLogParser Timestamp False Positive
+**Change**: Changed regex from 2 hex bytes to 4 hex bytes minimum
+**File**: `Parsers\HexLogParser.cs:50-55`
+**Result**: Fixed timestamp issue for plain text files ✓
+**Status**: Kept (valid fix)
+
+### Attempt 3: Add Dynamic Pattern Discovery
+**Change**: Added `DiscoverRepeatingPatterns()` to scan for 3-16 byte patterns
+**File**: `Analyzers\TerminatorDetector.cs:285-324`
+**Result**: FAILED - finds random long patterns instead of structural markers ❌
+**Status**: Needs complete redesign
+
+### Attempt 4: Implement Basic MarkerDetector
+**Change**: Implemented `DetectStartMarker()` and `DetectEndMarker()` methods
+**File**: `Analyzers\ProtocolDetector.cs:230-401`
+**Result**: Never called because dynamic discovery doesn't find markers to analyze ❌
+**Status**: Code exists but ineffective
+
+### Attempt 5: MessageExtractor Use Markers
+**Change**: Added priority: Markers > Terminator in frame extraction
+**File**: `Parsers\MessageExtractor.cs:75-228`
+**Result**: Correct logic, but receives NULL markers so has no effect ❌
+**Status**: Code correct but depends on broken detection
+
+### Attempt 6: Fix Sampling for Small Files
+**Change**: Files <100KB scan every byte instead of sampling
+**File**: `Analyzers\TerminatorDetector.cs:291`
+**Result**: Made problem WORSE - now finds more random patterns ❌
+**Status**: Wrong approach
+
+### Attempt 7: Add Diagnostic Output
+**Change**: Added MessageBox showing detected patterns
+**File**: `MainWindow.xaml.cs:355-394`
+**Result**: Successfully revealed the root problem ✓
+**Status**: Temporary debug code - should remove before final
 
 ---
 
