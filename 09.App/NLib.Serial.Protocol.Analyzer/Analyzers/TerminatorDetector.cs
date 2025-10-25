@@ -286,8 +286,9 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
         {
             var patternDict = new Dictionary<string, PatternInfo>();
 
-            // Sample the data to find candidate patterns (to avoid O(n^2) explosion)
-            int sampleInterval = Math.Max(1, data.Length / 1000); // Sample every Nth position
+            // For small files (<100KB), scan every position for accuracy
+            // For large files, use sampling to avoid performance issues
+            int sampleInterval = data.Length < 100000 ? 1 : Math.Max(1, data.Length / 10000);
 
             for (int length = minLength; length <= maxLength; length++)
             {
@@ -307,11 +308,14 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 }
             }
 
-            // Return patterns that occur frequently enough (adjusted for sampling)
-            int adjustedMin = minOccurrences / Math.Max(1, sampleInterval);
+            // For small files with no sampling, use minOccurrences directly
+            // For sampled files, adjust the minimum
+            int effectiveMin = (sampleInterval == 1)
+                ? minOccurrences
+                : Math.Max(1, minOccurrences / sampleInterval);
 
             return patternDict.Values
-                .Where(p => p.Count >= Math.Max(1, adjustedMin))
+                .Where(p => p.Count >= effectiveMin)
                 .OrderByDescending(p => p.Bytes.Length)  // Longer patterns first
                 .ThenBy(p => p.Count)                     // Then fewer occurrences
                 .Select(p => p.Bytes)
