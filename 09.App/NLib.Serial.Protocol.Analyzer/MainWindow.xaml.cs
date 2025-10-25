@@ -329,9 +329,8 @@ namespace NLib
             // PASS 1: DETECT - Analyze raw bytes to find ALL patterns (encoding, terminators, structure)
             UpdateStatus("Pass 1: Detecting protocol structure...");
 
-            // TODO: Add UI control for user to select single/multi message mode
-            // For now: Try multi-message mode (false) to detect frame boundaries
-            bool? isSingleMessage = false; // false = multi-message, true = single-message, null = auto-detect
+            // Get user's protocol structure hint from UI
+            bool? isSingleMessage = GetProtocolStructureHint();
 
             _currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes, isSingleMessage);
 
@@ -634,6 +633,30 @@ namespace NLib
         private void UpdateStatus(string message)
         {
             txtStatus.Text = message;
+        }
+
+        /// <summary>
+        /// Gets the protocol structure hint from UI radio buttons.
+        /// </summary>
+        /// <returns>
+        /// true = Single Message (entire file is one message)
+        /// false = Multi Message (detect frame boundaries)
+        /// null = Auto Detect
+        /// </returns>
+        private bool? GetProtocolStructureHint()
+        {
+            if (rbSingleMessage.IsChecked == true)
+            {
+                return true; // Single message
+            }
+            else if (rbMultiMessage.IsChecked == true)
+            {
+                return false; // Multi message
+            }
+            else // rbAutoDetect.IsChecked == true
+            {
+                return null; // Auto detect
+            }
         }
 
         /// <summary>
