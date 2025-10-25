@@ -352,6 +352,47 @@ namespace NLib
 
             _currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes, isSingleMessage);
 
+            // DIAGNOSTIC: Show what was detected
+            var diagnostic = new System.Text.StringBuilder();
+            diagnostic.AppendLine("=== DETECTION RESULTS ===");
+            diagnostic.AppendLine($"File Size: {rawBytes.Length} bytes");
+            diagnostic.AppendLine();
+
+            if (_currentDetection.StartMarker != null)
+            {
+                diagnostic.AppendLine($"START MARKER: {BitConverter.ToString(_currentDetection.StartMarker.Bytes)}");
+                diagnostic.AppendLine($"  Confidence: {_currentDetection.StartMarker.Confidence:P0}");
+                diagnostic.AppendLine($"  Display: {_currentDetection.StartMarker.DisplayName}");
+            }
+            else
+            {
+                diagnostic.AppendLine("START MARKER: None");
+            }
+
+            if (_currentDetection.EndMarker != null)
+            {
+                diagnostic.AppendLine($"END MARKER: {BitConverter.ToString(_currentDetection.EndMarker.Bytes)}");
+                diagnostic.AppendLine($"  Confidence: {_currentDetection.EndMarker.Confidence:P0}");
+            }
+            else
+            {
+                diagnostic.AppendLine("END MARKER: None");
+            }
+
+            if (_currentDetection.FrameTerminator != null)
+            {
+                diagnostic.AppendLine($"FRAME TERMINATOR: {BitConverter.ToString(_currentDetection.FrameTerminator.Bytes)}");
+                diagnostic.AppendLine($"  Confidence: {_currentDetection.FrameTerminator.Confidence:P0}");
+            }
+
+            if (_currentDetection.SegmentTerminator != null)
+            {
+                diagnostic.AppendLine($"SEGMENT TERMINATOR: {BitConverter.ToString(_currentDetection.SegmentTerminator.Bytes)}");
+                diagnostic.AppendLine($"  Confidence: {_currentDetection.SegmentTerminator.Confidence:P0}");
+            }
+
+            MessageBox.Show(diagnostic.ToString(), "Detection Diagnostic", MessageBoxButton.OK, MessageBoxImage.Information);
+
             // Show detection results in status
             string detectionInfo = BuildDetectionInfo(_currentDetection);
             UpdateStatus($"Pass 1 complete - {detectionInfo}");
