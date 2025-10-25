@@ -1626,9 +1626,9 @@ public class AnalysisWarning
 
 ---
 
-**Document Version**: 5.1
-**Last Updated**: 2025-10-24
-**Status**: Universal Algorithm Design + State Machine Strategy (ValidationRules Removed)
+**Document Version**: 6.0
+**Last Updated**: 2025-10-26
+**Status**: **Pure Statistical Analysis** - NO Hardcoded Assumptions
 **Changes**:
 - v1.0-2.1: Production code based (WRONG APPROACH)
 - v3.0: Production code integrated (STILL WRONG)
@@ -1640,3 +1640,15 @@ public class AnalysisWarning
   - Strategy selection decision tree
   - HEX/Text format examples
 - v5.1: **REMOVED** Stage 6 (Validation Generation) - ValidationRules feature cancelled, updated pipeline to 5 stages
+- v6.0: **MAJOR STATISTICAL OVERHAUL** - Removed ALL hardcoded assumptions:
+  - ❌ Removed hardcoded character list `['^', '~', '<', '>', '@', '#', '$']`
+  - ❌ Removed hardcoded delimiter list (space, tab, comma, etc.)
+  - ✅ Added byte frequency analysis for ALL bytes (0x00-0xFF)
+  - ✅ Added position variance analysis (σ, CV = σ/μ)
+  - ✅ Added interval regularity detection (σ ≈ 0 = structural element)
+  - ✅ Added low-frequency detection (<2% = marker, not data)
+  - ✅ Full binary protocol support (bytes >0x7F)
+  - ✅ Algorithm 1: Statistical message boundary detection
+  - ✅ Algorithm 2: Statistical delimiter detection
+  - ✅ Updated all flowcharts to reflect statistical approach
+  - ✅ All pattern discovery is now data-driven, NO assumptions
