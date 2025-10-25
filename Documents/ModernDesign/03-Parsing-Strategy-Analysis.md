@@ -324,22 +324,22 @@ FUNCTION DetectMessageBoundaries(byte_data):
 
     // Decision criteria based on STATISTICS ONLY
     IF best_frame != null AND best_frame.confidence > 0.98:
-        // Frame-based protocol detected (high confidence)
+        // Package-based protocol detected (high confidence)
         RETURN {
-            structure: "FrameBased",
+            structure: "PackageBased",
             start_byte: best_frame.start_byte,
             end_byte: best_frame.end_byte,
-            frame_size: best_frame.frame_size,
+            package_size: best_frame.frame_size,
             confidence: best_frame.confidence,
             reasoning: "Start/end bytes with regular intervals (σ≈0)"
         }
 
     ELSE IF best_terminator != null AND best_terminator.regularity > 0.98:
-        // Single-line messages with regular terminator
+        // Single-package messages with regular terminator
         RETURN {
-            structure: "SingleLine",
+            structure: "SinglePackage",
             terminator_bytes: best_terminator.bytes,
-            message_length: best_terminator.interval,
+            package_length: best_terminator.interval,
             confidence: best_terminator.regularity,
             reasoning: "Regular terminator sequence detected"
         }
@@ -357,9 +357,9 @@ FUNCTION DetectMessageBoundaries(byte_data):
 
 | Log File | Detected Structure | Confidence | Statistical Evidence |
 |----------|-------------------|-----------|---------------------|
-| Log 1 | SingleLine | 1.0 | 0x0D 0x0A at 16-byte intervals, σ=0 |
-| Log 2 | FrameBased | 1.0 | 0x5E (freq=1%, regularity=1.0, interval=140), 0x7E at offset 137 |
-| Log 3 | SingleLine | 1.0 | 0x0D 0x0A sequence, regularity >0.98 |
+| Log 1 | SinglePackage | 1.0 | 0x0D 0x0A at 16-byte intervals, σ=0 |
+| Log 2 | PackageBased | 1.0 | 0x5E (freq=1%, regularity=1.0, interval=140), 0x7E at offset 137 |
+| Log 3 | SinglePackage | 1.0 | 0x0D 0x0A sequence, regularity >0.98 |
 
 **Flowchart: Message Boundary Detection Algorithm (Statistical)**
 
@@ -377,9 +377,9 @@ flowchart TD
 
     Step5 --> Decide{"Statistical Decision:<br/>Best Pattern Type?"}
 
-    Decide -->|Frame pattern<br/>confidence > 0.98| Return1["<b>RETURN FrameBased</b><br/>✓ Start/end bytes detected<br/>✓ Regular intervals (σ≈0)<br/>✓ Consistent frame size"]
+    Decide -->|Frame pattern<br/>confidence > 0.98| Return1["<b>RETURN PackageBased</b><br/>✓ Start/end bytes detected<br/>✓ Regular intervals (σ≈0)<br/>✓ Consistent package size"]
 
-    Decide -->|Terminator pattern<br/>regularity > 0.98| Return2["<b>RETURN SingleLine</b><br/>✓ Regular terminator found<br/>✓ Fixed message length<br/>✓ σ ≈ 0"]
+    Decide -->|Terminator pattern<br/>regularity > 0.98| Return2["<b>RETURN SinglePackage</b><br/>✓ Regular terminator found<br/>✓ Fixed package length<br/>✓ σ ≈ 0"]
 
     Decide -->|No regular patterns| Return3["<b>RETURN ContentBased</b><br/>✓ Variable structure<br/>✓ Low statistical confidence"]
 
@@ -743,88 +743,88 @@ FUNCTION AnalyzeDelimiterBased(messages, delimiter_info):
 
 ---
 
-### Algorithm 4: Multi-Line Frame Field Extraction
+### Algorithm 4: Multi-Segment Package Field Extraction
 
-**Goal**: For frame-based messages, extract fields from each line
+**Goal**: For package-based protocols, extract fields from each segment
 
-**Input**: Framed messages (start marker to end marker)
+**Input**: Packages (start marker to end marker)
 
 **Overview**:
 
-This algorithm processes multi-line frame data by collecting samples at each line position and analyzing them for patterns. The key insight is that **each line position is analyzed independently** - all samples from line 1 are grouped together, all samples from line 2 are grouped together, etc. Then each group is analyzed for data type patterns.
+This algorithm processes multi-segment package data by collecting samples at each segment position and analyzing them for patterns. The key insight is that **each segment position is analyzed independently** - all samples from segment 1 are grouped together, all samples from segment 2 are grouped together, etc. Then each group is analyzed for data type patterns.
 
 **Step 1: Main Extraction Function**
 
 ```
-FUNCTION ExtractFieldsFromFrame(frames, start_marker, end_marker, lines_per_frame):
+FUNCTION ExtractFieldsFromPackage(packages, start_marker, end_marker, segments_per_package):
 
-    fields_by_line_number = {}
+    fields_by_segment_index = {}
 
-    // Initialize: Create list for each line position
-    FOR line_num = 1 TO lines_per_frame:
-        fields_by_line_number[line_num] = []
+    // Initialize: Create list for each segment position
+    FOR segment_idx = 1 TO segments_per_package:
+        fields_by_segment_index[segment_idx] = []
 
-    // ═══ STEP 1: Collect Samples for Each Line Position ═══
+    // ═══ STEP 1: Collect Samples for Each Segment Position ═══
 
-    FOR each frame in frames:
-        FOR line_num = 1 TO frame.lines.Count:
-            line_text = frame.lines[line_num - 1]
-            fields_by_line_number[line_num].Add(line_text)
+    FOR each package in packages:
+        FOR segment_idx = 1 TO package.segments.Count:
+            segment_data = package.segments[segment_idx - 1]
+            fields_by_segment_index[segment_idx].Add(segment_data)
 
-    // ═══ STEP 2: Analyze Each Line Position ═══
+    // ═══ STEP 2: Analyze Each Segment Position ═══
 
-    line_patterns = []
+    segment_patterns = []
 
-    FOR line_num = 1 TO lines_per_frame:
-        samples = fields_by_line_number[line_num]
+    FOR segment_idx = 1 TO segments_per_package:
+        samples = fields_by_segment_index[segment_idx]
 
-        pattern = AnalyzeLinePattern(line_num, samples)
-        line_patterns.Add(pattern)
+        pattern = AnalyzeSegmentPattern(segment_idx, samples)
+        segment_patterns.Add(pattern)
 
-    RETURN line_patterns
+    RETURN segment_patterns
 ```
 
-**Step 2: Line Pattern Analysis Function**
+**Step 2: Segment Pattern Analysis Function**
 
-The `AnalyzeLinePattern` function examines samples from a single line position and determines the field type. It checks for:
-1. **Marker lines** (start/end markers)
-2. **Empty/whitespace** lines to skip
+The `AnalyzeSegmentPattern` function examines samples from a single segment position and determines the field type. It checks for:
+1. **Marker segments** (start/end markers)
+2. **Empty/whitespace** segments to skip
 3. **Data patterns** (dates, times, decimals, etc.)
 4. **Variance** to detect constants vs. variables
 
 ```
-FUNCTION AnalyzeLinePattern(line_number, samples):
+FUNCTION AnalyzeSegmentPattern(segment_index, samples):
 
-    // ═══ Check for Marker Lines ═══
+    // ═══ Check for Marker Segments ═══
 
-    IF line_number == 1:
+    IF segment_index == 1:
         // This should be start marker
         RETURN {
-            line_number: line_number,
+            segment_index: segment_index,
             field_type: "StartMarker",
             pattern: DetectRegexPattern(samples),
             action: "Validate",
             variance: CalculateVariance(samples)
         }
 
-    // Check if this is end marker line
+    // Check if this is end marker segment
     unique_samples = samples.Distinct().ToList()
 
     IF unique_samples.Count == 1 AND unique_samples[0].Length < 5:
         // Likely end marker or fixed label
         RETURN {
-            line_number: line_number,
+            segment_index: segment_index,
             field_type: "Marker" OR "FixedLabel",
             pattern: unique_samples[0],
             action: "Validate",
             variance: 0
         }
 
-    // ═══ Check for Empty/Whitespace Lines ═══
+    // ═══ Check for Empty/Whitespace Segments ═══
 
     IF samples.All(s => string.IsNullOrWhiteSpace(s)):
         RETURN {
-            line_number: line_number,
+            segment_index: segment_index,
             field_type: "Empty",
             pattern: "^\\s*$",
             action: "Skip",
@@ -855,7 +855,7 @@ FUNCTION AnalyzeLinePattern(line_number, samples):
                 sub_fields = ExtractCompoundFields(samples, pattern_test.regex)
 
                 RETURN {
-                    line_number: line_number,
+                    segment_index: segment_index,
                     field_type: "CompoundData",
                     pattern: pattern_test.regex,
                     action: "Parse",
@@ -864,7 +864,7 @@ FUNCTION AnalyzeLinePattern(line_number, samples):
                 }
 
             RETURN {
-                line_number: line_number,
+                segment_index: segment_index,
                 field_type: pattern_test.name,
                 pattern: pattern_test.regex,
                 action: "Parse",
@@ -880,7 +880,7 @@ FUNCTION AnalyzeLinePattern(line_number, samples):
     IF variance < 0.1:
         // Low variance - probably reserved/constant
         RETURN {
-            line_number: line_number,
+            segment_index: segment_index,
             field_type: "Reserved",
             pattern: ".*",
             action: "Skip",
@@ -889,7 +889,7 @@ FUNCTION AnalyzeLinePattern(line_number, samples):
     ELSE:
         // High variance - unknown data field
         RETURN {
-            line_number: line_number,
+            segment_index: segment_index,
             field_type: "UnknownData",
             pattern: ".*",
             action: "Parse",
@@ -960,35 +960,35 @@ FUNCTION ExtractCompoundFields(samples, pattern):
 
 **Summary**:
 
-This algorithm outputs a **line_patterns array** where each element describes what type of field is at each line position:
-- **StartMarker/EndMarker**: Validation boundaries for the frame
+This algorithm outputs a **segment_patterns array** where each element describes what type of field is at each segment position:
+- **StartMarker/EndMarker**: Validation boundaries for the package
 - **Date/Time**: Temporal data that can be combined
 - **Decimal/Integer**: Numeric data with optional units
 - **Compound**: Fields that need to be split (e.g., value + unit)
-- **Empty/Reserved**: Lines to skip or ignore
+- **Empty/Reserved**: Segments to skip or ignore
 - **Unknown**: Data that doesn't match known patterns
 
-The detector can then use these patterns to extract and validate data from subsequent frames.
+The detector can then use these patterns to extract and validate data from subsequent packages.
 
-**Sequence Diagram: Multi-Line Frame Field Extraction Algorithm**
+**Sequence Diagram: Multi-Segment Package Field Extraction Algorithm**
 
 ```mermaid
 sequenceDiagram
     actor Analyzer
-    participant Frames as Frame Buffer
+    participant Packages as Package Buffer
     participant Samples as Sample Collector
     participant Analysis as Pattern Analyzer
     participant Results as Results Output
 
-    Analyzer->>Frames: Input: List of Frames
-    Note over Analyzer,Results: STEP 1: Collect Samples for Each Line Position
+    Analyzer->>Packages: Input: List of Packages
+    Note over Analyzer,Results: STEP 1: Collect Samples for Each Segment Position
 
-    loop For each Frame
-        Analyzer->>Samples: Collect all lines from frame
-        Samples->>Samples: Organize by line position [1..N]
+    loop For each Package
+        Analyzer->>Samples: Collect all segments from package
+        Samples->>Samples: Organize by segment position [1..N]
     end
 
-    Note over Analyzer,Results: STEP 2: Analyze Each Line Position
+    Note over Analyzer,Results: STEP 2: Analyze Each Segment Position
 
     loop For each position 1 to N
         Analyzer->>Samples: Get all samples at this position
@@ -1006,7 +1006,7 @@ sequenceDiagram
         end
     end
 
-    Results->>Analyzer: Return: line_patterns[] with metadata for all positions
+    Results->>Analyzer: Return: segment_patterns[] with metadata for all positions
 ```
 
 ---
@@ -1041,7 +1041,7 @@ FUNCTION DetectFieldRelationships(fields):
                     target_field: "DateTime",
                     operation: "Date.Date + Time",
                     confidence: 1.0,
-                    reason: "Adjacent date and time fields detected"
+                    reason: "Adjacent date and time segments detected"
                 })
 
     // ═══ 2. Detect Split Fields (Compound → Multiple) ═══
@@ -1053,7 +1053,7 @@ FUNCTION DetectFieldRelationships(fields):
 
             relationships.Add({
                 type: "Split",
-                source_field: $"Line{compound_field.line_number}",
+                source_field: $"Segment{compound_field.segment_index}",
                 target_fields: compound_field.sub_fields.Select(sf => sf.name).ToList(),
                 operations: compound_field.sub_fields.Select(sf => sf.pattern).ToList(),
                 confidence: 1.0,
@@ -1188,62 +1188,62 @@ line.Split(' ', RemoveEmptyEntries)
 
 ---
 
-### Strategy 2: Frame-Based Parsing
+### Strategy 2: Package-Based Parsing
 
-**When to Use**: Start/end markers detected with fixed line count
+**When to Use**: Start/end markers detected with fixed segment count
 
 **Characteristics**:
-- Start marker begins message
-- End marker terminates message
-- Fixed number of lines per message
-- Line position determines meaning
+- Start marker begins package
+- End marker terminates package
+- Fixed number of segments per package
+- Segment position determines meaning
 
-**Example** (JIK6CAB - Frame structure):
+**Example** (JIK6CAB - Package structure):
 ```
-Line 1:  ^KJIK000     ← Start marker
-Line 2:  2023-11-07   ← Date
-Line 3:  17:19:38     ← Time
+Segment 1:  ^KJIK000     ← Start marker
+Segment 2:  2023-11-07   ← Date
+Segment 3:  17:19:38     ← Time
 ...
-Line 14: ~P1          ← End marker
+Segment 14: ~P1          ← End marker
 ```
 
 **Detection**:
 - Start marker pattern: `^\^KJIK\d{3}$`
 - End marker pattern: `^~P1$`
-- Line count between markers: 14 (consistent)
+- Segment count between markers: 14 (consistent)
 - Confidence: 100%
 
 **Parsing Algorithm**:
 ```
-WHEN line matches start_marker:
-    Reset frame buffer
-    Start accumulating lines
+WHEN segment matches start_marker:
+    Reset package buffer
+    Start accumulating segments
 
-WHEN frame.lineCount < expected_lines:
-    Add line to frame buffer
+WHEN package.segmentCount < expected_segments:
+    Add segment to package buffer
 
-WHEN line matches end_marker:
-    Process complete frame
-    Parse each line by position
+WHEN segment matches end_marker:
+    Process complete package
+    Parse each segment by position
 ```
 
 ---
 
 ### Strategy 3: State Machine Parsing ⭐ CRITICAL
 
-**When to Use**: Frame-based protocol where **line position** determines field identity, NOT content
+**When to Use**: Package-based protocol where **segment position** determines field identity, NOT content
 
-**Why ContentBased Fails**: When multiple lines have identical or similar content patterns but represent different fields
+**Why ContentBased Fails**: When multiple segments have identical or similar content patterns but represent different fields
 
-**Critical Example** (JIK6CAB Weight Lines):
+**Critical Example** (JIK6CAB Weight Segments):
 
 ```
-Line 4:  "  0.00 kg"   ← Tare Weight
-Line 5:  "  1.94 kg"   ← Gross Weight
-Line 8:  "  1.94 kg"   ← Net Weight
+Segment 4:  "  0.00 kg"   ← Tare Weight
+Segment 5:  "  1.94 kg"   ← Gross Weight
+Segment 8:  "  1.94 kg"   ← Net Weight
 ```
 
-**Problem**: All three lines contain "kg" - ContentBased parsing **cannot distinguish** between them.
+**Problem**: All three segments contain "kg" - ContentBased parsing **cannot distinguish** between them.
 
 **Solution**: State Machine tracks position in sequence:
 
@@ -1251,22 +1251,22 @@ Line 8:  "  1.94 kg"   ← Net Weight
 stateDiagram-v2
     [*] --> Idle
 
-    Idle --> Line1 : Start marker detected
+    Idle --> Segment1 : Start marker detected
 
-    Line1 --> Line2 : Line 2
-    Line2 --> Line3 : Line 3 - Parse Date
-    Line3 --> Line4 : Line 4 - Parse Time
-    Line4 --> Line5 : Line 5 - TareWeight
-    Line5 --> Line6 : Line 6 - GrossWeight
-    Line6 --> Line7 : Line 7 - Reserved
-    Line7 --> Line8 : Line 8 - Reserved
-    Line8 --> Line9 : Line 9 - NetWeight
-    Line9 --> Line10 : Line 10 - Duplicate
-    Line10 --> Line11 : Line 11 - PieceCount
-    Line11 --> Line12 : Line 12 - Empty
-    Line12 --> Line13 : Line 13 - Empty
-    Line13 --> Line14 : Line 14 - Status
-    Line14 --> Validate : End marker found
+    Segment1 --> Segment2 : Segment 2
+    Segment2 --> Segment3 : Segment 3 - Parse Date
+    Segment3 --> Segment4 : Segment 4 - Parse Time
+    Segment4 --> Segment5 : Segment 5 - TareWeight
+    Segment5 --> Segment6 : Segment 6 - GrossWeight
+    Segment6 --> Segment7 : Segment 7 - Reserved
+    Segment7 --> Segment8 : Segment 8 - Reserved
+    Segment8 --> Segment9 : Segment 9 - NetWeight
+    Segment9 --> Segment10 : Segment 10 - Duplicate
+    Segment10 --> Segment11 : Segment 11 - PieceCount
+    Segment11 --> Segment12 : Segment 12 - Empty
+    Segment12 --> Segment13 : Segment 13 - Empty
+    Segment13 --> Segment14 : Segment 14 - Status
+    Segment14 --> Validate : End marker found
 
     Validate --> ApplyRules : Valid
     ApplyRules --> Complete : All rules applied
@@ -1275,22 +1275,22 @@ stateDiagram-v2
     Validate --> Error : Invalid
     Error --> Idle : Reset
 
-    note right of Line4
+    note right of Segment4
         Position-Based Strategy
-        lineNumber determines field meaning:
-        Line 4: TareWeight
-        Line 5: GrossWeight
-        Line 8: NetWeight
-        Line 11: PieceCount
+        segmentIndex determines field meaning:
+        Segment 4: TareWeight
+        Segment 5: GrossWeight
+        Segment 8: NetWeight
+        Segment 11: PieceCount
 
-        All weight lines contain kg text
+        All weight segments contain kg text
         but POSITION distinguishes them!
     end note
 ```
 
 **State Tracking Variables**:
 ```csharp
-private int lineNumber = 0;
+private int segmentIndex = 0;
 private bool parsingInProgress = false;
 private DateTime? date;
 private TimeSpan? time;
@@ -1300,34 +1300,34 @@ private decimal? pieceCount;
 
 **Parsing Algorithm**:
 ```
-FUNCTION ParseLine(line):
-    IF line matches START_MARKER:
-        lineNumber = 0
+FUNCTION ParseSegment(segment):
+    IF segment matches START_MARKER:
+        segmentIndex = 0
         parsingInProgress = true
         Reset all field variables
 
     IF parsingInProgress:
-        lineNumber++
+        segmentIndex++
 
-        SWITCH lineNumber:
+        SWITCH segmentIndex:
             CASE 1: Validate start marker
-            CASE 2: date = ParseDate(line)
-            CASE 3: time = ParseTime(line)
+            CASE 2: date = ParseDate(segment)
+            CASE 3: time = ParseTime(segment)
                     date = date.Date + time  // Combine relationship
-            CASE 4: tareWeight = ParseWeight(line, "kg")
-            CASE 5: grossWeight = ParseWeight(line, "kg")
+            CASE 4: tareWeight = ParseWeight(segment, "kg")
+            CASE 5: grossWeight = ParseWeight(segment, "kg")
             CASE 6, 7: Skip  // Reserved fields
-            CASE 8: netWeight = ParseWeight(line, "kg")
+            CASE 8: netWeight = ParseWeight(segment, "kg")
             CASE 9: Skip  // Duplicate display
-            CASE 10: pieceCount = ParsePieceCount(line, "pcs")
-            CASE 11, 12: Skip  // Empty lines
+            CASE 10: pieceCount = ParsePieceCount(segment, "pcs")
+            CASE 11, 12: Skip  // Empty segments
             CASE 13: Skip  // Status indicator
             CASE 14:
-                IF line matches END_MARKER:
+                IF segment matches END_MARKER:
                     ApplyValidation()  // GW - TW = NW
                     FireEvent()
                     parsingInProgress = false
-                    lineNumber = 0
+                    segmentIndex = 0
                 ELSE:
                     Error: Invalid end marker
 ```
@@ -1336,40 +1336,40 @@ FUNCTION ParseLine(line):
 
 | Approach | How it determines field | Works for JIK6CAB? |
 |----------|------------------------|-------------------|
-| **ContentBased** | `if (line.Contains("kg"))` | ❌ **NO** - Can't distinguish TW/GW/NW |
-| **State Machine** | `switch (lineNumber)` | ✅ **YES** - Position determines meaning |
+| **ContentBased** | `if (segment.Contains("kg"))` | ❌ **NO** - Can't distinguish TW/GW/NW |
+| **State Machine** | `switch (segmentIndex)` | ✅ **YES** - Position determines meaning |
 
 **Detection Algorithm**:
 ```
-IF start_marker AND end_marker AND fixed_line_count detected:
+IF start_marker AND end_marker AND fixed_segment_count detected:
 
-    // Check if line position matters more than content
-    FOR each line position in frame:
+    // Check if segment position matters more than content
+    FOR each segment position in package:
         samples = GetAllSamplesAtPosition(position)
 
         // Check for position-dependent fields
         IF samples have similar content BUT different semantic meaning:
-            // Example: Lines 4, 5, 8 all contain "kg"
+            // Example: Segments 4, 5, 8 all contain "kg"
             strategy = STATE_MACHINE
             BREAK
 
-    // Alternative: Check if skip lines exist
-    IF some line positions are always empty/reserved:
+    // Alternative: Check if skip segments exist
+    IF some segment positions are always empty/reserved:
         strategy = STATE_MACHINE
 ```
 
 **When to Use State Machine vs ContentBased**:
 
 Use **State Machine** when:
-- ✅ Fixed line count per message
-- ✅ Line position determines field identity
-- ✅ Multiple lines have identical content patterns
-- ✅ Some lines must be skipped
-- ✅ Field relationships span multiple lines (Date + Time)
+- ✅ Fixed segment count per package
+- ✅ Segment position determines field identity
+- ✅ Multiple segments have identical content patterns
+- ✅ Some segments must be skipped
+- ✅ Field relationships span multiple segments (Date + Time)
 
 Use **ContentBased** when:
-- ✅ Variable line count per message
-- ✅ Line content uniquely identifies field type
+- ✅ Variable segment count per package
+- ✅ Segment content uniquely identifies field type
 - ✅ No positional dependencies
 - ✅ Pattern matching can distinguish all fields
 
@@ -1420,25 +1420,25 @@ SWITCH header:
 
 **Example** (PHMeter):
 ```
-Line 1: "3.01pH 25.5°C ATC"  ← Contains "pH" and "°C"
-Line 2: "20-Feb-2023"        ← Contains "-" (date pattern)
-Line 3: "11:11"              ← Contains ":" (time pattern)
+Segment 1: "3.01pH 25.5°C ATC"  ← Contains "pH" and "°C"
+Segment 2: "20-Feb-2023"        ← Contains "-" (date pattern)
+Segment 3: "11:11"              ← Contains ":" (time pattern)
 ```
 
 **Detection**:
 - No fixed start/end markers
-- Variable line count
+- Variable segment count
 - High pattern variance
 - Content uniquely identifies field
 
 **Parsing Algorithm**:
 ```
-IF line.Contains("pH") AND line.Contains("°C"):
-    ParseBothFields(line)
-ELSE IF line.Contains("-"):
-    ParseDate(line)
-ELSE IF line.Contains(":"):
-    ParseTime(line)
+IF segment.Contains("pH") AND segment.Contains("°C"):
+    ParseBothFields(segment)
+ELSE IF segment.Contains("-"):
+    ParseDate(segment)
+ELSE IF segment.Contains(":"):
+    ParseTime(segment)
 ```
 
 **Important**: ContentBased works ONLY when content patterns are unique per field type.
@@ -1451,14 +1451,14 @@ ELSE IF line.Contains(":"):
 flowchart TD
     A[Analyze Log File] --> B{Start/End Markers<br/>Detected?}
 
-    B -->|Yes| C{Fixed Line Count<br/>Between Markers?}
+    B -->|Yes| C{Fixed Segment Count<br/>Between Markers?}
     B -->|No| D{High Delimiter<br/>Frequency?}
 
-    C -->|Yes| E{Multiple Lines<br/>Same Content Pattern?}
+    C -->|Yes| E{Multiple Segments<br/>Same Content Pattern?}
     C -->|No| F[ContentBased Parsing]
 
     E -->|Yes| G[⭐ State Machine Parsing<br/>Position-Based]
-    E -->|No| H[Frame-Based Parsing<br/>Content-Based per Line]
+    E -->|No| H[Package-Based Parsing<br/>Content-Based per Segment]
 
     D -->|Yes| I{Hierarchical<br/>Delimiters?}
     D -->|No| J{Fixed Message<br/>Length?}
@@ -1489,17 +1489,17 @@ Stage 1: Byte Extraction
 ├─ Output: List<LogEntry> with bytes and text
 └─ Algorithm: Parse HEX/Text columns, extract bytes
     ↓
-Stage 2: Message Boundary Detection
+Stage 2: Package Boundary Detection
 │
 ├─ Input: List<LogEntry>
-├─ Output: List<Message> (grouped entries)
+├─ Output: List<Package> (grouped entries)
 └─ Algorithm: Marker detection, terminator analysis
     ↓
 Stage 3: Field Structure Analysis
 │
-├─ Input: List<Message>
+├─ Input: List<Package>
 ├─ Output: List<FieldInfo> with positions/patterns
-└─ Algorithm: Delimiter detection, position analysis, frame line analysis
+└─ Algorithm: Delimiter detection, position analysis, package segment analysis
     ↓
 Stage 4: Field Classification
 │

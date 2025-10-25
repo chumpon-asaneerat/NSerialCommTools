@@ -104,9 +104,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Analyzers\ProtocolDetector.cs" />
-    <Compile Include="Models\DetectionResult.cs" />
-    <Compile Include="Utilities\ByteArraySplitter.cs" />
+    <None Include="v2\MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+    </None>
+    <None Include="v2\Analyzers\ProtocolDetector.cs" />
+    <None Include="v2\Models\DetectionResult.cs" />
+    <None Include="v2\Utilities\ByteArraySplitter.cs" />
     <None Include="v1\MainWindow1.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -118,7 +121,7 @@
     <None Include="v1\Analyzers\PatternAnalyzer.cs" />
     <None Include="v1\Analyzers\RelationshipDetector.cs" />
     <None Include="v1\Analyzers\TerminatorDetector.cs" />
-    <Compile Include="Analyzers\EncodingDetector.cs" />
+    <None Include="v2\Analyzers\EncodingDetector.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -183,29 +186,33 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <None Include="v2\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Analyzers\DelimiterDetector.cs" />
-    <Compile Include="Analyzers\FieldAnalyzer.cs" />
-    <Compile Include="Analyzers\PatternAnalyzer.cs" />
-    <Compile Include="Analyzers\ProtocolDefinitionGenerator.cs" />
-    <Compile Include="Analyzers\RelationshipDetector.cs" />
-    <Compile Include="Analyzers\StrategySelector.cs" />
-    <Compile Include="Analyzers\TerminatorDetector.cs" />
-    <Compile Include="Models\AnalysisResult.cs" />
-    <Compile Include="Models\DelimiterInfo.cs" />
-    <Compile Include="Models\FieldInfo.cs" />
-    <Compile Include="Models\FieldRelationship.cs" />
-    <Compile Include="Models\LogData.cs" />
-    <Compile Include="Models\ProtocolDefinition.cs" />
-    <Compile Include="Models\StrategyType.cs" />
-    <Compile Include="Models\TerminatorInfo.cs" />
-    <Compile Include="Parsers\HexLogParser.cs" />
-    <Compile Include="Parsers\MessageExtractor.cs" />
-    <Compile Include="Parsers\StateMachineParser.cs" />
+    <None Include="v2\Analyzers\DelimiterDetector.cs" />
+    <None Include="v2\Analyzers\FieldAnalyzer.cs" />
+    <None Include="v2\Analyzers\PatternAnalyzer.cs" />
+    <None Include="v2\Analyzers\ProtocolDefinitionGenerator.cs" />
+    <None Include="v2\Analyzers\RelationshipDetector.cs" />
+    <None Include="v2\Analyzers\StrategySelector.cs" />
+    <None Include="v2\Analyzers\TerminatorDetector.cs" />
+    <None Include="v2\Models\AnalysisResult.cs" />
+    <None Include="v2\Models\DelimiterInfo.cs" />
+    <None Include="v2\Models\FieldInfo.cs" />
+    <None Include="v2\Models\FieldRelationship.cs" />
+    <None Include="v2\Models\LogData.cs" />
+    <None Include="v2\Models\ProtocolDefinition.cs" />
+    <None Include="v2\Models\StrategyType.cs" />
+    <None Include="v2\Models\TerminatorInfo.cs" />
+    <None Include="v2\Parsers\HexLogParser.cs" />
+    <None Include="v2\Parsers\MessageExtractor.cs" />
+    <None Include="v2\Parsers\StateMachineParser.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Generators\" />
+    <Folder Include="v2\Generators\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
