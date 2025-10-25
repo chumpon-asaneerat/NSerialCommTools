@@ -62,14 +62,58 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
         private byte[] ParseHexDump(string content)
         {
             var bytes = new List<byte>();
-            var matches = Regex.Matches(content, @"[0-9A-Fa-f]{2}");
 
-            foreach (Match match in matches)
+            // Split by lines to process each line
+            var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var line in lines)
             {
-                bytes.Add(Convert.ToByte(match.Value, 16));
+                // Check if this is a hex dump line with text preview (e.g., "5E 4B 4A 49 ... ^KJIK")
+                // Extract only the hex part (before the text preview)
+                string hexPart = line;
+
+                // Look for the text preview separator (usually multiple spaces or a specific character)
+                // Common formats:
+                // "5E 4B 4A 49    ^KJIK" (multiple spaces)
+                // "5E 4B 4A 49  |  ^KJIK" (pipe separator)
+                int textStartIndex = FindTextPreviewStart(line);
+
+                if (textStartIndex > 0)
+                {
+                    hexPart = line.Substring(0, textStartIndex);
+                }
+
+                // Extract all hex bytes from this line (only from hex part)
+                var matches = Regex.Matches(hexPart, @"[0-9A-Fa-f]{2}");
+
+                foreach (Match match in matches)
+                {
+                    bytes.Add(Convert.ToByte(match.Value, 16));
+                }
             }
 
             return bytes.ToArray();
+        }
+
+        /// <summary>
+        /// Finds where the text preview starts in a hex dump line.
+        /// Returns -1 if no text preview detected.
+        /// </summary>
+        private int FindTextPreviewStart(string line)
+        {
+            // Look for common patterns that indicate text preview start:
+            // 1. Four or more consecutive spaces (hex bytes are separated by 1-2 spaces)
+            // 2. A pipe character |
+            // 3. Two spaces followed by non-hex characters
+
+            var match = Regex.Match(line, @"    "); // 4+ spaces
+            if (match.Success)
+            {
+                return match.Index;
+            }
+
+            // No text preview found
+            return -1;
         }
 
         private byte[] ParsePureHex(string content)

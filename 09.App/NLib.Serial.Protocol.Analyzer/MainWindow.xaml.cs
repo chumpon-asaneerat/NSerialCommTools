@@ -334,6 +334,10 @@ namespace NLib
 
             _currentDetection = _protocolDetector.DetectProtocolStructure(rawBytes, isSingleMessage);
 
+            // Show detection results in status
+            string detectionInfo = BuildDetectionInfo(_currentDetection);
+            UpdateStatus($"Pass 1 complete - {detectionInfo}");
+
             // PASS 2: EXTRACT - Split using detected patterns (NO GUESSING!)
             UpdateStatus("Pass 2: Extracting messages...");
             _currentLogData = _messageExtractor.ExtractMessages(rawBytes, _currentDetection);
@@ -657,6 +661,46 @@ namespace NLib
             {
                 return null; // Auto detect
             }
+        }
+
+        /// <summary>
+        /// Builds diagnostic information about detection results.
+        /// </summary>
+        private string BuildDetectionInfo(DetectionResult detection)
+        {
+            var info = new StringBuilder();
+
+            // Frame terminator
+            if (detection.FrameTerminator != null)
+            {
+                info.Append($"Frame: {BitConverter.ToString(detection.FrameTerminator.Bytes).Replace("-", " ")} ");
+            }
+            else
+            {
+                info.Append("Frame: None ");
+            }
+
+            // Segment terminator
+            if (detection.SegmentTerminator != null)
+            {
+                info.Append($"| Seg: {BitConverter.ToString(detection.SegmentTerminator.Bytes).Replace("-", " ")} ");
+            }
+            else
+            {
+                info.Append("| Seg: None ");
+            }
+
+            // Field delimiter
+            if (detection.FieldDelimiter != null)
+            {
+                info.Append($"| Field: {BitConverter.ToString(detection.FieldDelimiter.Bytes).Replace("-", " ")}");
+            }
+            else
+            {
+                info.Append("| Field: None");
+            }
+
+            return info.ToString();
         }
 
         /// <summary>
