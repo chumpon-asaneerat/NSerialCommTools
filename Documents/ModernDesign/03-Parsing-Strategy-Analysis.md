@@ -526,23 +526,25 @@ FUNCTION DetectDelimiters(messages):
 | Log 2 | None detected | None | None | No bytes meet criteria |
 | Log 3 | 0x2F ('/') | 0x20 (space) | Hierarchical | 0x2F: mean=1, σ=0; 0x20: mean=2, σ=0 |
 
-**Flowchart: Delimiter Detection Algorithm**
+**Flowchart: Delimiter Detection Algorithm (Statistical)**
 
 ```mermaid
 flowchart TD
-    Start([Start: List of Messages]) --> Step1["<b>STEP 1: Count Occurrences</b><br/>For each candidate delimiter:<br/>Space, Tab, Comma, Semicolon<br/>Colon, Slash, Pipe<br/>Count total appearances"]
+    Start([Start: List of Messages]) --> Step1["<b>STEP 1: Byte Frequency Per Message</b><br/>For ALL bytes (0x00-0xFF):<br/>Count occurrences in each message<br/>Track frequency %"]
 
-    Step1 --> Step2["<b>STEP 2: Calculate Consistency</b><br/>For each delimiter:<br/>Count occurrences per message<br/>Calculate average & std deviation<br/>Consistency = 1 - stddev/avg"]
+    Step1 --> Step2["<b>STEP 2: Statistical Analysis</b><br/>For each byte:<br/>Mean = Average(occurrences)<br/>σ = Standard Deviation<br/>CV = σ/μ<br/>Consistency = 1 - CV"]
 
-    Step2 --> Step3["<b>STEP 3: Detect Hierarchical</b><br/>Find all delimiters with<br/>consistency > 0.8 AND frequency > 0<br/>Order by frequency"]
+    Step2 --> Filter["<b>Apply Delimiter Criteria</b><br/>Byte must meet ALL:<br/>• Mean > 0.5 (appears in most messages)<br/>• Consistency > 0.8<br/>• Freq 2%-60% (not too rare/common)"]
 
-    Step3 --> Check{"How many<br/>high-consistency<br/>delimiters found?"}
+    Filter --> Step3["<b>STEP 3: Sort & Select</b><br/>Sort candidates by consistency<br/>Select top 2 if available"]
 
-    Check -->|2 or more| Return1["<b>RETURN Hierarchical</b><br/>Primary: highest frequency<br/>Secondary: second highest<br/>Multi-level structure detected"]
+    Step3 --> Check{"How many bytes<br/>with consistency > 0.95?"}
 
-    Check -->|Exactly 1| Return2["<b>RETURN Simple</b><br/>Single delimiter found<br/>Fields separated by one char"]
+    Check -->|2 or more| Return1["<b>RETURN Hierarchical</b><br/>Primary: byte with highest consistency<br/>Secondary: second highest<br/>Both have σ≈0"]
 
-    Check -->|None| Return3["<b>RETURN None</b><br/>No consistent delimiters<br/>Fixed position or complex"]
+    Check -->|Exactly 1| Return2["<b>RETURN Simple</b><br/>Single delimiter byte<br/>High consistency detected"]
+
+    Check -->|None| Return3["<b>RETURN None</b><br/>No bytes meet statistical criteria<br/>Try fixed-position analysis"]
 
     Return1 --> End([End])
     Return2 --> End
