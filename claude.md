@@ -11,16 +11,24 @@ This is a .NET 4.7.x serial communication project with multiple components.
    - Device implementations for various serial devices
    - Located at: `01.Core\NLib.Serial.Devices\`
 
-2. **NLib.Serial.Emulator.App** (09.App folder)
+2. **NLib.Serial.Protocol.Analyzer** (09.App folder)
+   - Protocol analyzer application (CURRENTLY EMPTY - Ready for implementation)
+   - Located at: `09.App\NLib.Serial.Protocol.Analyzer\`
+   - **❌ DO NOT ACCESS v2 folder** - Contains archived code
+   - **⚠️ v1 folder** - Reference only (may have outdated terminology)
+   - MainWindow is empty - implement fresh using design documents
+
+3. **NLib.Serial.Emulator.App** (09.App folder)
    - Serial device emulator application
    - Located at: `09.App\NLib.Serial.Emulator.App\`
 
-3. **NLib.Serial.Terminal.App** (09.App folder)
+4. **NLib.Serial.Terminal.App** (09.App folder)
    - Serial terminal application for testing/usage
    - Located at: `09.App\NLib.Serial.Terminal.App\`
 
 ### Projects to IGNORE:
 - **NLib** (00.NLib folder) - Foundation library, do not analyze
+- **09.App/NLib.Serial.Protocol.Analyzer/v2/** - ❌ Archived code, DO NOT ACCESS
 
 ### Reference Materials:
 - **Documents/LuckyTex Devices/** - Contains log data captured from third-party tools
@@ -64,6 +72,26 @@ Create detailed documentation that explains how the code works, including:
      - TFO1
      - WeightQA
      - WeightSPUN
+
+## CRITICAL PROJECT RULES
+
+### Protocol Analyzer Project Status (Updated 2025-10-26)
+**The Protocol Analyzer has been cleaned up and reset:**
+- ✅ MainWindow.xaml/.cs are EMPTY - ready for fresh implementation
+- ❌ **DO NOT ACCESS `09.App/NLib.Serial.Protocol.Analyzer/v2/` folder** - Contains archived code
+- ⚠️ `v1/` folder is for reference only - may have outdated terminology
+- ✅ Start fresh using design documents (Documents/ModernDesign/)
+- See: `Documents/ModernDesign/PROJECT-STATUS.md` for details
+
+### Terminology Standards (Updated 2025-10-26)
+**ALL CODE AND DOCUMENTATION MUST USE:**
+- ✅ **Package** (NOT "Frame" or "Message") - Complete data unit from device
+- ✅ **Segment** (NOT "Line") - Sub-unit within a package
+- ✅ **SegmentIndex** (NOT "LineNumber") - Position within package
+- ✅ **PackageBased** (NOT "FrameBased" or "MultiLine") - Multi-segment protocol
+- ✅ **SinglePackage** (NOT "SingleLine") - Single-segment protocol
+
+**Reference**: `Documents/ModernDesign/TERMINOLOGY-UPDATE-GUIDE.md`
 
 ## CRITICAL DOCUMENTATION STANDARDS
 
