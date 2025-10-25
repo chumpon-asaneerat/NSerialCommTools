@@ -3,6 +3,7 @@
 using NLib.Serial.ProtocolAnalyzer.Models;
 using NLib.Serial.ProtocolAnalyzer.Parsers;
 using System;
+using System.Collections.Generic;
 
 #endregion
 
@@ -224,19 +225,179 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
     #region Helper Classes (Placeholders)
 
     /// <summary>
-    /// Placeholder for MarkerDetector (to be implemented in future phase).
     /// Detects frame markers like STX, ETX, or custom start/end markers.
+    /// Basic implementation that looks for common ASCII markers at frame boundaries.
     /// </summary>
     internal class MarkerDetector
     {
         public MarkerDetectionResult DetectMarkers(byte[] rawBytes, TerminatorHierarchyResult terminators)
         {
-            // TODO: Implement marker detection
-            return new MarkerDetectionResult
+            var result = new MarkerDetectionResult
             {
                 StartMarker = null,
                 EndMarker = null
             };
+
+            // Only detect markers if we have a frame terminator
+            if (terminators == null || terminators.FrameTerminator == null)
+                return result;
+
+            byte[] frameTermBytes = terminators.FrameTerminator.Bytes;
+
+            // Find all positions where frames might start (after frame terminators)
+            var frameStartPositions = new List<int> { 0 }; // File start is always a potential frame start
+
+            for (int i = 0; i <= rawBytes.Length - frameTermBytes.Length; i++)
+            {
+                if (BytesMatch(rawBytes, i, frameTermBytes))
+                {
+                    int nextPos = i + frameTermBytes.Length;
+                    if (nextPos < rawBytes.Length)
+                    {
+                        frameStartPositions.Add(nextPos);
+                    }
+                }
+            }
+
+            // Look for common start markers at frame boundaries
+            result.StartMarker = DetectStartMarker(rawBytes, frameStartPositions);
+            result.EndMarker = DetectEndMarker(rawBytes, frameTermBytes);
+
+            return result;
+        }
+
+        private FrameMarkerInfo DetectStartMarker(byte[] rawBytes, List<int> frameStartPositions)
+        {
+            // Look for printable ASCII sequences that appear at frame starts
+            // Common patterns: ^, STX (0x02), SOH (0x01), or custom markers like "^KJIK"
+
+            if (frameStartPositions.Count < 2)
+                return null; // Need at least 2 frames to detect a pattern
+
+            // Check for consistent byte sequences at frame starts (up to 10 bytes)
+            for (int len = 3; len <= 10; len++)
+            {
+                byte[] candidateMarker = null;
+                int matchCount = 0;
+
+                foreach (int pos in frameStartPositions)
+                {
+                    if (pos + len > rawBytes.Length)
+                        continue;
+
+                    byte[] sequence = new byte[len];
+                    Array.Copy(rawBytes, pos, sequence, 0, len);
+
+                    if (candidateMarker == null)
+                    {
+                        candidateMarker = sequence;
+                        matchCount = 1;
+                    }
+                    else if (BytesEqual(sequence, candidateMarker))
+                    {
+                        matchCount++;
+                    }
+                }
+
+                // If this sequence appears at 80%+ of frame starts, it's likely a start marker
+                if (candidateMarker != null && matchCount >= frameStartPositions.Count * 0.8)
+                {
+                    return new FrameMarkerInfo
+                    {
+                        Bytes = candidateMarker,
+                        DisplayName = "StartMarker",
+                        Confidence = (double)matchCount / frameStartPositions.Count
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        private FrameMarkerInfo DetectEndMarker(byte[] rawBytes, byte[] frameTerminator)
+        {
+            // Look for consistent sequences that appear BEFORE the frame terminator
+            // Common patterns: ETX (0x03), EOT (0x04), or custom markers like "~P1"
+
+            var endPositions = new List<int>();
+
+            // Find all frame terminator positions
+            for (int i = 0; i <= rawBytes.Length - frameTerminator.Length; i++)
+            {
+                if (BytesMatch(rawBytes, i, frameTerminator))
+                {
+                    endPositions.Add(i);
+                }
+            }
+
+            if (endPositions.Count < 2)
+                return null;
+
+            // Check for consistent byte sequences before frame terminators (up to 10 bytes)
+            for (int len = 2; len <= 10; len++)
+            {
+                byte[] candidateMarker = null;
+                int matchCount = 0;
+
+                foreach (int termPos in endPositions)
+                {
+                    int markerStart = termPos - len;
+                    if (markerStart < 0)
+                        continue;
+
+                    byte[] sequence = new byte[len];
+                    Array.Copy(rawBytes, markerStart, sequence, 0, len);
+
+                    if (candidateMarker == null)
+                    {
+                        candidateMarker = sequence;
+                        matchCount = 1;
+                    }
+                    else if (BytesEqual(sequence, candidateMarker))
+                    {
+                        matchCount++;
+                    }
+                }
+
+                // If this sequence appears at 80%+ of frame ends, it's likely an end marker
+                if (candidateMarker != null && matchCount >= endPositions.Count * 0.8)
+                {
+                    return new FrameMarkerInfo
+                    {
+                        Bytes = candidateMarker,
+                        DisplayName = "EndMarker",
+                        Confidence = (double)matchCount / endPositions.Count
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        private bool BytesMatch(byte[] data, int position, byte[] pattern)
+        {
+            if (position + pattern.Length > data.Length)
+                return false;
+
+            for (int i = 0; i < pattern.Length; i++)
+            {
+                if (data[position + i] != pattern[i])
+                    return false;
+            }
+            return true;
+        }
+
+        private bool BytesEqual(byte[] a, byte[] b)
+        {
+            if (a.Length != b.Length)
+                return false;
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                    return false;
+            }
+            return true;
         }
     }
 

@@ -125,6 +125,24 @@ namespace NLib
             }
         }
 
+        private void rbMessageType_Checked(object sender, RoutedEventArgs e)
+        {
+            // When user changes message type, reload the file to re-detect with new settings
+            if (txtFilePath != null && !string.IsNullOrWhiteSpace(txtFilePath.Text))
+            {
+                try
+                {
+                    // Re-load the current file with the new message type setting
+                    LoadLogFile(txtFilePath.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error reloading file:\n{ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         private void btnBrowse_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog
@@ -645,7 +663,6 @@ namespace NLib
         /// <returns>
         /// true = Single Message (entire file is one message)
         /// false = Multi Message (detect frame boundaries)
-        /// null = Auto Detect
         /// </returns>
         private bool? GetProtocolStructureHint()
         {
@@ -653,13 +670,9 @@ namespace NLib
             {
                 return true; // Single message
             }
-            else if (rbMultiMessage.IsChecked == true)
+            else // rbMultiMessage.IsChecked == true (default)
             {
                 return false; // Multi message
-            }
-            else // rbAutoDetect.IsChecked == true
-            {
-                return null; // Auto detect
             }
         }
 

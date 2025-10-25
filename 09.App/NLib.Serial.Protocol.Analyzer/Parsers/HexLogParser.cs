@@ -49,8 +49,10 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
 
         private bool IsHexDumpFormat(string content)
         {
-            // Check for hex dump format (e.g., "00 01 02 03" or "00:01:02:03")
-            return Regex.IsMatch(content, @"[0-9A-Fa-f]{2}[\s:][0-9A-Fa-f]{2}");
+            // Check for hex dump format (e.g., "5E 4B 4A 49 4B 30" or "5E:4B:4A:49")
+            // Must have at least 4 consecutive hex byte patterns (8+ bytes in sequence)
+            // This prevents false positives from timestamps like "17:19:38"
+            return Regex.IsMatch(content, @"[0-9A-Fa-f]{2}[\s:][0-9A-Fa-f]{2}[\s:][0-9A-Fa-f]{2}[\s:][0-9A-Fa-f]{2}");
         }
 
         private bool IsPureHexFormat(string content)

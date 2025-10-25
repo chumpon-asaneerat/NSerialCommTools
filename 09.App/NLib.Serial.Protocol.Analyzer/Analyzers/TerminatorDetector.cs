@@ -203,7 +203,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
 
         /// <summary>
         /// STEP 1: Finds all repeating byte sequences in the raw data.
-        /// Scans for patterns of 1-4 bytes that occur multiple times.
+        /// Uses DYNAMIC discovery to find ANY repeating patterns (markers, terminators, delimiters).
         /// IMPORTANT: Check LONGER patterns first to avoid double-counting overlaps!
         /// </summary>
         private Dictionary<string, ByteSequenceCandidate> FindRepeatingSequences(byte[] rawBytes)
@@ -211,12 +211,21 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             var candidates = new Dictionary<string, ByteSequenceCandidate>();
             var excludedPositions = new HashSet<int>(); // Positions already matched by longer patterns
 
-            // Common terminator/delimiter patterns to check
-            // CRITICAL: Ordered by LENGTH (longest first) to avoid overlap issues!
-            var patternsToCheck = new List<byte[]>
+            // PHASE 1: DYNAMIC DISCOVERY - Find ANY repeating patterns (3-16 bytes)
+            // This discovers custom markers like ^KJIK000, ~P1, STX/ETX sequences, etc.
+            var dynamicPatterns = DiscoverRepeatingPatterns(rawBytes, minLength: 3, maxLength: 16, minOccurrences: 2);
+
+            // PHASE 2: Build complete pattern list (dynamic + predefined)
+            var patternsToCheck = new List<byte[]>();
+
+            // Add discovered patterns first (longest to shortest)
+            patternsToCheck.AddRange(dynamicPatterns.OrderByDescending(p => p.Length));
+
+            // Add common predefined patterns (for fallback)
+            patternsToCheck.AddRange(new List<byte[]>
             {
-                // 4-byte patterns (check first!)
-                new byte[] { 0x0D, 0x0A, 0x0D, 0x0A },  // Double CRLF (MUST check before single CRLF!)
+                // 4-byte patterns
+                new byte[] { 0x0D, 0x0A, 0x0D, 0x0A },  // Double CRLF
 
                 // 2-byte patterns
                 new byte[] { 0x0D, 0x0A },               // CRLF
@@ -234,15 +243,20 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                 new byte[] { 0x03 },                     // ETX
                 new byte[] { 0x1E },                     // Record Separator
                 new byte[] { 0x1F }                      // Unit Separator
-            };
+            });
 
-            // Search for each pattern
+            // Search for each pattern (longest first)
             foreach (var pattern in patternsToCheck)
             {
                 var positions = FindAllOccurrences(rawBytes, pattern, excludedPositions);
                 if (positions.Count > 0)
                 {
                     string key = BitConverter.ToString(pattern);
+
+                    // Skip if already added
+                    if (candidates.ContainsKey(key))
+                        continue;
+
                     candidates[key] = new ByteSequenceCandidate
                     {
                         Bytes = pattern,
@@ -250,8 +264,7 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
                         Count = positions.Count
                     };
 
-                    // Mark these positions (and the bytes within the pattern) as used
-                    // so shorter patterns don't double-count them
+                    // Mark these positions as used to avoid overlap
                     foreach (int pos in positions)
                     {
                         for (int offset = 0; offset < pattern.Length; offset++)
@@ -263,6 +276,53 @@ namespace NLib.Serial.ProtocolAnalyzer.Analyzers
             }
 
             return candidates;
+        }
+
+        /// <summary>
+        /// DYNAMIC PATTERN DISCOVERY: Finds repeating byte sequences of any length.
+        /// Binary-first approach - no assumptions about text or specific patterns.
+        /// </summary>
+        private List<byte[]> DiscoverRepeatingPatterns(byte[] data, int minLength, int maxLength, int minOccurrences)
+        {
+            var patternDict = new Dictionary<string, PatternInfo>();
+
+            // Sample the data to find candidate patterns (to avoid O(n^2) explosion)
+            int sampleInterval = Math.Max(1, data.Length / 1000); // Sample every Nth position
+
+            for (int length = minLength; length <= maxLength; length++)
+            {
+                for (int i = 0; i < data.Length - length; i += sampleInterval)
+                {
+                    byte[] pattern = new byte[length];
+                    Array.Copy(data, i, pattern, 0, length);
+
+                    string key = BitConverter.ToString(pattern);
+
+                    if (!patternDict.ContainsKey(key))
+                    {
+                        patternDict[key] = new PatternInfo { Bytes = pattern, Count = 0 };
+                    }
+
+                    patternDict[key].Count++;
+                }
+            }
+
+            // Return patterns that occur frequently enough (adjusted for sampling)
+            int adjustedMin = minOccurrences / Math.Max(1, sampleInterval);
+
+            return patternDict.Values
+                .Where(p => p.Count >= Math.Max(1, adjustedMin))
+                .OrderByDescending(p => p.Bytes.Length)  // Longer patterns first
+                .ThenBy(p => p.Count)                     // Then fewer occurrences
+                .Select(p => p.Bytes)
+                .Take(50) // Top 50 patterns
+                .ToList();
+        }
+
+        private class PatternInfo
+        {
+            public byte[] Bytes { get; set; }
+            public int Count { get; set; }
         }
 
         /// <summary>

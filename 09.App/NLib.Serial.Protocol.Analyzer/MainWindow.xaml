@@ -48,12 +48,13 @@
                         </StackPanel>
 
                         <!-- Protocol Structure Hint (helps detection algorithm) -->
-                        <GroupBox Header="Protocol Structure Hint" Padding="10,5">
+                        <GroupBox Header="Protocol Structure" Padding="10,5">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Message Type:" VerticalAlignment="Center" Margin="0,0,15,0"/>
-                                <RadioButton Name="rbAutoDetect" Content="Auto Detect" GroupName="MessageType" IsChecked="True" Margin="0,0,15,0"/>
-                                <RadioButton Name="rbSingleMessage" Content="Single Message (entire file)" GroupName="MessageType" Margin="0,0,15,0"/>
-                                <RadioButton Name="rbMultiMessage" Content="Multi Message (detect frames)" GroupName="MessageType" Margin="0,0,0,0"/>
+                                <RadioButton Name="rbSingleMessage" Content="Single Message (entire file)" GroupName="MessageType" Margin="0,0,15,0"
+                                             Checked="rbMessageType_Checked"/>
+                                <RadioButton Name="rbMultiMessage" Content="Multi Message (detect frames)" GroupName="MessageType" IsChecked="True" Margin="0,0,0,0"
+                                             Checked="rbMessageType_Checked"/>
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

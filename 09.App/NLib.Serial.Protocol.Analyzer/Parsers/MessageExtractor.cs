@@ -73,14 +73,32 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
         #region Private Methods - Frame Extraction
 
         /// <summary>
-        /// Extracts frames using detected frame terminator.
+        /// Extracts frames using detected markers or frame terminator.
+        /// PRIORITY: Markers > Terminator
         /// BINARY-SAFE: All operations on byte[], no string conversion.
         /// </summary>
         private List<byte[]> ExtractFrames(byte[] rawBytes, DetectionResult detection)
         {
             var frames = new List<byte[]>();
 
-            // Check if we have a frame terminator
+            // PRIORITY 1: Check for frame markers (most reliable)
+            if (detection.StartMarker != null &&
+                detection.StartMarker.Bytes != null &&
+                detection.StartMarker.Confidence >= 0.7)
+            {
+                // Split by start marker
+                return ExtractFramesByStartMarker(rawBytes, detection.StartMarker.Bytes);
+            }
+
+            if (detection.EndMarker != null &&
+                detection.EndMarker.Bytes != null &&
+                detection.EndMarker.Confidence >= 0.7)
+            {
+                // Split by end marker
+                return ExtractFramesByEndMarker(rawBytes, detection.EndMarker.Bytes);
+            }
+
+            // PRIORITY 2: Check for frame terminator
             if (detection.FrameTerminator == null ||
                 detection.FrameTerminator.Bytes == null ||
                 detection.FrameTerminator.Confidence < 0.5)
@@ -105,6 +123,102 @@ namespace NLib.Serial.ProtocolAnalyzer.Parsers
             foreach (var frame in splitFrames)
             {
                 if (frame != null && frame.Length > 0)
+                {
+                    frames.Add(frame);
+                }
+            }
+
+            return frames;
+        }
+
+        /// <summary>
+        /// Extracts frames by splitting on start markers.
+        /// Each frame begins with the start marker.
+        /// </summary>
+        private List<byte[]> ExtractFramesByStartMarker(byte[] rawBytes, byte[] startMarker)
+        {
+            var frames = new List<byte[]>();
+            var frameStartPositions = new List<int>();
+
+            // Find all positions where start marker occurs
+            for (int i = 0; i <= rawBytes.Length - startMarker.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < startMarker.Length; j++)
+                {
+                    if (rawBytes[i + j] != startMarker[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    frameStartPositions.Add(i);
+                }
+            }
+
+            // Extract frames between start markers
+            for (int i = 0; i < frameStartPositions.Count; i++)
+            {
+                int startPos = frameStartPositions[i];
+                int endPos = (i + 1 < frameStartPositions.Count)
+                    ? frameStartPositions[i + 1]
+                    : rawBytes.Length;
+
+                int frameLength = endPos - startPos;
+                byte[] frame = new byte[frameLength];
+                Array.Copy(rawBytes, startPos, frame, 0, frameLength);
+
+                frames.Add(frame);
+            }
+
+            return frames;
+        }
+
+        /// <summary>
+        /// Extracts frames by splitting on end markers.
+        /// Each frame ends with the end marker.
+        /// </summary>
+        private List<byte[]> ExtractFramesByEndMarker(byte[] rawBytes, byte[] endMarker)
+        {
+            var frames = new List<byte[]>();
+            int lastEndPos = 0;
+
+            // Find all positions where end marker occurs
+            for (int i = 0; i <= rawBytes.Length - endMarker.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < endMarker.Length; j++)
+                {
+                    if (rawBytes[i + j] != endMarker[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    // Found end marker - extract frame from last position to here
+                    int frameLength = (i + endMarker.Length) - lastEndPos;
+                    byte[] frame = new byte[frameLength];
+                    Array.Copy(rawBytes, lastEndPos, frame, 0, frameLength);
+
+                    frames.Add(frame);
+                    lastEndPos = i + endMarker.Length;
+                }
+            }
+
+            // Add any remaining data as the last frame
+            if (lastEndPos < rawBytes.Length)
+            {
+                int frameLength = rawBytes.Length - lastEndPos;
+                byte[] frame = new byte[frameLength];
+                Array.Copy(rawBytes, lastEndPos, frame, 0, frameLength);
+
+                if (frame.Length > 0)
                 {
                     frames.Add(frame);
                 }
