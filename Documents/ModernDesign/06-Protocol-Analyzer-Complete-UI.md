@@ -29,7 +29,7 @@
 graph TD
     A[LogDataPage<br/>Load log file] --> B[AnalyzerPage<br/>Run statistical analysis]
     B --> C[FieldEditorPage<br/>Edit field names]
-    C --> D[ExportPage<br/>Export JSON/YAML]
+    C --> D[ExportPage<br/>Export JSON]
 
     style A fill:#E1F5FE
     style B fill:#FFF9C4
@@ -44,7 +44,7 @@ graph TD
 | 1 | **LogDataPage** | Load data from file | Log file path | byte[] raw data |
 | 2 | **AnalyzerPage** | Analyze patterns | byte[] raw data | Analysis results |
 | 3 | **FieldEditorPage** | Edit fields | Detected fields | Edited field definitions |
-| 4 | **ExportPage** | Export definition | Field definitions | JSON/YAML files |
+| 4 | **ExportPage** | Export definition | Field definitions | JSON files |
 
 ---
 
@@ -607,7 +607,7 @@ Validate protocol definition and export to files.
 ├─────────────────────────────────────────────────┤
 │ 💾 Export Configuration                         │
 │ Output: [C:\Exports\  ] [Browse...]            │
-│ Formats: ☑JSON ☐YAML ☐HTML Report ☐Test Cases│
+│ Format:  ☑ JSON Definition                     │
 ├─────────────────────────────────────────────────┤
 │ ┌──────────────┐ ┌──────────────┐             │
 │ │📋 Protocol   │ │📊 Fields     │             │
@@ -650,10 +650,9 @@ Validate protocol definition and export to files.
                     <TextBlock Text="Output Folder:" DockPanel.Dock="Left"/>
                     <TextBox x:Name="OutputFolderTextBox"/>
                 </DockPanel>
-                <StackPanel Orientation="Horizontal">
-                    <CheckBox Content="📄 JSON" IsChecked="True"/>
-                    <CheckBox Content="📄 YAML"/>
-                    <CheckBox Content="📊 Analysis Report"/>
+                <StackPanel>
+                    <CheckBox Content="📄 JSON Definition" IsChecked="True" IsEnabled="False"/>
+                    <TextBlock Text="(Only JSON format supported)" FontSize="10" Foreground="Gray"/>
                 </StackPanel>
             </StackPanel>
         </GroupBox>
@@ -728,7 +727,7 @@ graph TD
     Tab4 --> Verify[Validation status shown]
     Verify --> Configure[Configure export]
     Configure --> Export[Click 'Export Files']
-    Export --> Files[JSON/YAML files created]
+    Export --> Files[JSON file created]
     Files --> Done[Done!]
 
     style Tab1 fill:#E1F5FE
@@ -884,7 +883,7 @@ sequenceDiagram
 └── Services/
     ├── ParserService.cs         → File parsing logic
     ├── AnalyzerService.cs       → Statistical analysis
-    └── ExportService.cs         → JSON/YAML export
+    └── ExportService.cs         → JSON export only
 ```
 
 ---

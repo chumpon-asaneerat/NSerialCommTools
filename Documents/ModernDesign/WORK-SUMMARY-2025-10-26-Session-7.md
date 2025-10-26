@@ -314,8 +314,8 @@ DockPanel
 - ✅ Validation status banner (green/red based on validity)
 - 📋 Protocol summary (device name, type, encoding, terminator, delimiter, fields, confidence)
 - 📊 Fields summary DataGrid
-- 💾 Export configuration (output folder, formats)
-- Export format checkboxes (JSON, YAML, HTML Report, Test Cases)
+- 💾 Export configuration (output folder)
+- Export format: JSON only (YAML/HTML not supported)
 
 **Layout Structure**:
 ```
@@ -579,7 +579,7 @@ Model.Fields
     ↓ (exported from)
 ExportPage
     ↓ (generates)
-Model.ProtocolDefinition → JSON/YAML files
+Model.ProtocolDefinition → JSON file
 ```
 
 ### Folder Structure (Final)
@@ -610,7 +610,7 @@ Model.ProtocolDefinition → JSON/YAML files
 └── Services/
     ├── ParserService.cs         → File parsing logic
     ├── AnalyzerService.cs       → Statistical analysis
-    └── ExportService.cs         → JSON/YAML export
+    └── ExportService.cs         → JSON export only
 ```
 
 ---
@@ -631,7 +631,7 @@ Model.ProtocolDefinition → JSON/YAML files
 - [ ] Create Services/ folder
 - [ ] Implement ParserService.cs (read log files)
 - [ ] Implement AnalyzerService.cs (statistical detection)
-- [ ] Implement ExportService.cs (JSON/YAML export)
+- [ ] Implement ExportService.cs (JSON export only)
 
 ### Phase 3: Implement UI ⏳
 - [ ] Create MainWindow.xaml (TabControl + StatusBar)
