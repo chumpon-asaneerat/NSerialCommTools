@@ -1,16 +1,10 @@
 # Protocol Analyzer Tool - Complete Application UI Design
 
-**Document:** Comprehensive Protocol Analyzer Application UI Design (Consolidated)
-**Version:** 3.0 (Consolidated from Docs 06+07+08)
-**Date:** 2025-10-27
-**Status:** Complete - Ready for Implementation
-**Scope:** All UI components, page content details, and detection configuration
-
-**Consolidation Notes:**
-- Merged Document 06 (Complete UI), 07 (Page Content), and 08 (Detection Configuration)
-- Added multi-level terminator support (Package + Segment terminators)
-- Updated Quick Presets (5 presets: removed Tab)
-- Single comprehensive reference for all UI implementation
+**Document:** Unified Protocol Analyzer Application UI Design
+**Version:** 2.0 (Simplified, Clean Design)
+**Date:** 2025-10-26
+**Status:** Updated with DockPanel/StackPanel Architecture
+**Scope:** All UI components integrated into single cohesive application
 
 ---
 
@@ -18,13 +12,12 @@
 1. [Application Overview](#application-overview)
 2. [Architecture Design](#architecture-design)
 3. [Main Application Window](#main-application-window)
-4. [Page 1: LogDataPage with Detection Configuration](#page-1-logdatapage-with-detection-configuration)
+4. [Page 1: LogDataPage (Input)](#page-1-logdatapage-input)
 5. [Page 2: AnalyzerPage (Analysis)](#page-2-analyzerpage-analysis)
 6. [Page 3: FieldEditorPage (Field Editor)](#page-3-fieldeditorpage-field-editor)
 7. [Page 4: ExportPage (Export)](#page-4-exportpage-export)
 8. [Integrated Workflow](#integrated-workflow)
 9. [Data Flow & Models](#data-flow--models)
-10. [Page Content Reference](#page-content-reference)
 
 ---
 
@@ -290,20 +283,10 @@ public partial class MainWindow : Window
 
 ---
 
-## Page 1: LogDataPage with Detection Configuration
+## Page 1: LogDataPage (Input)
 
 ### Purpose
-Load serial log data from files, configure protocol detection settings, and display statistics with auto-detection assistance.
-
-**Enhanced Workflow:**
-1. User selects log file
-2. Clicks **"Load & Auto-Detect"**
-3. System parses file AND runs quick detection
-4. **Detection results auto-fill editable controls**
-5. User can accept, edit, or manually configure detection settings
-6. Click **"Next: Analyze"** → Proceeds to Page 2 with configured settings
-
-**Key Principle:** Auto-detect first, then let user refine.
+Load serial log data from files and display statistics.
 
 ### UI Layout
 
