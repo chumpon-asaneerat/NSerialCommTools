@@ -195,12 +195,13 @@ These show actual `ExtractPackage()` implementations using Package terminology.
 | 01-Production-Code-Analysis.md | Existing device patterns | ✅ Reference |
 | 02-System-Architecture.md | System design | ✅ Reference |
 | 03-Parsing-Strategy-Analysis.md | Detection algorithms | ✅ Updated v6.0 |
-| 04-Data-Models-Design.md | C# data models | ✅ Updated v2.2 |
+| 04-Data-Models-Design.md | C# data models | ✅ Updated v2.3 (DetectionConfiguration) |
 | 05-JSON-Schema-Design.md | JSON definition format | ⏳ Needs update v2.1→v3.0 |
-| 06-Protocol-Analyzer-Complete-UI.md | UI design with XAML | ✅ Updated v2.2 |
-| 07-Page-Content-Overview.md | Page content reference | ✅ NEW v1.0 |
+| 06-Protocol-Analyzer-Complete-UI.md | UI design with XAML | ✅ Updated v3.0 (CONSOLIDATED) |
+| ~~07-Page-Content-Overview.md~~ | ~~Page content reference~~ | ❌ Deleted (merged into 06) |
+| ~~08-Page1-Detection-Configuration-Design.md~~ | ~~Detection config design~~ | ❌ Deleted (merged into 06) |
 | TERMINOLOGY-UPDATE-GUIDE.md | Terminology mapping | ✅ Updated v1.1 |
-| PROJECT-STATUS.md (this file) | Current project state | ✅ Current |
+| PROJECT-STATUS.md (this file) | Current project state | ✅ Current v1.3 |
 
 ---
 
