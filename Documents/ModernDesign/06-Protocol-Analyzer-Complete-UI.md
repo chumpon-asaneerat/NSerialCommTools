@@ -1,23 +1,23 @@
 # Protocol Analyzer Tool - Complete Application UI Design
 
 **Document:** Unified Protocol Analyzer Application UI Design
-**Version:** 1.0 (Comprehensive, Full Application)
-**Date:** 2025-10-21
-**Status:** Complete Application Design
+**Version:** 2.0 (Simplified, Clean Design)
+**Date:** 2025-10-26
+**Status:** Updated with DockPanel/StackPanel Architecture
 **Scope:** All UI components integrated into single cohesive application
 
 ---
 
 ## Table of Contents
 1. [Application Overview](#application-overview)
-2. [Main Application Window](#main-application-window)
-3. [Input Methods (Serial Port & Log File)](#input-methods)
-4. [Analysis & Results Panel](#analysis--results-panel)
-5. [Field Editor Component](#field-editor-component)
-6. [Output & Export](#output--export)
-7. [Integrated Workflow](#integrated-workflow)
-8. [Data Models & Classes](#data-models--classes)
-9. [UI Implementation](#ui-implementation)
+2. [Architecture Design](#architecture-design)
+3. [Main Application Window](#main-application-window)
+4. [Page 1: LogDataPage (Input)](#page-1-logdatapage-input)
+5. [Page 2: AnalyzerPage (Analysis)](#page-2-analyzerpage-analysis)
+6. [Page 3: FieldEditorPage (Field Editor)](#page-3-fieldeditorpage-field-editor)
+7. [Page 4: ExportPage (Export)](#page-4-exportpage-export)
+8. [Integrated Workflow](#integrated-workflow)
+9. [Data Flow & Models](#data-flow--models)
 
 ---
 
@@ -25,861 +25,873 @@
 
 **Protocol Analyzer Tool** is a complete solution for analyzing serial device protocols:
 
+```mermaid
+graph TD
+    A[LogDataPage<br/>Load log file] --> B[AnalyzerPage<br/>Run statistical analysis]
+    B --> C[FieldEditorPage<br/>Edit field names]
+    C --> D[ExportPage<br/>Export JSON/YAML]
+
+    style A fill:#E1F5FE
+    style B fill:#FFF9C4
+    style C fill:#C8E6C9
+    style D fill:#E8F5E9
 ```
-┌─────────────────────────────────────────────┐
-│ Input Methods                               │
-│ ├─ Serial Port (Real-time capture)         │
-│ └─ Log File (Pre-captured data)             │
-└─────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│ Pattern Detection & Analysis                │
-│ ├─ Terminator Detection                     │
-│ ├─ Delimiter Detection                      │
-│ ├─ Field Analysis                           │
-│ └─ Type Inference                           │
-└─────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│ Field Editor & Refinement                   │
-│ ├─ Rename fields to meaningful names        │
-│ ├─ Validate field types                     │
-│ ├─ Add descriptions                         │
-│ └─ Preview updated definition               │
-└─────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│ Export & Output                             │
-│ ├─ JSON Protocol Definition                 │
-│ ├─ YAML Format                              │
-│ ├─ Analysis Report                          │
-│ └─ Test Cases                               │
-└─────────────────────────────────────────────┘
+
+### Workflow Steps
+
+| Step | Page | Purpose | Input | Output |
+|------|------|---------|-------|--------|
+| 1 | **LogDataPage** | Load data from file | Log file path | byte[] raw data |
+| 2 | **AnalyzerPage** | Analyze patterns | byte[] raw data | Analysis results |
+| 3 | **FieldEditorPage** | Edit fields | Detected fields | Edited field definitions |
+| 4 | **ExportPage** | Export definition | Field definitions | JSON/YAML files |
+
+---
+
+## Architecture Design
+
+### Single Shared Model Pattern
+
+All pages share a single `ProtocolAnalyzerModel` instance:
+
+```csharp
+MainWindow
+    ↓ (creates & owns)
+[ProtocolAnalyzerModel] ← Single instance
+    ↓ (injected via Setup())
+┌──────────┬──────────┬──────────┬──────────┐
+│LogData   │Analyzer  │FieldEdit │Export    │
+│Page      │Page      │Page      │Page      │
+└──────────┴──────────┴──────────┴──────────┘
+```
+
+**Key Principles:**
+- ✅ One model instance created in MainWindow
+- ✅ All pages receive model via `Setup(model)` method
+- ✅ Pages bind UI to model properties
+- ✅ Model implements `INotifyPropertyChanged`
+- ✅ Automatic UI updates across all pages
+
+### Layout Strategy
+
+**All layouts use DockPanel/StackPanel** (no Grid.RowDefinitions/ColumnDefinitions):
+
+```
+DockPanel (Main container)
+├── DockPanel.Dock="Top" → Headers, buttons
+├── DockPanel.Dock="Bottom" → Actions, status
+└── (Center - fills remaining) → Main content
 ```
 
 ---
 
 ## Main Application Window
 
-### Full Application Layout
-
-The application uses **TabControl** for clean separation of workflow stages:
+### Window Structure
 
 ```
-╔════════════════════════════════════════════════════════════════════════════╗
-║  Protocol Analyzer Tool                                        [ _ □ X ]    ║
-╠════════════════════════════════════════════════════════════════════════════╣
-║                                                                             ║
-║  ┌─ TOOLBAR ──────────────────────────────────────────────────────────────┐ ║
-║  │ [New] [Open Log] [Import] [Save] [Export] | [Settings] [Help] [About] │ ║
-║  └─────────────────────────────────────────────────────────────────────────┘ ║
-║                                                                             ║
-║  ┌─ TABCONTROL ───────────────────────────────────────────────────────────┐ ║
-║  │ [▶ Input] [Analysis] [Field Editor] [Export]                          │ ║
-║  ├─────────────────────────────────────────────────────────────────────────┤ ║
-║  │                                                                         │ ║
-║  │  ┌─ INPUT TAB ─────────────────────────────────────────────────────┐   │ ║
-║  │  │                                                                │   │ ║
-║  │  │  [Serial Port ▼] [Log File]                                 │   │ ║
-║  │  │                                                                │   │ ║
-║  │  │  ┌─ Serial Port Mode ────────────────────────────────────┐   │   │ ║
-║  │  │  │                                                        │   │   │ ║
-║  │  │  │ Port: [COM3        ▼]  [Refresh]                      │   │   │ ║
-║  │  │  │ Baud: [9600        ▼]  [◉ Connected] [○ Disconnected] │   │   │ ║
-║  │  │  │ Bits: [8 ▼] Parity: [None ▼] Stop: [1 ▼]             │   │   │ ║
-║  │  │  │                                                        │   │   │ ║
-║  │  │  │ [Connect] [Disconnect] [Test Connection]             │   │   │ ║
-║  │  │  │                                                        │   │   │ ║
-║  │  │  └────────────────────────────────────────────────────────┘   │   │ ║
-║  │  │                                                                │   │ ║
-║  │  │  ┌─ Live Capture Display ────────────────────────────────┐   │   │ ║
-║  │  │  │ Status: ▶ Capturing...                               │   │   │ ║
-║  │  │  │ Messages: 1247  |  Bytes: 18,942  |  Avg: 15 bytes   │   │   │ ║
-║  │  │  │                                                        │   │   │ ║
-║  │  │  │ Hex Dump:                                             │   │   │ ║
-║  │  │  │ 53 54 2C 47 53 20 20 20 20 32 30 2E 37 67 20 20 0D   │   │   │ ║
-║  │  │  │ 0A 55 53 2C 47 53 20 20 20 20 32 30 2E 39 67 20 20   │   │   │ ║
-║  │  │  │                                                        │   │   │ ║
-║  │  │  │ [Pause] [Resume] [Clear] [Save to File]              │   │   │ ║
-║  │  │  │                                                        │   │   │ ║
-║  │  │  └────────────────────────────────────────────────────────┘   │   │ ║
-║  │  │                                                                │   │ ║
-║  │  │  [◀ Back] [▶ Next: Analyze]                                 │   │ ║
-║  │  │                                                                │   │ ║
-║  │  └────────────────────────────────────────────────────────────────┘   │ ║
-║  │                                                                         │ ║
-║  └─────────────────────────────────────────────────────────────────────────┘ ║
-║                                                                             ║
-║  │  ┌─ Log File Mode ────────────────────────────────────────────┐   │   │ ║
-║  │  │ [Browse...] [Open Recent ▼]                                │   │   │ ║
-║  │  │                                                             │   │   │ ║
-║  │  │ File: [________________________________________] [Browse]  │   │   │ ║
-║  │  │                                                             │   │   │ ║
-║  │  │ Format: ◉ Auto-detect  ○ Hex+ASCII  ○ Pure Hex  ○ Text    │   │   │ ║
-║  │  │                                                             │   │   │ ║
-║  │  │ ┌─ Preview ──────────────────────────────────────────────┐│   │   │ ║
-║  │  │ │ 53 54 2C 47 53 20 20 20 20 32 30 2E 37 67 20 20 0D 0A ││   │   │ ║
-║  │  │ │ 55 53 2C 47 53 20 20 20 20 32 30 2E 39 67 20 20 0D 0A ││   │   │ ║
-║  │  │ │ ...                                                      ││   │   │ ║
-║  │  │ └────────────────────────────────────────────────────────┘│   │   │ ║
-║  │  │                                                             │   │   │ ║
-║  │  │ [◀ Back] [▶ Next: Analyze]                                │   │   │ ║
-║  │  │                                                             │   │   │ ║
-║  │  └─────────────────────────────────────────────────────────────┘   │   │ ║
-║  │                                                                     │   │ ║
-║  └─────────────────────────────────────────────────────────────────────┘   │ ║
-║                                                                             ║
-║  ┌─ TABCONTROL (continued) ──────────────────────────────────────────────┐  ║
-║  │ [Input] [▶ Analysis] [Field Editor] [Export]                        │  ║
-║  ├──────────────────────────────────────────────────────────────────────┤  ║
-║  │                                                                      │  ║
-║  │  Protocol Type:                                                    │  ║
-║  │  ☑ Single-package streaming  ☐ Multi-segment package  ☐ Command-response│  ║
-║  │                                                                      │  ║
-║  │  ┌─ Terminator Analysis ─────────────────────────────────────┐     │  ║
-║  │  │ Type: \r\n (CRLF)                                         │     │  ║
-║  │  │ Bytes: 0x0D 0x0A                                          │     │  ║
-║  │  │ Frequency: 1247/1247 (100%)                               │     │  ║
-║  │  │ Confidence: 100%  ████████████████████░░                 │     │  ║
-║  │  └────────────────────────────────────────────────────────────┘     │  ║
-║  │                                                                      │  ║
-║  │  ┌─ Delimiter Analysis ──────────────────────────────────────┐     │  ║
-║  │  │ Delimiter | Frequency | Confidence | Structural         │     │  ║
-║  │  │ Comma (,) | 100%      | 100%       | Yes               │     │  ║
-║  │  │ Space ( ) | 100%      | 70%        | No                │     │  ║
-║  │  └────────────────────────────────────────────────────────────┘     │  ║
-║  │                                                                      │  ║
-║  │  ┌─ Fields Detected ─────────────────────────────────────────┐     │  ║
-║  │  │ Field 0: Status (string) - Confidence: 95%               │     │  ║
-║  │  │ Field 1: Mode (string) - Confidence: 98%                 │     │  ║
-║  │  │ Field 2: Weight (decimal) - Confidence: 90%              │     │  ║
-║  │  └────────────────────────────────────────────────────────────┘     │  ║
-║  │                                                                      │  ║
-║  │  Overall Confidence: 95%  ████████░░                              │  ║
-║  │                                                                      │  ║
-║  │  [◀ Back] [▶ Next: Edit Fields]                                    │  ║
-║  │                                                                      │  ║
-║  └──────────────────────────────────────────────────────────────────────┘  ║
-║                                                                             ║
-║  ┌─ TABCONTROL (continued) ──────────────────────────────────────────────┐  ║
-║  │ [Input] [Analysis] [▶ Field Editor] [Export]                         │  ║
-║  ├──────────────────────────────────────────────────────────────────────┤  ║
-║  │                                                                      │  ║
-║  │  ┌─ Fields Table (Editable) ────────────────────────────────┐       │  ║
-║  │  │ Pos │ Current Name │ New Name      │ Type    │ Sample     │       │  ║
-║  │  ├─────┼──────────────┼───────────────┼─────────┼────────────┤       │  ║
-║  │  │  0  │ Field0       │ [Status     ]│ string  │ ST, US     │       │  ║
-║  │  │  1  │ Field1       │ [Mode       ]│ string  │ GS         │       │  ║
-║  │  │  2  │ Field2       │ [Weight     ]│ decimal │ 20.7, 85.5 │       │  ║
-║  │  └─────────────────────────────────────────────────────────────────┘       │  ║
-║  │                                                                      │  ║
-║  │  [Suggest Names] [Validate] [Undo] [Redo]                         │  ║
-║  │                                                                      │  ║
-║  │  ┌─ Selected Field Details ──────────────────────────────────┐     │  ║
-║  │  │ Name: Status           Description: [____________]        │     │  ║
-║  │  │ Type: string           Unit: [        ]                  │     │  ║
-║  │  │ Allowed Values: ST, US (from data)                       │     │  ║
-║  │  │ ☑ Required  ☐ Is Constant  ☐ Contains Unit              │     │  ║
-║  │  └────────────────────────────────────────────────────────────┘     │  ║
-║  │                                                                      │  ║
-║  │  ┌─ Live Definition Preview ────────────────────────────────┐       │  ║
-║  │  │ {                                                        │       │  ║
-║  │  │   "protocol": {                                          │       │  ║
-║  │  │     "fields": [                                          │       │  ║
-║  │  │       { "name": "Status", "type": "string" },            │       │  ║
-║  │  │       { "name": "Mode", "type": "string" },              │       │  ║
-║  │  │       { "name": "Weight", "type": "decimal" }            │       │  ║
-║  │  │     ]                                                    │       │  ║
-║  │  │   }                                                      │       │  ║
-║  │  │ }                                                        │       │  ║
-║  │  └────────────────────────────────────────────────────────────┘     │  ║
-║  │                                                                      │  ║
-║  │  [◀ Back] [▶ Next: Export]                                         │  ║
-║  │                                                                      │  ║
-║  └──────────────────────────────────────────────────────────────────────┘  ║
-║                                                                             ║
-║  ┌─ TABCONTROL (continued) ──────────────────────────────────────────────┐  ║
-║  │ [Input] [Analysis] [Field Editor] [▶ Export]                         │  ║
-║  ├──────────────────────────────────────────────────────────────────────┤  ║
-║  │                                                                      │  ║
-║  │  Status: ✓ All fields valid (3 fields, 100% confidence)             │  ║
-║  │                                                                      │  ║
-║  │  Validation Results:                                                │  ║
-║  │  ✓ Field names are valid C# identifiers                             │  ║
-║  │  ✓ All field names are unique                                       │  ║
-║  │  ✓ Definition can parse 100% of test messages                       │  ║
-║  │                                                                      │  ║
-║  │  ┌─ Export Configuration ────────────────────────────────────┐      │  ║
-║  │  │ Device Name: [TScaleNHB              ]                   │      │  ║
-║  │  │ Output Folder: [C:\Protocols\  Browse]                   │      │  ║
-║  │  │                                                           │      │  ║
-║  │  │ Export Formats:                                           │      │  ║
-║  │  │ ☑ JSON  ☑ YAML  ☑ Analysis Report  ☑ Test Cases         │      │  ║
-║  │  └────────────────────────────────────────────────────────────┘      │  ║
-║  │                                                                      │  ║
-║  │  [◀ Back] [▶ Export] [Save Draft] [Exit]                           │  ║
-║  │                                                                      │  ║
-║  └──────────────────────────────────────────────────────────────────────┘  ║
-║                                                                             ║
-║  Status Bar: Ready | 1247 messages | 95% confidence | All valid           ║
-║                                                                             ║
-╚════════════════════════════════════════════════════════════════════════════╝
+┌──────────────────────────────────────────────────┐
+│ Serial Protocol Analyzer              [_][□][X] │
+├──────────────────────────────────────────────────┤
+│ ┌─ TABS ───────────────────────────────────────┐│
+│ │[1️⃣ Input][2️⃣ Analysis][3️⃣ Field Editor][4️⃣ Export]││
+│ ├──────────────────────────────────────────────┤│
+│ │                                              ││
+│ │  (Page UserControl Content Here)            ││
+│ │                                              ││
+│ │                                              ││
+│ └──────────────────────────────────────────────┘│
+├──────────────────────────────────────────────────┤
+│ Ready │ 0 entries │ Confidence: N/A             │
+└──────────────────────────────────────────────────┘
 ```
 
----
+### MainWindow.xaml
 
-## Input Methods
+```xml
+<Window x:Class="NLib.Serial.Protocol.Analyzer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:NLib.Serial.Protocol.Analyzer.Pages"
+        Title="Serial Protocol Analyzer"
+        Height="700"
+        Width="1000"
+        WindowStartupLocation="CenterScreen">
 
-### Panel 1A: Serial Port Mode
+    <DockPanel>
+
+        <!-- STATUS BAR (Bottom) -->
+        <StatusBar DockPanel.Dock="Bottom" Height="25" Background="#F0F0F0">
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="StatusText" Text="Ready" Margin="5,0,20,0"/>
+                    <TextBlock Text="│" Foreground="Gray" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="EntryCountText" Text="0 entries" Margin="5,0,20,0"/>
+                    <TextBlock Text="│" Foreground="Gray" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="ConfidenceStatusText" Text="Confidence: N/A" Margin="5,0,0,0"/>
+                </StackPanel>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- MAIN TABCONTROL (Center - fills space) -->
+        <TabControl x:Name="MainTabControl"
+                    Margin="10"
+                    SelectionChanged="MainTabControl_SelectionChanged">
+
+            <!-- Tab 1: Input -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="1️⃣" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="Input Data" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:LogDataPage x:Name="LogDataPage" />
+            </TabItem>
+
+            <!-- Tab 2: Analysis -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="2️⃣" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="Analysis" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:AnalyzerPage x:Name="AnalyzerPage" />
+            </TabItem>
+
+            <!-- Tab 3: Field Editor -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="3️⃣" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="Field Editor" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:FieldEditorPage x:Name="FieldEditorPage" />
+            </TabItem>
+
+            <!-- Tab 4: Export -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="4️⃣" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="Export" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:ExportPage x:Name="ExportPage" />
+            </TabItem>
+
+        </TabControl>
+
+    </DockPanel>
+</Window>
+```
+
+### MainWindow.xaml.cs
 
 ```csharp
-public class SerialPortInputPanel : UserControl
+public partial class MainWindow : Window
 {
-    private SerialPortReader _reader;
-    private ObservableCollection<string> _availablePorts;
-    private DispatcherTimer _captureTimer;
+    // Single shared model instance
+    private ProtocolAnalyzerModel _model;
 
-    private TextBox _portComboBox;
-    private TextBox _baudRateComboBox;
-    private TextBox _hexDumpTextBox;
-    private Label _statusLabel;
-    private Label _messageCountLabel;
-    private Label _bytesCountLabel;
-
-    public event EventHandler<CaptureCompletedEventArgs> CaptureCompleted;
-
-    public void InitializeSerialPort()
+    public MainWindow()
     {
-        _reader = new SerialPortReader();
-        _reader.DataReceived += OnDataReceived;
-        _reader.ConnectionStatusChanged += OnConnectionStatusChanged;
+        InitializeComponent();
 
-        RefreshAvailablePorts();
+        // Create THE model (single instance)
+        _model = new ProtocolAnalyzerModel();
+
+        // Subscribe to model property changes
+        _model.PropertyChanged += Model_PropertyChanged;
+
+        // Setup all pages with the model
+        // Pages already exist (created by XAML), just call Setup()
+        LogDataPage.Setup(_model);
+        AnalyzerPage.Setup(_model);
+        FieldEditorPage.Setup(_model);
+        ExportPage.Setup(_model);
+
+        // Initialize status bar
+        UpdateStatusBar();
     }
 
-    private void OnDataReceived(object sender, DataReceivedEventArgs e)
+    private void Model_PropertyChanged(object sender, PropertyChangedEventArgs e)
     {
-        Dispatcher.Invoke(() =>
+        UpdateStatusBar();
+    }
+
+    private void UpdateStatusBar()
+    {
+        // Update entry count
+        if (_model.LogFile != null && _model.LogFile.Entries != null)
+            EntryCountText.Text = $"{_model.LogFile.Entries.Count} entries";
+        else
+            EntryCountText.Text = "0 entries";
+
+        // Update confidence
+        if (_model.AnalysisResult != null)
         {
-            _hexDumpTextBox.AppendText($"{e.HexData}\r\n");
-
-            _messageCountLabel.Content = _reader.GetCapturedData().MessageCount;
-            _bytesCountLabel.Content = _reader.GetCapturedData().TotalBytes;
-
-            UpdateCaptureStatistics();
-        });
-    }
-
-    private void Connect_Click(object sender, RoutedEventArgs e)
-    {
-        var settings = new SerialPortReader.ConnectionSettings
-        {
-            PortName = (string)_portComboBox.SelectedItem,
-            BaudRate = int.Parse((string)_baudRateComboBox.SelectedItem)
-        };
-
-        _reader.Connect(settings);
-    }
-
-    public LogData GetCapturedData()
-    {
-        return _reader.GetCapturedData();
-    }
-
-    public void SaveCaptureToFile(string filePath)
-    {
-        _reader.SaveCaptureToFile(filePath);
-    }
-}
-```
-
-### Panel 1B: Log File Mode
-
-```csharp
-public class LogFileInputPanel : UserControl
-{
-    private HexLogParser _parser;
-    private TextBox _filePathTextBox;
-    private TextBox _hexPreviewTextBox;
-
-    public event EventHandler<FileLoadedEventArgs> FileLoaded;
-
-    private void BrowseButton_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new OpenFileDialog
-        {
-            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-            Title = "Select Serial Log File"
-        };
-
-        if (dialog.ShowDialog() == true)
-        {
-            LoadLogFile(dialog.FileName);
+            double confidence = _model.AnalysisResult.OverallConfidence * 100;
+            ConfidenceStatusText.Text = $"Confidence: {confidence:F1}%";
         }
+        else
+            ConfidenceStatusText.Text = "Confidence: N/A";
+
+        // Update general status
+        if (_model.ProtocolDefinition != null)
+            StatusText.Text = "✅ Ready to export";
+        else if (_model.AnalysisResult != null)
+            StatusText.Text = "✅ Analysis complete";
+        else if (_model.LogFile != null)
+            StatusText.Text = "✅ Data loaded";
+        else
+            StatusText.Text = "Ready";
     }
 
-    private void LoadLogFile(string filePath)
+    private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        try
+        // Validate data before allowing tab switch
+        if (MainTabControl.SelectedIndex == 1) // Analysis tab
         {
-            byte[] rawBytes = _parser.ParseLogFile(filePath);
-            LogData data = ExtractMessages(rawBytes);
-
-            FileLoaded?.Invoke(this, new FileLoadedEventArgs { LogData = data });
-
-            // Show preview
-            DisplayPreview(filePath, rawBytes);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error loading file: {ex.Message}");
-        }
-    }
-
-    private void DisplayPreview(string filePath, byte[] data)
-    {
-        var hex = BitConverter.ToString(data, 0, Math.Min(500, data.Length));
-        _hexPreviewTextBox.Text = hex.Replace("-", " ");
-        _filePathTextBox.Text = filePath;
-    }
-}
-```
-
----
-
-## Analysis & Results Panel
-
-### Panel 2: Automatic Pattern Detection
-
-```csharp
-public class AnalysisResultsPanel : UserControl
-{
-    private PatternAnalyzer _analyzer;
-    private AnalysisResult _currentAnalysis;
-
-    public void AnalyzeLogData(LogData logData)
-    {
-        _currentAnalysis = _analyzer.Analyze(logData);
-
-        // Update UI with results
-        UpdateProtocolType();
-        UpdateTerminatorResults();
-        UpdateDelimiterResults();
-        UpdateFieldDetection();
-        UpdateConfidenceScore();
-    }
-
-    private void UpdateProtocolType()
-    {
-        var protocolType = DetectProtocolType(_currentAnalysis);
-
-        ProtocolTypeCheckBox1.IsChecked = (protocolType == ProtocolType.SingleLine);
-        ProtocolTypeCheckBox2.IsChecked = (protocolType == ProtocolType.MultiLine);
-        ProtocolTypeCheckBox3.IsChecked = (protocolType == ProtocolType.CommandResponse);
-    }
-
-    private void UpdateTerminatorResults()
-    {
-        TerminatorTypeLabel.Content = _currentAnalysis.Terminator.String;
-        TerminatorConfidenceLabel.Content =
-            $"{(_currentAnalysis.Terminator.Confidence * 100):F0}%";
-    }
-
-    private void UpdateDelimiterResults()
-    {
-        DelimiterListBox.ItemsSource = _currentAnalysis.Delimiters
-            .OrderByDescending(d => d.Confidence)
-            .Select(d => new
+            if (_model.LogFile == null || _model.RawData == null)
             {
-                Character = d.Character,
-                Frequency = $"{(d.Frequency * 100):F0}%",
-                Confidence = $"{(d.Confidence * 100):F0}%"
-            });
-    }
-
-    private void UpdateFieldDetection()
-    {
-        FieldCountLabel.Content = _currentAnalysis.Fields.Count;
-    }
-
-    private void UpdateConfidenceScore()
-    {
-        double confidence = _currentAnalysis.Confidence;
-        ConfidenceProgressBar.Value = confidence * 100;
-        ConfidenceLabel.Content = $"{(confidence * 100):F0}%";
-    }
-}
-```
-
----
-
-## Field Editor Component
-
-### Panel 3: Integrated Field Editor
-
-```csharp
-public class FieldEditorPanel : UserControl
-{
-    private List<FieldDefinition> _fields;
-    private DataGrid _fieldsGrid;
-    private TextBox _fieldNameTextBox;
-    private TextBox _fieldDescriptionTextBox;
-    private ComboBox _fieldTypeComboBox;
-
-    public event EventHandler FieldsChanged;
-
-    public void LoadFields(List<FieldInfo> autoDetectedFields)
-    {
-        _fields = autoDetectedFields.Select((f, i) => new FieldDefinition
-        {
-            Position = f.Position,
-            AutoGeneratedName = $"Field{i}",
-            UserDefinedName = $"Field{i}",
-            DataType = f.Type,
-            SampleValues = f.SampleValues,
-            Confidence = f.Confidence,
-            IsValid = true
-        }).ToList();
-
-        RefreshFieldsGrid();
-    }
-
-    private void RefreshFieldsGrid()
-    {
-        _fieldsGrid.ItemsSource = null;
-        _fieldsGrid.ItemsSource = _fields;
-    }
-
-    private void FieldsGrid_CellEditEnded(object sender, DataGridCellEditEndedEventArgs e)
-    {
-        var field = (FieldDefinition)e.Row.Item;
-
-        // Validate field name as C# identifier
-        if (!IsValidCSharpIdentifier(field.UserDefinedName))
-        {
-            MessageBox.Show("Invalid field name. Must be a valid C# identifier.");
-            field.UserDefinedName = field.AutoGeneratedName;
-            e.Row.Undo();
-            return;
-        }
-
-        // Check uniqueness
-        var duplicates = _fields.Where(f => f.UserDefinedName == field.UserDefinedName && f != field);
-        if (duplicates.Any())
-        {
-            MessageBox.Show("Field name must be unique.");
-            field.UserDefinedName = field.AutoGeneratedName;
-            e.Row.Undo();
-            return;
-        }
-
-        field.IsValid = true;
-        FieldsChanged?.Invoke(this, EventArgs.Empty);
-        RefreshDefinitionPreview();
-    }
-
-    private bool IsValidCSharpIdentifier(string name)
-    {
-        if (string.IsNullOrEmpty(name))
-            return false;
-
-        if (!char.IsLetter(name[0]) && name[0] != '_')
-            return false;
-
-        foreach (char c in name.Skip(1))
-        {
-            if (!char.IsLetterOrDigit(c) && c != '_')
-                return false;
-        }
-
-        // Check for C# keywords
-        var keywords = new[] { "class", "namespace", "public", "private", "int", "string", "bool" };
-        return !keywords.Contains(name);
-    }
-
-    public FieldDefinition[] GetEditedFields()
-    {
-        return _fields.ToArray();
-    }
-
-    public class FieldDefinition
-    {
-        public int Position { get; set; }
-        public string AutoGeneratedName { get; set; }
-        public string UserDefinedName { get; set; }
-        public string DataType { get; set; }
-        public List<string> SampleValues { get; set; }
-        public double Confidence { get; set; }
-        public string Description { get; set; }
-        public bool IsRequired { get; set; }
-        public bool IsConstant { get; set; }
-        public bool IsValid { get; set; }
-    }
-}
-```
-
----
-
-## Output & Export
-
-### Panel 5: Export Configuration
-
-```csharp
-public class ExportPanel : UserControl
-{
-    private ProtocolDefinition _definition;
-    private TextBox _deviceNameTextBox;
-    private CheckBox _jsonCheckBox;
-    private CheckBox _yamlCheckBox;
-    private CheckBox _reportCheckBox;
-    private CheckBox _testCasesCheckBox;
-    private TextBox _outputFolderTextBox;
-
-    public void PrepareExport(FieldEditorPanel.FieldDefinition[] fields, AnalysisResult analysis)
-    {
-        // Build protocol definition from edited fields
-        _definition = BuildProtocolDefinition(fields, analysis);
-
-        // Validate
-        ValidateDefinition();
-
-        // Show export options
-        UpdateExportUI();
-    }
-
-    private ProtocolDefinition BuildProtocolDefinition(
-        FieldEditorPanel.FieldDefinition[] fields,
-        AnalysisResult analysis)
-    {
-        return new ProtocolDefinition
-        {
-            DeviceInfo = new DeviceInfo
-            {
-                Name = _deviceNameTextBox.Text,
-                CreatedDate = DateTime.Now
-            },
-            Protocol = new ProtocolSpec
-            {
-                Type = "streaming",
-                Terminator = analysis.Terminator.String,
-                Fields = fields.Select(f => new FieldSpec
-                {
-                    Name = f.UserDefinedName,
-                    Position = f.Position,
-                    Type = f.DataType,
-                    Description = f.Description,
-                    Confidence = f.Confidence
-                }).ToList()
+                MessageBox.Show("Please load data first in the Input tab.");
+                MainTabControl.SelectedIndex = 0;
             }
-        };
-    }
-
-    private void ValidateDefinition()
-    {
-        var validation = ProtocolValidator.Validate(_definition);
-
-        ValidationListBox.ItemsSource = validation.Messages;
-        StatusLabel.Content = validation.IsValid
-            ? "✓ All fields valid"
-            : "✗ Validation errors found";
-    }
-
-    public void ExportDefinition()
-    {
-        string basePath = _outputFolderTextBox.Text;
-
-        if (_jsonCheckBox.IsChecked.Value)
-            ExportAsJson(basePath);
-
-        if (_yamlCheckBox.IsChecked.Value)
-            ExportAsYaml(basePath);
-
-        if (_reportCheckBox.IsChecked.Value)
-            ExportAsReport(basePath);
-
-        if (_testCasesCheckBox.IsChecked.Value)
-            ExportTestCases(basePath);
-
-        MessageBox.Show("Export completed successfully!");
-    }
-
-    private void ExportAsJson(string basePath)
-    {
-        string json = JsonConvert.SerializeObject(_definition, Formatting.Indented);
-        string filePath = Path.Combine(basePath, $"{_definition.DeviceInfo.Name}_Protocol.json");
-        File.WriteAllText(filePath, json);
-    }
-
-    private void ExportAsYaml(string basePath)
-    {
-        var serializer = new SerializerBuilder().Build();
-        string yaml = serializer.Serialize(_definition);
-        string filePath = Path.Combine(basePath, $"{_definition.DeviceInfo.Name}_Protocol.yaml");
-        File.WriteAllText(filePath, yaml);
+        }
+        else if (MainTabControl.SelectedIndex == 2) // Field Editor tab
+        {
+            if (_model.AnalysisResult == null || _model.Fields == null)
+            {
+                MessageBox.Show("Please run analysis first in the Analysis tab.");
+                MainTabControl.SelectedIndex = 1;
+            }
+        }
+        else if (MainTabControl.SelectedIndex == 3) // Export tab
+        {
+            if (_model.Fields == null || _model.Fields.Count == 0)
+            {
+                MessageBox.Show("Please define fields first in the Field Editor tab.");
+                MainTabControl.SelectedIndex = 2;
+            }
+        }
     }
 }
+```
+
+---
+
+## Page 1: LogDataPage (Input)
+
+### Purpose
+Load serial log data from files and display statistics.
+
+### UI Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│ 📁 Log File Selection                           │
+│ ┌─────────────────────────────────┐ [Browse...] │
+│ │ C:\Logs\capture.txt             │             │
+│ └─────────────────────────────────┘             │
+│ ○ Auto-detect ○ HEX+Text ○ HEX Only ○ Text     │
+│ [📂 Load File]                                  │
+├─────────────────────────────────────────────────┤
+│ 📊 File Statistics                              │
+│ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐           │
+│ │ 1247 │ │18942 │ │  15  │ │42 KB │           │
+│ │Entry │ │Bytes │ │Avg   │ │Size  │           │
+│ └──────┘ └──────┘ └──────┘ └──────┘           │
+├─────────────────────────────────────────────────┤
+│ 🔍 Hex Preview (First 50 entries)              │
+│ ┌─────────────────────────────────────────────┐│
+│ │ Line 1: 53 54 2C 47 53 20 20 20 32 30 2E 37││
+│ │ Line 2: 55 53 2C 47 53 20 20 20 32 31 2E 31││
+│ │ ...                                         ││
+│ └─────────────────────────────────────────────┘│
+├─────────────────────────────────────────────────┤
+│ 📝 Text Preview (ASCII)                        │
+│ ┌─────────────────────────────────────────────┐│
+│ │ ST,GS    20.7g                              ││
+│ │ US,GS    21.1g                              ││
+│ └─────────────────────────────────────────────┘│
+├─────────────────────────────────────────────────┤
+│                       [Clear] [▶ Next: Analyze] │
+└─────────────────────────────────────────────────┘
+```
+
+### XAML Structure
+
+```xml
+<UserControl x:Class="...LogDataPage">
+    <DockPanel Margin="10">
+
+        <!-- ACTION BUTTONS (Bottom) -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Clear" Click="ClearButton_Click"/>
+            <Button Content="▶ Next: Analyze" Click="NextButton_Click"/>
+        </StackPanel>
+
+        <!-- FILE SELECTION (Top) -->
+        <GroupBox DockPanel.Dock="Top" Header="📁 Log File Selection">
+            <StackPanel Margin="5">
+                <DockPanel Margin="5">
+                    <Button Content="Browse..." DockPanel.Dock="Right"
+                            Click="BrowseButton_Click"/>
+                    <TextBox x:Name="FilePathTextBox" IsReadOnly="True"/>
+                </DockPanel>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="Auto-detect" IsChecked="True"/>
+                    <RadioButton Content="HEX + Text"/>
+                    <!-- ... -->
+                </StackPanel>
+                <Button Content="📂 Load File" Click="LoadButton_Click"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- STATISTICS PANEL (Top) -->
+        <GroupBox DockPanel.Dock="Top" Header="📊 File Statistics">
+            <StackPanel Orientation="Horizontal">
+                <!-- Stat cards (4 cards) -->
+                <Border Width="180">
+                    <StackPanel>
+                        <TextBlock Text="Total Entries"/>
+                        <TextBlock Text="{Binding LogFile.Entries.Count}"/>
+                    </StackPanel>
+                </Border>
+                <!-- ... more cards ... -->
+            </StackPanel>
+        </GroupBox>
+
+        <!-- MAIN CONTENT (Center - fills remaining) -->
+        <DockPanel Margin="0,10,0,0">
+            <!-- Text Preview (Bottom of center) -->
+            <GroupBox DockPanel.Dock="Bottom" Header="📝 Text Preview">
+                <TextBox x:Name="TextPreviewTextBox"/>
+            </GroupBox>
+
+            <!-- Hex Preview (Fills remaining) -->
+            <GroupBox Header="🔍 Hex Preview">
+                <TextBox x:Name="HexPreviewTextBox"/>
+            </GroupBox>
+        </DockPanel>
+
+    </DockPanel>
+</UserControl>
+```
+
+### Code-Behind Pattern
+
+```csharp
+public partial class LogDataPage : UserControl
+{
+    private ProtocolAnalyzerModel _model;
+    private ParserService _parserService;
+
+    public LogDataPage()
+    {
+        InitializeComponent();
+        _parserService = new ParserService();
+    }
+
+    /// <summary>
+    /// Setup method - called by MainWindow to inject model
+    /// </summary>
+    public void Setup(ProtocolAnalyzerModel model)
+    {
+        _model = model;
+        DataContext = _model; // Bind UI to model
+    }
+
+    private void LoadButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Use service to load data into model
+        _model.LogFile = _parserService.ParseFile(FilePathTextBox.Text);
+        _model.RawData = _model.LogFile.GetAllBytes();
+
+        UpdatePreview();
+    }
+}
+```
+
+---
+
+## Page 2: AnalyzerPage (Analysis)
+
+### Purpose
+Run statistical analysis and display detected patterns.
+
+### UI Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│ [🔬 Run Analysis]  Click 'Run Analysis' to start│
+├─────────────────────────────────────────────────┤
+│ 📈 Overall Analysis Confidence                  │
+│ Confidence: 95%                                 │
+│ ████████████████░░░░                           │
+├─────────────────────────────────────────────────┤
+│ ┌───────────┐ ┌───────────┐ ┌───────────┐    │
+│ │🔚Terminator│ │✂️Delimiter│ │📋Protocol │    │
+│ │           │ │           │ │Type      │    │
+│ │0x0D 0x0A  │ │Char│Freq │ │Single-   │    │
+│ │CRLF       │ │ ,  │100% │ │Package   │    │
+│ │Occurs:    │ │ SP │70%  │ │          │    │
+│ │1247/1247  │ └───────────┘ │Strategy: │    │
+│ │Conf: 100% │               │Delimiter │    │
+│ └───────────┘               │Fields: 5 │    │
+│                             └───────────┘    │
+├─────────────────────────────────────────────────┤
+│ 📊 Detected Fields Preview                     │
+│ ┌───┬────────┬────────┬────────────┬────┬───┐│
+│ │Pos│Name    │Type    │Sample Vals │Conf│Var││
+│ ├───┼────────┼────────┼────────────┼────┼───┤│
+│ │ 0 │Field0  │String  │ST, US      │95% │░░░││
+│ │ 1 │Field1  │String  │GS          │98% │░  ││
+│ │ 2 │Field2  │Decimal │20.7, 21.1  │90% │███││
+│ └───┴────────┴────────┴────────────┴────┴───┘│
+│ 💡 Variance: Low=constant, High=data field    │
+└─────────────────────────────────────────────────┘
+```
+
+### XAML Structure
+
+```xml
+<UserControl x:Class="...AnalyzerPage">
+    <DockPanel Margin="10">
+
+        <!-- ANALYZE BUTTON (Top) -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Button Content="🔬 Run Analysis" Click="AnalyzeButton_Click"/>
+            <TextBlock x:Name="AnalysisStatusText"/>
+        </StackPanel>
+
+        <!-- OVERALL CONFIDENCE (Top) -->
+        <GroupBox DockPanel.Dock="Top" Header="📈 Overall Confidence">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Confidence: "/>
+                    <TextBlock x:Name="ConfidenceText" Text="0%"/>
+                </StackPanel>
+                <ProgressBar x:Name="ConfidenceProgressBar"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- FIELD PREVIEW (Bottom) -->
+        <GroupBox DockPanel.Dock="Bottom" Header="📊 Detected Fields">
+            <DockPanel>
+                <DataGrid x:Name="FieldsPreviewDataGrid"/>
+                <Border DockPanel.Dock="Bottom" Background="#FFFACD">
+                    <TextBlock Text="💡 Variance: Low=constant, High=data"/>
+                </Border>
+            </DockPanel>
+        </GroupBox>
+
+        <!-- DETECTION RESULTS (Center - 3 panels side-by-side) -->
+        <StackPanel Orientation="Horizontal">
+            <GroupBox Header="🔚 Terminator" Width="280">
+                <!-- Terminator info -->
+            </GroupBox>
+            <GroupBox Header="✂️ Delimiter" Width="300">
+                <!-- Delimiter DataGrid -->
+            </GroupBox>
+            <GroupBox Header="📋 Protocol Type" Width="260">
+                <!-- Protocol info -->
+            </GroupBox>
+        </StackPanel>
+
+    </DockPanel>
+</UserControl>
+```
+
+---
+
+## Page 3: FieldEditorPage (Field Editor)
+
+### Purpose
+Edit field names, types, and properties.
+
+### UI Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│ ✏️ Edit Field Names    [🔤 Suggest] [✔️ Validate]│
+│ Double-click to edit. Must be valid C# names.  │
+├─────────────────────────────────────────────────┤
+│ 📋 Field List                                   │
+│ ┌───┬────────┬──────────┬────┬──────────┬───┐ │
+│ │Pos│Auto    │✏️ Name   │Type│Samples   │OK?││
+│ ├───┼────────┼──────────┼────┼──────────┼───┤ │
+│ │ 0 │Field0  │[Status  ]│Str │ST, US    │✅ ││
+│ │ 1 │Field1  │[Mode    ]│Str │GS        │✅ ││
+│ │ 2 │Field2  │[Weight  ]│Dec │20.7, 21.1│✅ ││
+│ └───┴────────┴──────────┴────┴──────────┴───┘ │
+├─────────────────────────────────────────────────┤
+│ 🔍 Selected Field Details                      │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│ │Properties│ │Statistics│ │Samples   │       │
+│ │Name:     │ │Total: 1247│ │ST       │       │
+│ │[Status  ]│ │Unique: 5 │ │US       │       │
+│ │Type:     │ │Variance: │ │...      │       │
+│ │[String▼]│ │0.004     │ │         │       │
+│ │☑Required│ │Conf: 95% │ │         │       │
+│ └──────────┘ └──────────┘ └──────────┘       │
+└─────────────────────────────────────────────────┘
+```
+
+### XAML Structure
+
+```xml
+<UserControl x:Class="...FieldEditorPage">
+    <DockPanel Margin="10">
+
+        <!-- HEADER & ACTIONS (Top) -->
+        <DockPanel DockPanel.Dock="Top">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="🔤 Suggest Names" Click="SuggestNamesButton_Click"/>
+                <Button Content="✔️ Validate All" Click="ValidateButton_Click"/>
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="✏️ Edit Field Names and Properties"/>
+                <TextBlock Text="Double-click a cell to edit..."/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- SELECTED FIELD DETAILS (Bottom) -->
+        <GroupBox DockPanel.Dock="Bottom" Header="🔍 Selected Field Details">
+            <StackPanel Orientation="Horizontal">
+                <!-- 3 panels: Properties, Statistics, Samples -->
+                <StackPanel Width="300">
+                    <TextBox x:Name="FieldNameTextBox"/>
+                    <ComboBox x:Name="DataTypeComboBox"/>
+                    <CheckBox x:Name="RequiredCheckBox"/>
+                </StackPanel>
+                <StackPanel Width="250">
+                    <!-- Statistics -->
+                </StackPanel>
+                <StackPanel>
+                    <ListBox x:Name="SampleValuesListBox"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- FIELDS GRID (Center - fills remaining) -->
+        <GroupBox Header="📋 Field List">
+            <DataGrid x:Name="FieldsDataGrid"
+                      SelectionChanged="FieldsDataGrid_SelectionChanged"
+                      CellEditEnding="FieldsDataGrid_CellEditEnding"/>
+        </GroupBox>
+
+    </DockPanel>
+</UserControl>
+```
+
+---
+
+## Page 4: ExportPage (Export)
+
+### Purpose
+Validate protocol definition and export to files.
+
+### UI Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│ ✅ Validation Status: All Valid                 │
+│ ✓ All field names are valid C# identifiers     │
+│ ✓ All field names are unique                   │
+│ ✓ All required fields are defined              │
+├─────────────────────────────────────────────────┤
+│ 💾 Export Configuration                         │
+│ Output: [C:\Exports\  ] [Browse...]            │
+│ Formats: ☑JSON ☐YAML ☐HTML Report ☐Test Cases│
+├─────────────────────────────────────────────────┤
+│ ┌──────────────┐ ┌──────────────┐             │
+│ │📋 Protocol   │ │📊 Fields     │             │
+│ │Summary       │ │Summary       │             │
+│ │              │ │              │             │
+│ │Device: Scale │ │#│Name│Type  │             │
+│ │Type: Single  │ │0│Stat│String│             │
+│ │Encoding: ASCII│ │1│Mode│String│             │
+│ │Terminator:   │ │2│Wght│Decimal             │
+│ │  0x0D 0x0A   │ │              │             │
+│ │Delimiter:    │ │              │             │
+│ │  0x2C (,)    │ │              │             │
+│ │Fields: 5     │ │              │             │
+│ │Confidence:   │ │              │             │
+│ │  95%         │ │              │             │
+│ └──────────────┘ └──────────────┘             │
+├─────────────────────────────────────────────────┤
+│                     [◀ Back] [💾 Export Files]  │
+└─────────────────────────────────────────────────┘
+```
+
+### XAML Structure
+
+```xml
+<UserControl x:Class="...ExportPage">
+    <DockPanel Margin="10">
+
+        <!-- ACTION BUTTONS (Bottom) -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="◀ Back" Click="BackButton_Click"/>
+            <Button Content="💾 Export Files" Click="ExportButton_Click"/>
+        </StackPanel>
+
+        <!-- EXPORT CONFIGURATION (Bottom) -->
+        <GroupBox DockPanel.Dock="Bottom" Header="💾 Export Configuration">
+            <StackPanel>
+                <DockPanel>
+                    <Button Content="Browse..." DockPanel.Dock="Right"/>
+                    <TextBlock Text="Output Folder:" DockPanel.Dock="Left"/>
+                    <TextBox x:Name="OutputFolderTextBox"/>
+                </DockPanel>
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox Content="📄 JSON" IsChecked="True"/>
+                    <CheckBox Content="📄 YAML"/>
+                    <CheckBox Content="📊 Analysis Report"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- VALIDATION STATUS (Top) -->
+        <Border DockPanel.Dock="Top" x:Name="ValidationStatusBorder"
+                Background="LightGreen">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="✅"/>
+                    <TextBlock Text="Validation Status: "/>
+                    <TextBlock x:Name="ValidationStatusText" Text="All Valid"/>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="✓ All field names are valid..."/>
+                    <!-- ... more validation items ... -->
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- PROTOCOL SUMMARY (Center - 2 panels side-by-side) -->
+        <StackPanel Orientation="Horizontal">
+            <GroupBox Header="📋 Protocol Summary" Width="380">
+                <StackPanel>
+                    <TextBox x:Name="DeviceNameTextBox"/>
+                    <DockPanel>
+                        <TextBlock Text="Protocol Type:"/>
+                        <TextBlock x:Name="ProtocolTypeText"/>
+                    </DockPanel>
+                    <!-- ... more properties ... -->
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="📊 Fields Summary">
+                <DataGrid x:Name="FieldsSummaryDataGrid"/>
+            </GroupBox>
+        </StackPanel>
+
+    </DockPanel>
+</UserControl>
 ```
 
 ---
 
 ## Integrated Workflow
 
-### Complete Application Flow
+### Complete User Journey
 
 ```mermaid
 graph TD
-    A[Start Application] --> B{Input Method?}
+    Start[User starts app] --> Tab1[Tab 1: Input Data]
 
-    B -->|Serial Port| C[Panel 1A: Connect to Device]
-    B -->|Load Log File| D[Panel 1B: Select File]
+    Tab1 --> Load[Click 'Load File']
+    Load --> Browse[Browse for log file]
+    Browse --> Parse[File parsed]
+    Parse --> Stats[Statistics displayed]
+    Stats --> Next1[Click 'Next: Analyze']
 
-    C --> C1[Capture Real-time Data]
-    D --> D1[Load & Parse File]
+    Next1 --> Tab2[Tab 2: Analysis]
+    Tab2 --> Analyze[Click 'Run Analysis']
+    Analyze --> Detect[Statistical detection runs]
+    Detect --> Results[Results displayed]
+    Results --> Review[User reviews results]
+    Review --> Next2[Switch to Field Editor]
 
-    C1 --> E["Panel 2: Auto-Analyze"]
-    D1 --> E
+    Next2 --> Tab3[Tab 3: Field Editor]
+    Tab3 --> Edit[User edits field names]
+    Edit --> Validate[Validation checks]
+    Validate --> Next3[Switch to Export]
 
-    E --> E1["Detect:<br/>- Terminator<br/>- Delimiter<br/>- Fields"]
+    Next3 --> Tab4[Tab 4: Export]
+    Tab4 --> Verify[Validation status shown]
+    Verify --> Configure[Configure export]
+    Configure --> Export[Click 'Export Files']
+    Export --> Files[JSON/YAML files created]
+    Files --> Done[Done!]
 
-    E1 --> F{Confidence<br/>Acceptable?}
-
-    F -->|Low| G["Show Low Confidence<br/>Warning"]
-    F -->|High| H["Panel 3: Field Editor"]
-
-    G --> H
-
-    H --> H1["User Renames Fields<br/>Validates Names<br/>Adds Descriptions"]
-
-    H1 --> I["Panel 4: Live Preview<br/>Shows Updated Definition"]
-
-    I --> J{Fields<br/>Valid?}
-
-    J -->|No| H
-    J -->|Yes| K["Panel 5: Export Config"]
-
-    K --> K1["Select Export Formats<br/>- JSON<br/>- YAML<br/>- Report<br/>- Test Cases"]
-
-    K1 --> L["Validate Complete Definition"]
-
-    L --> M{Validation<br/>OK?}
-
-    M -->|Errors| K
-    M -->|Success| N["Export Files"]
-
-    N --> O["Show Completion<br/>Open Output Folder"]
-
-    O --> P[End]
-
-    style A fill:#e1f5ff
-    style C1 fill:#fff9c4
-    style D1 fill:#fff9c4
-    style E fill:#e1f5ff
-    style H fill:#c8e6c9
-    style N fill:#e8f5e9
-    style O fill:#c8e6c9
-    style P fill:#e1f5ff
+    style Tab1 fill:#E1F5FE
+    style Tab2 fill:#FFF9C4
+    style Tab3 fill:#C8E6C9
+    style Tab4 fill:#E8F5E9
+    style Done fill:#4CAF50,color:#FFF
 ```
+
+### Tab Validation Logic
+
+MainWindow prevents users from skipping steps:
+
+| Current Tab | User Tries to Go To | Validation | Action |
+|-------------|---------------------|------------|---------|
+| Input | Analysis | Check if data loaded | If no data → show warning, stay on Input |
+| Analysis | Field Editor | Check if analysis done | If no analysis → show warning, go to Analysis |
+| Field Editor | Export | Check if fields defined | If no fields → show warning, go to Editor |
 
 ---
 
-## Data Models & Classes
+## Data Flow & Models
 
-### Core Data Structures
+### ProtocolAnalyzerModel (Shared)
 
 ```csharp
-namespace NLib.Serial.ProtocolAnalyzer
+public class ProtocolAnalyzerModel : INotifyPropertyChanged
 {
-    // Input: Captured or loaded log data
-    public class LogData
-    {
-        public List<byte[]> Messages { get; set; }
-        public int TotalBytes { get; set; }
-        public int MessageCount { get; set; }
-        public int AverageMessageLength { get; set; }
-        public DateTime CapturedTime { get; set; }
-    }
+    // Step 1: Input Data
+    public LogFile LogFile { get; set; }
+    public byte[] RawData { get; set; }
 
-    // Analysis: Pattern detection results
-    public class AnalysisResult
-    {
-        public TerminatorInfo Terminator { get; set; }
-        public List<DelimiterInfo> Delimiters { get; set; }
-        public List<FieldInfo> Fields { get; set; }
-        public int MessageCount { get; set; }
-        public double Confidence { get; set; }
-        public string SuggestedStrategy { get; set; }
-    }
+    // Step 2: Analysis Results
+    public AnalysisResult AnalysisResult { get; set; }
 
-    // Field: Detected field information
-    public class FieldInfo
-    {
-        public int Position { get; set; }
-        public string AutoName { get; set; }
-        public string Type { get; set; }
-        public List<string> SampleValues { get; set; }
-        public double Confidence { get; set; }
-    }
+    // Step 3: Edited Fields
+    public List<FieldInfo> Fields { get; set; }
 
-    // Output: Protocol definition
-    public class ProtocolDefinition
-    {
-        public DeviceInfo DeviceInfo { get; set; }
-        public ProtocolSpec Protocol { get; set; }
-        public ParsingSpec Parsing { get; set; }
-        public ValidationSpec Validation { get; set; }
-        public List<TestCase> TestCases { get; set; }
-    }
+    // Step 4: Final Definition
+    public ProtocolDefinition ProtocolDefinition { get; set; }
 
-    public class DeviceInfo
-    {
-        public string Name { get; set; }
-        public string Manufacturer { get; set; }
-        public string Model { get; set; }
-        public string Description { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public double AnalysisConfidence { get; set; }
-    }
-
-    public class ProtocolSpec
-    {
-        public string Type { get; set; }
-        public string Format { get; set; }
-        public string Encoding { get; set; }
-        public string Terminator { get; set; }
-        public List<FieldSpec> Fields { get; set; }
-    }
-
-    public class FieldSpec
-    {
-        public string Name { get; set; }
-        public int Position { get; set; }
-        public string Type { get; set; }
-        public string Description { get; set; }
-        public List<string> AllowedValues { get; set; }
-        public double Confidence { get; set; }
-        public bool IsRequired { get; set; }
-        public bool IsConstant { get; set; }
-    }
-
-    public class ParsingSpec
-    {
-        public string Strategy { get; set; }
-        public string Delimiter { get; set; }
-        public List<string> Steps { get; set; }
-    }
-
-    public class ValidationSpec
-    {
-        public List<string> Required { get; set; }
-        public Dictionary<string, Constraint> Constraints { get; set; }
-    }
-
-    public class TestCase
-    {
-        public string Name { get; set; }
-        public byte[] InputBytes { get; set; }
-        public Dictionary<string, object> ExpectedOutput { get; set; }
-    }
+    public event PropertyChangedEventHandler PropertyChanged;
 }
 ```
 
----
-
-## UI Implementation
-
-### Main Window Class
+### Services (Logic)
 
 ```csharp
-public partial class MainWindow : Window
+// ParserService - Parse log files
+public class ParserService
 {
-    private SerialPortInputPanel _panelSerialPort;
-    private LogFileInputPanel _panelLogFile;
-    private AnalysisResultsPanel _panelAnalysis;
-    private FieldEditorPanel _panelFieldEditor;
-    private ExportPanel _panelExport;
-
-    private PatternAnalyzer _analyzer;
-    private LogData _currentLogData;
-    private AnalysisResult _currentAnalysis;
-
-    public MainWindow()
-    {
-        InitializeComponent();
-        InitializeAllPanels();
-        SetupEventHandlers();
-    }
-
-    private void InitializeAllPanels()
-    {
-        _panelSerialPort = new SerialPortInputPanel();
-        _panelLogFile = new LogFileInputPanel();
-        _panelAnalysis = new AnalysisResultsPanel();
-        _panelFieldEditor = new FieldEditorPanel();
-        _panelExport = new ExportPanel();
-
-        // Add panels to UI
-        InputPanelHost.Children.Add(_panelSerialPort);
-        AnalysisPanelHost.Children.Add(_panelAnalysis);
-        FieldEditorPanelHost.Children.Add(_panelFieldEditor);
-        ExportPanelHost.Children.Add(_panelExport);
-    }
-
-    private void SetupEventHandlers()
-    {
-        _panelSerialPort.CaptureCompleted += (s, e) =>
-        {
-            _currentLogData = e.LogData;
-            AnalyzeData();
-        };
-
-        _panelLogFile.FileLoaded += (s, e) =>
-        {
-            _currentLogData = e.LogData;
-            AnalyzeData();
-        };
-
-        _panelFieldEditor.FieldsChanged += (s, e) =>
-        {
-            _panelExport.PrepareExport(_panelFieldEditor.GetEditedFields(), _currentAnalysis);
-        };
-    }
-
-    private void AnalyzeData()
-    {
-        _currentAnalysis = _analyzer.Analyze(_currentLogData);
-        _panelAnalysis.AnalyzeLogData(_currentLogData);
-        _panelFieldEditor.LoadFields(_currentAnalysis.Fields);
-    }
-
-    private void AnalyzeButton_Click(object sender, RoutedEventArgs e)
-    {
-        AnalyzeData();
-        TabControl.SelectedIndex = 1; // Show Analysis panel
-    }
-
-    private void ExportButton_Click(object sender, RoutedEventArgs e)
-    {
-        _panelExport.ExportDefinition();
-    }
+    public LogFile ParseFile(string filePath) { ... }
 }
+
+// AnalyzerService - Run statistical analysis
+public class AnalyzerService
+{
+    public AnalysisResult Analyze(byte[] rawData) { ... }
+}
+
+// ExportService - Export protocol definition
+public class ExportService
+{
+    public void ExportAsJson(ProtocolDefinition def, string path) { ... }
+}
+```
+
+### Data Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant LogDataPage
+    participant Model
+    participant AnalyzerPage
+    participant FieldEditorPage
+    participant ExportPage
+
+    User->>LogDataPage: Click 'Load File'
+    LogDataPage->>Model: Set LogFile, RawData
+    Model-->>LogDataPage: PropertyChanged event
+
+    User->>AnalyzerPage: Click 'Run Analysis'
+    AnalyzerPage->>Model: Get RawData
+    AnalyzerPage->>Model: Set AnalysisResult, Fields
+    Model-->>AnalyzerPage: PropertyChanged event
+
+    User->>FieldEditorPage: Edit field names
+    FieldEditorPage->>Model: Update Fields
+    Model-->>FieldEditorPage: PropertyChanged event
+
+    User->>ExportPage: Click 'Export'
+    ExportPage->>Model: Get Fields, AnalysisResult
+    ExportPage->>Model: Set ProtocolDefinition
+    ExportPage->>ExportPage: Write JSON files
 ```
 
 ---
 
 ## Summary
 
-This comprehensive design ensures:
+### Key Features
 
-✅ **Unified UI** - All components integrated into one cohesive application
-✅ **Data Flow** - Clear progression: Input → Analysis → Edit → Export
-✅ **Compatibility** - All components work together seamlessly
-✅ **User Experience** - Intuitive workflow with live previews
-✅ **Extensibility** - Easy to add new features without breaking compatibility
+✅ **Ultra-Clean Design**
+- No Toolbar
+- No Header/Banner
+- Maximum content space
+- Minimal distractions
 
-**Next Implementation Steps:**
-1. Build Main Window layout in WPF
-2. Implement panel components
-3. Connect event handlers for data flow
-4. Add validation and error handling
-5. Implement export functionality
+✅ **DockPanel/StackPanel Architecture**
+- No Grid.RowDefinitions/ColumnDefinitions
+- Simpler XAML
+- Easier to maintain
+- Flexible layouts
 
+✅ **Single Shared Model**
+- One `ProtocolAnalyzerModel` instance
+- All pages share the same data
+- Automatic UI updates via `INotifyPropertyChanged`
+- Clear data flow
+
+✅ **Workflow Validation**
+- Can't skip steps
+- User-friendly warnings
+- Guided workflow
+
+✅ **Rich Visualizations**
+- Statistics cards with color coding
+- Progress bars for confidence
+- DataGrids for field/delimiter display
+- Color-coded validation status
+
+### Folder Structure
+
+```
+09.App/NLib.Serial.Protocol.Analyzer/
+├── MainWindow.xaml              → TabControl + StatusBar only
+├── MainWindow.xaml.cs           → Model setup, tab validation
+│
+├── Pages/                       → UserControl pages
+│   ├── LogDataPage.xaml         → DockPanel layout
+│   ├── LogDataPage.xaml.cs      → Setup(model) method
+│   ├── AnalyzerPage.xaml
+│   ├── AnalyzerPage.xaml.cs
+│   ├── FieldEditorPage.xaml
+│   ├── FieldEditorPage.xaml.cs
+│   ├── ExportPage.xaml
+│   └── ExportPage.xaml.cs
+│
+├── Models/
+│   └── ProtocolAnalyzerModel.cs → Shared data model
+│
+└── Services/
+    ├── ParserService.cs         → File parsing logic
+    ├── AnalyzerService.cs       → Statistical analysis
+    └── ExportService.cs         → JSON/YAML export
+```
+
+---
+
+**Document Version**: 2.0
+**Last Updated**: 2025-10-26
+**Status**: Complete - Simplified Architecture with DockPanel/StackPanel
+**Changes**:
+- v1.0: Initial comprehensive UI design with Toolbar
+- v2.0: **Complete redesign** - Removed Toolbar/Header, DockPanel/StackPanel architecture, Single shared model pattern, Detailed page layouts with visualization
