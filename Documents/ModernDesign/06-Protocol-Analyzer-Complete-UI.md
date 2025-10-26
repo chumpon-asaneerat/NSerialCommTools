@@ -1198,11 +1198,199 @@ sequenceDiagram
 
 ---
 
-**Document Version**: 2.2
-**Last Updated**: 2025-10-26
-**Status**: Complete - Simplified Architecture with DockPanel/StackPanel
+## Page Content Reference
+
+### Quick Reference: What Each Page Displays
+
+| Page | Primary Content | Key Data Points | User Actions |
+|------|----------------|-----------------|--------------|
+| **1. LogDataPage** | File statistics, detection config, preview | Entry count, hex/text preview, detection settings | Load file, configure detection, verify settings |
+| **2. AnalyzerPage** | Field detection results | Detected fields, confidence, variance | Run analysis, review fields |
+| **3. FieldEditorPage** | Field editing interface | Field names, types, validation, samples | Edit names, set types, validate |
+| **4. ExportPage** | Summary & validation | Protocol summary, field list, validation status | Export JSON definition |
+
+### Page 1: LogDataPage - Content Details
+
+**File Selection Section:**
+- File path display
+- Format selection (Auto-detect, HEX+Text, HEX Only, Text)
+- Load & Auto-Detect button
+- Import Settings button
+
+**File Statistics (4 Cards):**
+1. Total Entries - Count of log entries
+2. Total Bytes - Complete byte count
+3. Average - Bytes per entry
+4. File Size - Size in KB
+
+**Protocol Detection Configuration:**
+- Package Terminator (Required) - Auto/Manual mode, bytes, confidence
+- Segment Delimiter (Optional) - Auto/Manual/None, bytes, confidence
+- Segment Terminator (Optional - NEW) - For multi-level protocols
+- Start/End Markers (Optional) - Frame markers
+- Encoding - ASCII/UTF-8/Binary
+- Quick Presets (5) - CRLF, LF, CR, Comma, Space
+- Actions - Save, Import, Reset
+
+**Data Previews:**
+- Hex Preview - First 50 entries in hexadecimal
+- Text Preview - ASCII conversion
+
+### Page 2: AnalyzerPage - Content Details
+
+**Analysis Controls:**
+- Run Analysis button
+- Analysis status text
+
+**Overall Confidence Panel:**
+- Confidence percentage (0-100%)
+- Progress bar with color coding (Red/Yellow/Green)
+
+**Detected Fields Preview (DataGrid):**
+
+| Column | Data | Purpose |
+|--------|------|---------|
+| Position | 0-based index | Field position in package |
+| Name | Auto-generated | Field0, Field1, etc. |
+| Type | Detected type | String, Decimal, Int |
+| Samples | First 3 values | Sample data |
+| Unique | Count | Distinct value count |
+| Conf% | 0-100% | Detection confidence |
+| Variance | 0.0-1.0 | Data variability (bar chart) |
+
+**Variance Visualization:**
+- Low variance (Red) - Constant field (e.g., always "ST")
+- High variance (Green) - Data field (e.g., changing weights)
+
+### Page 3: FieldEditorPage - Content Details
+
+**Fields DataGrid (Editable):**
+
+| Column | Editable | Data |
+|--------|----------|------|
+| Position | No | Field position |
+| Auto Name | No | System-generated name |
+| **Name** | **Yes** | User-defined field name |
+| Type | No | Detected data type |
+| Samples | No | Sample values |
+| OK? | No | Validation icon (✅/❌) |
+
+**Selected Field Details (3 Panels):**
+
+**Panel 1 - Properties:**
+- Name textbox (editable)
+- Type dropdown (String, Decimal, Int, Byte, Bool)
+- Required checkbox
+- Show in Export checkbox
+
+**Panel 2 - Statistics:**
+- Total Occurrences
+- Unique Values count
+- Variance (0.0-1.0)
+- Confidence percentage
+- Min/Max Length
+
+**Panel 3 - Sample Values:**
+- ListBox with first 20 unique values
+- Scrollable
+- Actual data from log file
+
+**Action Buttons:**
+- Suggest Names - AI-based naming
+- Validate All - Check all field names
+
+### Page 4: ExportPage - Content Details
+
+**Validation Status Banner:**
+- Color-coded (Green = valid, Red = errors)
+- Checklist of validation items
+- Error messages if invalid
+
+**Protocol Summary Panel:**
+
+| Field | Data | Editable |
+|-------|------|----------|
+| Device Name | User input | Yes |
+| Protocol Type | Detected type | No |
+| Encoding | Detected encoding | No |
+| Package Terminator | Hex bytes | No |
+| Segment Delimiter | Hex bytes or "None" | No |
+| Segment Terminator | Hex bytes or "None" | No |
+| Field Count | Total fields | No |
+| Overall Confidence | Percentage | No |
+
+**Fields Summary DataGrid:**
+
+| Column | Data |
+|--------|------|
+| # | Position number (0, 1, 2...) |
+| Name | User-defined field name |
+| Type | Data type |
+| Required | Yes/No |
+
+**Export Configuration:**
+- Output Folder textbox (editable)
+- Browse button
+- Export Files button
+
+**Export Output:**
+- Filename: `[DeviceName]-Protocol.json`
+- Format: JSON only (YAML/HTML not supported)
+
+### Status Bar Updates
+
+**Bottom status bar shows (across all pages):**
+- Entry count - Updates after Page 1 load
+- Confidence percentage - Updates after Page 2 analysis
+- General status:
+  - "Ready" (no data)
+  - "✅ Data loaded" (after Page 1)
+  - "✅ Analysis complete" (after Page 2)
+  - "✅ Ready to export" (after Page 4)
+
+### Navigation & Validation
+
+**Tab Validation Rules:**
+
+| Attempting to Open | Requires | Error Message |
+|-------------------|----------|---------------|
+| Page 2 (Analysis) | Data loaded | "Please load data first in the Input tab." |
+| Page 3 (Field Editor) | Analysis complete | "Please run analysis first in the Analysis tab." |
+| Page 4 (Export) | Fields defined | "Please define fields first in the Field Editor tab." |
+
+### Data Flow Between Pages
+
+```mermaid
+graph LR
+    P1[Page 1<br/>LogDataPage] -->|LogFile<br/>RawData<br/>DetectionConfig| P2[Page 2<br/>AnalyzerPage]
+    P2 -->|AnalysisResult<br/>Fields| P3[Page 3<br/>FieldEditorPage]
+    P3 -->|Updated Fields| P4[Page 4<br/>ExportPage]
+    P4 -->|ProtocolDefinition| JSON[JSON File]
+
+    style P1 fill:#E1F5FE
+    style P2 fill:#FFF9C4
+    style P3 fill:#C8E6C9
+    style P4 fill:#E8F5E9
+    style JSON fill:#FFE4B5
+```
+
+**Data Transfer Details:**
+
+| From → To | Data Transferred | Model Property |
+|-----------|------------------|----------------|
+| Page 1 → 2 | Loaded data + detection config | LogFile, RawData, DetectionConfig |
+| Page 2 → 3 | Analysis results | AnalysisResult, Fields |
+| Page 3 → 4 | Edited fields | Fields (updated) |
+| Page 4 → File | Protocol definition | ProtocolDefinition |
+
+---
+
+**Document Version**: 3.0
+**Last Updated**: 2025-10-27
+**Status**: Complete - Consolidated Reference Document
 **Changes**:
 - v1.0: Initial comprehensive UI design with Toolbar
 - v2.0: **Complete redesign** - Removed Toolbar/Header, DockPanel/StackPanel architecture, Single shared model pattern, Detailed page layouts with visualization
 - v2.1: **Removed YAML/HTML export** - Only JSON export supported (YAML/HTML NOT implemented)
 - v2.2: **Removed export format selection panel** - Since only JSON is supported, no format selection UI needed
+- v3.0: **CONSOLIDATED** - Merged Documents 06+07+08, Added multi-level terminator support (Package + Segment terminators), Updated to 5 Quick Presets (removed Tab), Added comprehensive Detection Configuration section, Added Page Content Reference
