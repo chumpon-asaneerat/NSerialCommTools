@@ -14,7 +14,7 @@
 4. ✅ Updated Document 04 to v2.3 (added DetectionConfiguration classes)
 5. ✅ Deleted redundant Documents 07 and 08
 6. ✅ Updated PROJECT-STATUS.md to v1.3
-7. ✅ Created work summary: WORK-SUMMARY-2025-10-27-Session-7.md
+7. ✅ Created work summary: WORK-SUMMARY-2025-10-27-Session-8.md
 
 ---
 
@@ -130,6 +130,24 @@ public class ProtocolAnalyzerModel : INotifyPropertyChanged
 - ✅ MainWindow.xaml/.cs are empty - ready for implementation
 - ✅ Use design documents as reference
 - ✅ Create new classes in Models/ folder
+
+---
+
+## Session Documentation
+
+**Work Summary Naming Convention:**
+- Each session should create a work summary file
+- Format: `WORK-SUMMARY-YYYY-MM-DD-Session-X.md`
+- Location: `Documents/ModernDesign/`
+- Examples:
+  - WORK-SUMMARY-2025-10-26-Session-7.md
+  - WORK-SUMMARY-2025-10-27-Session-8.md
+  - WORK-SUMMARY-YYYY-MM-DD-Session-9.md (next session - use actual date)
+
+**For Next Session (Session 8):**
+- Create work summary at start or end of session following naming format
+- Document all accomplishments, decisions, and code changes
+- Update this file (last_session.txt) with concise next steps for Session 9
 
 ---
 
