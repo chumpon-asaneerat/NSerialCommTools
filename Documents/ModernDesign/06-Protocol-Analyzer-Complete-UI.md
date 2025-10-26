@@ -134,7 +134,7 @@ The application uses **TabControl** for clean separation of workflow stages:
 ║  ├──────────────────────────────────────────────────────────────────────┤  ║
 ║  │                                                                      │  ║
 ║  │  Protocol Type:                                                    │  ║
-║  │  ☑ Single-line streaming  ☐ Multi-line package  ☐ Command-response│  ║
+║  │  ☑ Single-package streaming  ☐ Multi-segment package  ☐ Command-response│  ║
 ║  │                                                                      │  ║
 ║  │  ┌─ Terminator Analysis ─────────────────────────────────────┐     │  ║
 ║  │  │ Type: \r\n (CRLF)                                         │     │  ║

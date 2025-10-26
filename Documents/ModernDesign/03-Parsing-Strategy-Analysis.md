@@ -98,7 +98,7 @@ HEX: 2D 20 20 31 2E 36 33 38 20 6B 67 20 20 20 20 4E 0D 0A
 TEXT: -  1.638 kg    N\r\n
 ```
 
-**Log File 2** (Unknown Device B - Multi-Line Frame Scale):
+**Log File 2** (Unknown Device B - Multi-Segment Package Scale):
 ```
 HEX: 5E 4B 4A 49 4B 30 30 30 0D 0A
 TEXT: ^KJIK000\r\n

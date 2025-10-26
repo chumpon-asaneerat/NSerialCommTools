@@ -2,8 +2,8 @@
 
 ## NSerialCommTools - Protocol Analyzer Data Models
 
-**Document Version**: 1.0
-**Last Updated**: 2025-10-19
+**Document Version**: 2.2
+**Last Updated**: 2025-10-26
 **Status**: Design Phase
 
 **Related Documents**:
@@ -42,27 +42,72 @@ This document defines all C# classes and data structures used in the Protocol An
 4. **Serialization-Ready**: Support JSON serialization
 5. **.NET 4.7.2 Compatible**: No modern C# features
 
+### Terminology Clarification
+
+**IMPORTANT: Log File Structure vs Protocol Structure**
+
+This document uses two different conceptual structures:
+
+| Concept | What It Represents | Terminology | Purpose |
+|---------|-------------------|-------------|---------|
+| **Log File Structure** | Text files captured from serial tools | "Lines" in file | Human-readable format for debugging |
+| **Protocol Structure** | Device communication format | "Packages" and "Segments" | Actual device protocol organization |
+
+**Example**:
+```
+Log File (capture.txt):
+  Line 1: 53 54 2C 47 53 20 20 20 20 32 30 2E 37 67 0D 0A  ← Text file line
+  Line 2: 55 53 2C 47 53 20 20 20 20 32 31 2E 31 67 0D 0A  ← Text file line
+
+Protocol Structure:
+  Package {                                               ← Protocol package
+    Segment 1: "ST"                                       ← Protocol segment
+    Segment 2: "GS"                                       ← Protocol segment
+    Segment 3: "20.7g"                                    ← Protocol segment
+  }
+```
+
+**Key Properties**:
+- `FileLineNumber` = Line in the TEXT FILE (for error reporting)
+- `SegmentIndex` = Position within PROTOCOL PACKAGE (for parsing)
+
+**Why Both?**
+- Log files are TEXT files (with "lines") because they're captured by 3rd-party tools
+- Protocol structure uses "Packages/Segments" for binary compatibility
+- The analyzer reads log file LINES and extracts protocol BYTES
+
 ---
 
 ## Core Data Models
 
 ### LogEntry Class
 
-**Purpose**: Normalized representation of one log file line after parsing.
+**Purpose**: Normalized representation of one log file entry after parsing.
+
+**Important Distinction**:
+- **Log File Structure**: Text files with "lines" (file format for human readability)
+- **Protocol Structure**: Packages with "Segments" (device communication format)
+
+This class represents entries from the LOG FILE (text file), not the protocol structure.
+The `FileLineNumber` property refers to the line number in the text file, used for error reporting.
 
 **Namespace**: `NLib.Serial.Protocol.Analyzer.Models`
 
 ```csharp
 /// <summary>
-/// Represents a single line from the log file after parsing.
+/// Represents a single entry from the log file after parsing.
 /// Used internally during analysis phase.
+///
+/// NOTE: Log files are TEXT files with "lines" for human readability.
+/// The protocol itself uses "Packages" and "Segments" (not related to file lines).
+/// This class bridges the gap: reads from log file lines, extracts protocol bytes.
 /// </summary>
 public class LogEntry
 {
     #region Properties
 
     /// <summary>
-    /// Raw bytes extracted from this log line.
+    /// Raw bytes extracted from this log entry.
     /// This is the actual protocol data.
     /// </summary>
     public byte[] Bytes { get; set; }
@@ -74,8 +119,14 @@ public class LogEntry
     public string Text { get; set; }
 
     /// <summary>
-    /// Line number in the original log file (1-based).
-    /// Used for error reporting and debugging.
+    /// Line number in the original LOG FILE (1-based).
+    /// Used for error reporting and debugging the log file itself.
+    ///
+    /// IMPORTANT: This refers to the TEXT FILE structure, NOT the protocol structure.
+    /// - Log files are TEXT files with "lines" (human-readable format)
+    /// - Protocol structure uses "Packages" and "Segments" (device communication)
+    ///
+    /// Example: "Parse error at line 47 in capture.txt"
     /// </summary>
     public int FileLineNumber { get; set; }
 
@@ -160,12 +211,12 @@ public class LogEntryMetadata
     public string Encoding { get; set; }
 
     /// <summary>
-    /// Was this line a comment or separator in the log file?
+    /// Was this entry a comment or separator in the log file?
     /// </summary>
     public bool IsComment { get; set; }
 
     /// <summary>
-    /// Original raw line from file (before parsing).
+    /// Original raw entry from file (before parsing).
     /// </summary>
     public string OriginalLine { get; set; }
 
@@ -864,12 +915,12 @@ public class ProtocolDefinition
     public string MessageStructure { get; set; }
 
     /// <summary>
-    /// Header pattern (if multi-line messages).
+    /// Header pattern (if multi-segment packages).
     /// </summary>
     public string MessageHeader { get; set; }
 
     /// <summary>
-    /// Footer pattern (if multi-line messages).
+    /// Footer pattern (if multi-segment packages).
     /// </summary>
     public string MessageFooter { get; set; }
 
@@ -1698,10 +1749,10 @@ public enum SegmentAction
 public enum ParsingStrategy
 {
     Unknown = 0,
-    SingleLine = 1,         // One line = one message, parse all fields from single line
-    MultiLineFrame = 2,     // Multi-line with header/footer markers
-    SequentialLines = 3,    // State machine - parse lines sequentially (like JIK6CAB)
-    ContentBased = 4,       // Detect line type by content (like PHMeter)
+    SinglePackage = 1,      // One segment = one package, parse all fields from single segment
+    PackageBased = 2,       // Multi-segment package with header/footer markers
+    SequentialSegments = 3, // State machine - parse segments sequentially (like JIK6CAB)
+    ContentBased = 4,       // Detect segment type by content (like PHMeter)
     HeaderByte = 5          // Switch on first byte (like TFO1)
 }
 ```
@@ -1793,7 +1844,7 @@ This document defines all data models needed for the Protocol Analyzer:
 
 ### Analysis Phase Models:
 - **LogFile** - Loaded log file
-- **LogEntry** - Normalized log line
+- **LogEntry** - Normalized log entry
 - **AnalysisResult** - Detection results
 - **FieldInfo** - Detected field with statistics
 
@@ -1805,8 +1856,8 @@ This document defines all data models needed for the Protocol Analyzer:
 - **FieldRelationship** - Combined/calculated fields
 
 ### State Machine Models:
-- **LineSequenceConfig** - Sequential line parsing configuration
-- **LineDefinition** - Single line in sequence with Width and ShowInEditor properties
+- **SegmentSequenceConfig** - Sequential segment parsing configuration
+- **SegmentDefinition** - Single segment in sequence with Width and ShowInEditor properties
 
 ### Supporting Models:
 - **13 enumerations** for type safety
@@ -1815,8 +1866,8 @@ This document defines all data models needed for the Protocol Analyzer:
 
 ### Features Supported:
 - ✅ **Field Relationships** - Combine Date+Time, split Value+Unit, calculate fields
-- ✅ **State Machine Parsing** - Sequential line-by-line parsing (JIK6CAB pattern)
-- ✅ **Skip Lines** - Mark lines as parse/skip/validate
+- ✅ **State Machine Parsing** - Sequential segment-by-segment parsing (JIK6CAB pattern)
+- ✅ **Skip Segments** - Mark segments as parse/skip/validate
 - ✅ **Editor Visibility** - ShowInEditor property controls UI display
 - ✅ **Multi-Field Units** - Separate value and unit fields
 
@@ -1830,10 +1881,11 @@ All models are:
 
 ---
 
-**Document Version**: 2.1
-**Last Updated**: 2025-10-24
-**Status**: Complete - State Machine Support (ValidationRules Removed)
+**Document Version**: 2.2
+**Last Updated**: 2025-10-26
+**Status**: Complete - Terminology Updated & Clarified
 **Changes**:
 - v1.0: Initial complete data models
 - v2.0: Added ValidationRule, FieldRelationship, LineSequenceConfig, 6 new enums
 - v2.1: **REMOVED ValidationRules** (feature cancelled), Updated LineDefinition with Width and ShowInEditor properties
+- v2.2: **Terminology Update** - Line→Segment, Frame→Package terminology applied; Added "Terminology Clarification" section explaining Log File Structure vs Protocol Structure distinction; Enhanced FileLineNumber documentation

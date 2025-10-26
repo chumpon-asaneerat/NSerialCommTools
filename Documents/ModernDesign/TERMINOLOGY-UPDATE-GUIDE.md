@@ -343,12 +343,21 @@ FUNCTION ParseSegment(segment):
 ## Notes
 
 1. **FileLineNumber** - Keep as-is (refers to log file line numbers, not protocol structure)
+   - **Why**: Log files are TEXT files with "lines" (captured by 3rd-party tools)
+   - **Distinction**: Log File Structure (lines in text file) ≠ Protocol Structure (packages/segments)
+   - **Purpose**: Error reporting - "Parse error at line 47 in capture.txt"
+   - See Document 04 "Terminology Clarification" section for detailed explanation
+
 2. **Variable names** - Internal variable names like `frame` in local scope MAY be acceptable
 3. **Comments** - Update ALL comments that refer to "line" in protocol context
 4. **Hybrid terms** - Avoid mixing old/new (e.g., don't use "Package-Line")
 
 ---
 
-**Document Version**: 1.0
+**Document Version**: 1.1
 **Last Updated**: 2025-10-26
 **Status**: Ready for Implementation
+
+**Changes**:
+- v1.0: Initial terminology mapping and update guide
+- v1.1: Enhanced FileLineNumber note with detailed explanation of Log File Structure vs Protocol Structure distinction
