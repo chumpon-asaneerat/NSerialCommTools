@@ -1366,16 +1366,16 @@ public class FieldRelationship
 
 ---
 
-### LineSequenceConfig Class
+### SegmentSequenceConfig Class
 
-**Purpose**: Configuration for sequential line parsing (state machine approach).
+**Purpose**: Configuration for sequential segment parsing (state machine approach).
 
 ```csharp
 /// <summary>
-/// Configuration for sequential line-by-line parsing.
-/// Used for complex multi-line protocols like JIK6CAB.
+/// Configuration for sequential segment-by-segment parsing.
+/// Used for complex multi-segment package protocols like JIK6CAB.
 /// </summary>
-public class LineSequenceConfig
+public class SegmentSequenceConfig
 {
     /// <summary>
     /// Sequence name.
@@ -1383,9 +1383,9 @@ public class LineSequenceConfig
     public string Name { get; set; }
 
     /// <summary>
-    /// Line definitions in order.
+    /// Segment definitions in order.
     /// </summary>
-    public List<LineDefinition> Lines { get; set; }
+    public List<SegmentDefinition> Segments { get; set; }
 
     /// <summary>
     /// Start marker pattern (e.g., "^KJIK000").
@@ -1398,18 +1398,18 @@ public class LineSequenceConfig
     public string EndMarker { get; set; }
 
     /// <summary>
-    /// Total number of lines in complete sequence.
+    /// Total number of segments in complete sequence.
     /// </summary>
-    public int ExpectedLineCount { get; set; }
+    public int ExpectedSegmentCount { get; set; }
 
     /// <summary>
     /// Timeout for incomplete sequences (milliseconds).
     /// </summary>
     public int TimeoutMs { get; set; }
 
-    public LineSequenceConfig()
+    public SegmentSequenceConfig()
     {
-        Lines = new List<LineDefinition>();
+        Segments = new List<SegmentDefinition>();
         TimeoutMs = 5000;
     }
 }
@@ -1417,34 +1417,34 @@ public class LineSequenceConfig
 
 ---
 
-### LineDefinition Class
+### SegmentDefinition Class
 
-**Purpose**: Defines a single line in a sequential parsing sequence.
+**Purpose**: Defines a single segment in a sequential parsing sequence.
 
 ```csharp
 /// <summary>
-/// Definition of a single line in a multi-line sequence.
+/// Definition of a single segment in a multi-segment package sequence.
 /// </summary>
-public class LineDefinition
+public class SegmentDefinition
 {
     /// <summary>
-    /// Line number (0-based position in sequence).
+    /// Segment index (0-based position in sequence).
     /// </summary>
-    public int LineNumber { get; set; }
+    public int SegmentIndex { get; set; }
 
     /// <summary>
-    /// Field name to extract from this line.
-    /// Null if line should be skipped.
+    /// Field name to extract from this segment.
+    /// Null if segment should be skipped.
     /// </summary>
     public string FieldName { get; set; }
 
     /// <summary>
-    /// Line action (parse, skip, validate).
+    /// Segment action (parse, skip, validate).
     /// </summary>
-    public LineAction Action { get; set; }
+    public SegmentAction Action { get; set; }
 
     /// <summary>
-    /// Pattern to match this line (for validation).
+    /// Pattern to match this segment (for validation).
     /// </summary>
     public string Pattern { get; set; }
 
@@ -1454,24 +1454,24 @@ public class LineDefinition
     public int? Width { get; set; }
 
     /// <summary>
-    /// Should this line be shown in the editor UI?
+    /// Should this segment be shown in the editor UI?
     /// True = show in editor, False = hide from editor (internal/reserved)
     /// </summary>
     public bool ShowInEditor { get; set; }
 
     /// <summary>
-    /// Is this line required?
+    /// Is this segment required?
     /// </summary>
     public bool Required { get; set; }
 
     /// <summary>
-    /// Description of this line.
+    /// Description of this segment.
     /// </summary>
     public string Description { get; set; }
 
-    public LineDefinition()
+    public SegmentDefinition()
     {
-        Action = LineAction.Parse;
+        Action = SegmentAction.Parse;
         Required = true;
         ShowInEditor = true;
     }
@@ -1556,10 +1556,10 @@ public enum ParseMethod
 public enum MessageStructureType
 {
     Unknown = 0,
-    SingleLine = 1,         // One line = one message
-    MultiLineFrame = 2,     // Multi-line message with header/footer
-    MultiLineBlock = 3,     // Fixed number of lines per message
-    VariableLength = 4      // Variable-length messages
+    SinglePackage = 1,      // One segment = one package
+    MultiPackage = 2,       // Multi-segment package with header/footer
+    PackageBlock = 3,       // Fixed number of segments per package
+    VariableLength = 4      // Variable-length packages
 }
 ```
 
@@ -1673,19 +1673,19 @@ public enum RelationshipType
 }
 ```
 
-### LineAction Enum
+### SegmentAction Enum
 
 ```csharp
 /// <summary>
-/// Action to perform on a line in sequential parsing.
+/// Action to perform on a segment in sequential parsing.
 /// </summary>
-public enum LineAction
+public enum SegmentAction
 {
     Unknown = 0,
     Parse = 1,          // Parse and extract field value
-    Skip = 2,           // Skip this line (don't parse)
-    Validate = 3,       // Validate line exists but don't extract value
-    Marker = 4          // Line is a start/end marker
+    Skip = 2,           // Skip this segment (don't parse)
+    Validate = 3,       // Validate segment exists but don't extract value
+    Marker = 4          // Segment is a start/end marker
 }
 ```
 
