@@ -65,10 +65,13 @@
 
 ### ✅ Completed & Updated
 - **03-Parsing-Strategy-Analysis.md** (v6.0) - Pure statistical algorithms, Package/Segment terminology
-- **04-Data-Models-Design.md** (v2.2) - Package/Segment terminology, Log File vs Protocol Structure clarification
-- **06-Protocol-Analyzer-Complete-UI.md** (v2.2) - Complete UI design with DockPanel/StackPanel architecture, JSON-only export
-- **07-Page-Content-Overview.md** (v1.0) - **NEW** - Comprehensive reference showing what content is displayed on each page
+- **04-Data-Models-Design.md** (v2.3) - **UPDATED** - Added DetectionConfiguration, DetectionModeInfo, DetectionMode classes with multi-level terminator support
+- **06-Protocol-Analyzer-Complete-UI.md** (v3.0) - **CONSOLIDATED** - Merged Docs 06+07+08, Multi-level terminators (Package+Segment), 5 Quick Presets, Detection Configuration
 - **TERMINOLOGY-UPDATE-GUIDE.md** (v1.1) - Complete terminology mapping with FileLineNumber clarification
+
+### 📝 Consolidated Documents (Content merged into Doc 06)
+- **~~07-Page-Content-Overview.md~~** - Content merged into Document 06 v3.0 (deleted)
+- **~~08-Page1-Detection-Configuration-Design.md~~** - Content merged into Document 06 v3.0 (deleted)
 
 ### ⏳ Need Manual Updates
 - **05-JSON-Schema-Design.md** (v2.1) - Update JSON schema terminology (Package/Segment)
