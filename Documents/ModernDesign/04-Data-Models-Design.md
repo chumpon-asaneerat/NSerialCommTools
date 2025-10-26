@@ -2,8 +2,8 @@
 
 ## NSerialCommTools - Protocol Analyzer Data Models
 
-**Document Version**: 2.2
-**Last Updated**: 2025-10-26
+**Document Version**: 2.3
+**Last Updated**: 2025-10-27
 **Status**: Design Phase
 
 **Related Documents**:
@@ -232,6 +232,283 @@ public class LogEntryMetadata
 ---
 
 ## Analysis Models
+
+### DetectionConfiguration Class
+
+**Purpose**: User-configured or auto-detected protocol detection settings used to constrain analysis algorithms.
+
+**Added in**: Version 2.3 (Session 7 completion)
+
+```csharp
+/// <summary>
+/// User-configured or auto-detected protocol detection settings.
+/// Used to constrain and guide analysis algorithms.
+/// Configured in Page 1 (LogDataPage) and passed to Page 2 (AnalyzerPage).
+/// </summary>
+public class DetectionConfiguration
+{
+    #region Package-Level Terminators
+
+    /// <summary>
+    /// Package terminator bytes (REQUIRED).
+    /// Marks the end of a complete package/message.
+    /// Example: 0x0D 0x0A (CRLF) for most text protocols.
+    /// </summary>
+    public byte[] PackageTerminator { get; set; }
+
+    #endregion
+
+    #region Segment-Level Separators (Mutually Exclusive)
+
+    /// <summary>
+    /// Segment delimiter bytes (OPTIONAL).
+    /// Separates fields/segments within a package (delimiter-based protocols).
+    /// Example: 0x2C (comma) for CSV-like protocols.
+    ///
+    /// NOTE: Use EITHER SegmentDelimiter OR SegmentTerminator, not both.
+    /// </summary>
+    public byte[] SegmentDelimiter { get; set; }
+
+    /// <summary>
+    /// Segment terminator bytes (OPTIONAL - NEW in v2.3).
+    /// Marks the end of each segment within a package (PackageBased protocols).
+    /// Example: 0x0D (CR) for JIK6CAB protocol with multi-level terminators.
+    ///
+    /// NOTE: Use EITHER SegmentDelimiter OR SegmentTerminator, not both.
+    /// </summary>
+    public byte[] SegmentTerminator { get; set; }
+
+    #endregion
+
+    #region Frame Markers (Optional)
+
+    /// <summary>
+    /// Start marker bytes (OPTIONAL).
+    /// Marks the beginning of a package (e.g., STX = 0x02).
+    /// Null if no start marker.
+    /// </summary>
+    public byte[] StartMarker { get; set; }
+
+    /// <summary>
+    /// End marker bytes (OPTIONAL).
+    /// Marks the end of a package, in addition to terminator (e.g., ETX = 0x03).
+    /// Null if no end marker.
+    /// </summary>
+    public byte[] EndMarker { get; set; }
+
+    #endregion
+
+    #region Encoding
+
+    /// <summary>
+    /// Text encoding type (REQUIRED).
+    /// Default: ASCII
+    /// </summary>
+    public EncodingType Encoding { get; set; }
+
+    #endregion
+
+    #region Detection Metadata
+
+    /// <summary>
+    /// Detection mode and confidence information for each setting.
+    /// Tracks whether each value was auto-detected or manually configured.
+    /// </summary>
+    public DetectionModeInfo ModeInfo { get; set; }
+
+    #endregion
+
+    #region Constructor
+
+    public DetectionConfiguration()
+    {
+        Encoding = EncodingType.ASCII;
+        ModeInfo = new DetectionModeInfo();
+    }
+
+    #endregion
+
+    #region Validation Methods
+
+    /// <summary>
+    /// Validates the detection configuration.
+    /// Returns true if valid, false otherwise.
+    /// </summary>
+    public bool Validate(out List<string> errors)
+    {
+        errors = new List<string>();
+
+        // Package Terminator is REQUIRED
+        if (PackageTerminator == null || PackageTerminator.Length == 0)
+        {
+            errors.Add("Package terminator is required.");
+        }
+
+        // Segment Delimiter and Segment Terminator are mutually exclusive
+        if (SegmentDelimiter != null && SegmentDelimiter.Length > 0 &&
+            SegmentTerminator != null && SegmentTerminator.Length > 0)
+        {
+            errors.Add("Cannot have both Segment Delimiter and Segment Terminator. Choose one.");
+        }
+
+        // Validate byte ranges
+        if (!ValidateBytes(PackageTerminator, "Package Terminator", errors)) return false;
+        if (!ValidateBytes(SegmentDelimiter, "Segment Delimiter", errors)) return false;
+        if (!ValidateBytes(SegmentTerminator, "Segment Terminator", errors)) return false;
+        if (!ValidateBytes(StartMarker, "Start Marker", errors)) return false;
+        if (!ValidateBytes(EndMarker, "End Marker", errors)) return false;
+
+        return errors.Count == 0;
+    }
+
+    private bool ValidateBytes(byte[] bytes, string fieldName, List<string> errors)
+    {
+        if (bytes == null) return true; // Null is OK for optional fields
+
+        if (bytes.Length == 0)
+        {
+            errors.Add($"{fieldName}: Cannot be empty array if specified.");
+            return false;
+        }
+
+        if (bytes.Length > 8)
+        {
+            errors.Add($"{fieldName}: Maximum 8 bytes allowed.");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Gets a human-readable description of the configuration.
+    /// </summary>
+    public string GetDescription()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Detection Configuration:");
+        sb.AppendLine($"  Package Terminator: {BytesToString(PackageTerminator)}");
+
+        if (SegmentDelimiter != null && SegmentDelimiter.Length > 0)
+            sb.AppendLine($"  Segment Delimiter: {BytesToString(SegmentDelimiter)}");
+
+        if (SegmentTerminator != null && SegmentTerminator.Length > 0)
+            sb.AppendLine($"  Segment Terminator: {BytesToString(SegmentTerminator)}");
+
+        if (StartMarker != null && StartMarker.Length > 0)
+            sb.AppendLine($"  Start Marker: {BytesToString(StartMarker)}");
+
+        if (EndMarker != null && EndMarker.Length > 0)
+            sb.AppendLine($"  End Marker: {BytesToString(EndMarker)}");
+
+        sb.AppendLine($"  Encoding: {Encoding}");
+
+        return sb.ToString();
+    }
+
+    private string BytesToString(byte[] bytes)
+    {
+        if (bytes == null || bytes.Length == 0) return "(none)";
+        return string.Join(" ", bytes.Select(b => $"0x{b:X2}"));
+    }
+
+    #endregion
+}
+```
+
+### DetectionModeInfo Class
+
+**Purpose**: Metadata about how each detection setting was configured (auto vs manual).
+
+```csharp
+/// <summary>
+/// Detection mode and confidence information for each configuration setting.
+/// Tracks whether values were auto-detected or manually entered.
+/// </summary>
+public class DetectionModeInfo
+{
+    #region Package Terminator
+
+    public DetectionMode PackageTerminatorMode { get; set; }
+    public double PackageTerminatorConfidence { get; set; }
+
+    #endregion
+
+    #region Segment Separators
+
+    public DetectionMode SegmentDelimiterMode { get; set; }
+    public double SegmentDelimiterConfidence { get; set; }
+
+    /// <summary>
+    /// NEW in v2.3: Segment terminator detection mode.
+    /// </summary>
+    public DetectionMode SegmentTerminatorMode { get; set; }
+
+    /// <summary>
+    /// NEW in v2.3: Segment terminator detection confidence.
+    /// </summary>
+    public double SegmentTerminatorConfidence { get; set; }
+
+    #endregion
+
+    #region Markers
+
+    public DetectionMode StartMarkerMode { get; set; }
+    public DetectionMode EndMarkerMode { get; set; }
+
+    #endregion
+
+    #region Encoding
+
+    public DetectionMode EncodingMode { get; set; }
+
+    #endregion
+
+    #region Constructor
+
+    public DetectionModeInfo()
+    {
+        // Default all to Auto mode
+        PackageTerminatorMode = DetectionMode.Auto;
+        SegmentDelimiterMode = DetectionMode.None;
+        SegmentTerminatorMode = DetectionMode.None;
+        StartMarkerMode = DetectionMode.None;
+        EndMarkerMode = DetectionMode.None;
+        EncodingMode = DetectionMode.Auto;
+    }
+
+    #endregion
+}
+```
+
+### DetectionMode Enum
+
+**Purpose**: Indicates whether a detection setting was auto-detected, manually entered, or not applicable.
+
+```csharp
+/// <summary>
+/// Detection mode for a configuration setting.
+/// </summary>
+public enum DetectionMode
+{
+    /// <summary>
+    /// Value was automatically detected by the system.
+    /// </summary>
+    Auto,
+
+    /// <summary>
+    /// Value was manually specified by the user.
+    /// </summary>
+    Manual,
+
+    /// <summary>
+    /// Setting is not applicable or not used (e.g., no delimiter).
+    /// </summary>
+    None
+}
+```
+
+---
 
 ### AnalysisResult Class
 
