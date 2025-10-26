@@ -314,8 +314,7 @@ DockPanel
 - ✅ Validation status banner (green/red based on validity)
 - 📋 Protocol summary (device name, type, encoding, terminator, delimiter, fields, confidence)
 - 📊 Fields summary DataGrid
-- 💾 Export configuration (output folder)
-- Export format: JSON only (YAML/HTML not supported)
+- 💾 Export configuration (output folder only - JSON format is implicit)
 
 **Layout Structure**:
 ```

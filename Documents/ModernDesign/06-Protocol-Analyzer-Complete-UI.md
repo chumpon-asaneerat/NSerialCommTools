@@ -594,7 +594,9 @@ Edit field names, types, and properties.
 ## Page 4: ExportPage (Export)
 
 ### Purpose
-Validate protocol definition and export to files.
+Validate protocol definition and export to JSON file only.
+
+**IMPORTANT:** Only JSON format is supported. YAML and HTML export are NOT implemented.
 
 ### UI Layout
 
@@ -607,7 +609,6 @@ Validate protocol definition and export to files.
 ├─────────────────────────────────────────────────┤
 │ 💾 Export Configuration                         │
 │ Output: [C:\Exports\  ] [Browse...]            │
-│ Format:  ☑ JSON Definition                     │
 ├─────────────────────────────────────────────────┤
 │ ┌──────────────┐ ┌──────────────┐             │
 │ │📋 Protocol   │ │📊 Fields     │             │
@@ -644,17 +645,11 @@ Validate protocol definition and export to files.
 
         <!-- EXPORT CONFIGURATION (Bottom) -->
         <GroupBox DockPanel.Dock="Bottom" Header="💾 Export Configuration">
-            <StackPanel>
-                <DockPanel>
-                    <Button Content="Browse..." DockPanel.Dock="Right"/>
-                    <TextBlock Text="Output Folder:" DockPanel.Dock="Left"/>
-                    <TextBox x:Name="OutputFolderTextBox"/>
-                </DockPanel>
-                <StackPanel>
-                    <CheckBox Content="📄 JSON Definition" IsChecked="True" IsEnabled="False"/>
-                    <TextBlock Text="(Only JSON format supported)" FontSize="10" Foreground="Gray"/>
-                </StackPanel>
-            </StackPanel>
+            <DockPanel>
+                <Button Content="Browse..." DockPanel.Dock="Right" Click="BrowseOutputFolder_Click"/>
+                <TextBlock Text="Output Folder:" DockPanel.Dock="Left" Margin="0,0,10,0"/>
+                <TextBox x:Name="OutputFolderTextBox" Text="C:\Exports\"/>
+            </DockPanel>
         </GroupBox>
 
         <!-- VALIDATION STATUS (Top) -->
@@ -888,9 +883,11 @@ sequenceDiagram
 
 ---
 
-**Document Version**: 2.0
+**Document Version**: 2.2
 **Last Updated**: 2025-10-26
 **Status**: Complete - Simplified Architecture with DockPanel/StackPanel
 **Changes**:
 - v1.0: Initial comprehensive UI design with Toolbar
 - v2.0: **Complete redesign** - Removed Toolbar/Header, DockPanel/StackPanel architecture, Single shared model pattern, Detailed page layouts with visualization
+- v2.1: **Removed YAML/HTML export** - Only JSON export supported (YAML/HTML NOT implemented)
+- v2.2: **Removed export format selection panel** - Since only JSON is supported, no format selection UI needed
