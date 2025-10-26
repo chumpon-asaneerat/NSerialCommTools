@@ -30,7 +30,7 @@
 | PROJECT-STATUS.md | v1.3 | Implementation guidelines |
 | TERMINOLOGY-UPDATE-GUIDE.md | v1.1 | Terminology reference |
 
-### ⏳ Optional (can update later):
+### 🔴 HIGHEST PRIORITY (Do First):
 - 05-JSON-Schema-Design.md (v2.1) - Needs Package/Segment terminology update
 
 ---
