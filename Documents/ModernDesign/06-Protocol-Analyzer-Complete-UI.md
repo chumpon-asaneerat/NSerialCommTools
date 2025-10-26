@@ -488,6 +488,250 @@ public partial class LogDataPage : UserControl
 }
 ```
 
+### Protocol Detection Configuration - Detailed Design
+
+#### Multi-Level Terminator Support
+
+**Important**: This system supports multi-level protocols with both Package and Segment terminators:
+
+```mermaid
+graph TD
+    A[Raw Data Stream] --> B[Package Terminator Detection]
+    B --> C[Package Extraction]
+    C --> D{Has Segment<br/>Terminator?}
+    D -->|Yes| E[Segment Terminator Detection]
+    D -->|No| F[Delimiter-Based Segmentation]
+    E --> G[Extract Segments]
+    F --> G
+
+    style A fill:#E1F5FE
+    style B fill:#FFF9C4
+    style C fill:#C8E6C9
+    style D fill:#FFE4B5
+    style E fill:#F8BBD0
+    style F fill:#D1C4E9
+    style G fill:#B2DFDB
+```
+
+**Three Terminator Types:**
+1. **Package Terminator** (Required) - Marks end of complete package/message
+2. **Segment Terminator** (Optional) - Marks end of each segment within package (for PackageBased protocols)
+3. **Segment Delimiter** (Optional) - Separates fields/segments (alternative to terminator)
+
+**Example Protocol with Both:**
+```
+Package = Segment1<SegTerm>Segment2<SegTerm>Segment3<PackTerm>
+Example:  "Field1\r"+"Field2\r"+"Field3\r"+"\n"
+          └─Seg Term─┘└─Seg Term─┘└─Seg Term─┘└Pack Term┘
+```
+
+#### Configuration Sections
+
+##### Section 1: Package Terminator 🔚 (Required)
+
+**Purpose:** Marks the end of a complete package/message.
+
+**Controls:**
+
+| Control | Type | Purpose | Behavior |
+|---------|------|---------|----------|
+| Mode Radio | Radio buttons | Auto/Manual | • Auto: Fields locked, show detected<br>• Manual: Fields unlocked for editing |
+| Confidence | Label | Detection quality | • Green ✅ if ≥80%<br>• Yellow ⚠️ if 60-79%<br>• Red ❌ if <60% |
+| Bytes | Byte editors | Hex sequence | • Format: "0xHH"<br>• Max 8 bytes |
+| + Add | Button | Add byte | Adds new byte textbox |
+| Clear | Button | Clear all | Removes all bytes |
+| Preview | Label | ASCII representation | Shows \r, \n, or char |
+| Occurrences | Label | Count in data | Auto-detect only |
+
+**Workflow:**
+1. Auto-detect: System finds terminator, populates fields (locked), shows confidence
+2. Manual mode: User can edit or enter custom terminator
+3. Validation: Must have ≥1 byte
+
+##### Section 2: Segment Delimiter ✂️ (Optional)
+
+**Purpose:** Separates fields/segments within a package (delimiter-based protocols).
+
+**Same controls as Package Terminator, PLUS:**
+- **None Checkbox** - For fixed-length protocols without delimiters
+
+**Use Cases:**
+- CSV-like: `Field1,Field2,Field3` (delimiter = comma)
+- Space-separated: `Field1 Field2 Field3` (delimiter = space)
+- Fixed-length: No delimiter (None checked)
+
+##### Section 3: Segment Terminator 🔚 (Optional - NEW)
+
+**Purpose:** Marks end of each segment in PackageBased protocols.
+
+**Multi-Level Protocol Example:**
+```
+JIK6CAB Device:
+Package = "S1\rS2\rS3\r\n"
+          └─┘ └─┘ └─┘└┘
+           │   │   │  └─ Package Terminator (\n)
+           └───┴───┴──── Segment Terminators (\r)
+```
+
+**Controls:** Same as Delimiter section
+
+**When to Use:**
+- ✅ PackageBased protocols (multi-segment with terminators)
+- ❌ SinglePackage protocols (use Package Terminator only)
+- ❌ Delimiter-based protocols (use Segment Delimiter instead)
+
+**Note:** Either use Segment Delimiter OR Segment Terminator, not both.
+
+##### Section 4 & 5: Start/End Markers 🏁 (Optional)
+
+**Purpose:** Frame markers for STX/ETX-style protocols.
+
+**Example:**
+```
+STX + Data + ETX
+0x02 + "Hello" + 0x03
+```
+
+**Controls:** Same as Delimiter (with None checkbox)
+
+**Use Cases:** Rare - most protocols use terminators only.
+
+##### Section 6: Encoding 📝 (Required)
+
+**Options:**
+- ASCII (7-bit, 0x00-0x7F)
+- UTF-8 (Unicode)
+- Binary (no text encoding)
+
+**Auto-Detection:**
+- 0x00-0x7F only → ASCII
+- 0x80-0xFF present → UTF-8 or Binary
+
+##### Section 7: Quick Presets (5 Presets)
+
+**One-click common values:**
+
+| Preset Button | Fills | Use Case |
+|--------------|-------|----------|
+| [CRLF \r\n] | 0x0D 0x0A | Windows line ending |
+| [LF \n] | 0x0A | Unix line ending |
+| [CR \r] | 0x0D | Mac classic / Segment terminator |
+| [Comma ,] | 0x2C | CSV-like delimiter |
+| [Space] | 0x20 | Space-separated fields |
+
+**Note:** Tab preset removed (less common, users can manually enter 0x09 if needed).
+
+##### Section 8: Actions
+
+**Three Action Buttons:**
+
+1. **💾 Save Settings** - Save current configuration to JSON file
+   - Filename: `[DeviceName]-Settings.json`
+   - Includes all detection settings
+   - Can be imported later
+
+2. **📂 Import Settings** - Load configuration from file
+   - Accepts Settings.json OR Definition.json
+   - Extracts `detectionSettings` section if Definition file
+   - Auto-populates all fields
+
+3. **🔄 Reset** - Clear manual inputs, re-run auto-detection
+   - Resets to Auto mode
+   - Re-runs detection if file loaded
+
+#### Data Flow: Load & Auto-Detect
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI
+    participant Parser
+    participant Detector
+    participant Model
+
+    User->>UI: Click "Load & Auto-Detect"
+    UI->>Parser: ParseFile(path)
+    Parser->>Parser: Read log file
+    Parser-->>UI: LogFile + RawData
+
+    UI->>Detector: QuickDetect(rawData)
+    Detector->>Detector: Find Package Terminator
+    Detector->>Detector: Find Segment Delimiter
+    Detector->>Detector: Find Segment Terminator
+    Detector->>Detector: Find Markers
+    Detector->>Detector: Detect Encoding
+    Detector-->>UI: DetectionResult
+
+    UI->>UI: Populate fields (Auto mode)
+    UI->>UI: Show confidence badges
+    UI->>Model: Set LogFile, RawData, DetectionConfig
+    UI-->>User: Display results
+```
+
+#### Validation Rules
+
+**Before "Next: Analyze":**
+
+| Check | Rule | Error/Warning |
+|-------|------|---------------|
+| File Loaded | LogFile != null | "Please load a log file first." |
+| Package Terminator | ≥1 byte defined | "Package terminator is required." |
+| Valid Hex | All bytes 0x00-0xFF | "Invalid hex byte: {value}" |
+| Mutual Exclusivity | Not both Seg Delimiter AND Seg Terminator | Warning: "Both delimiter and segment terminator set. Delimiter will be used." |
+
+**Optional Warnings:**
+- Low confidence (<60%): "Low confidence detection. Consider manual review."
+- Delimiter = Space: "Space delimiter detected. Fixed-length may work better."
+
+#### DetectionConfiguration Data Model
+
+**Added to ProtocolAnalyzerModel:**
+
+```csharp
+public class DetectionConfiguration
+{
+    // Package-level (Required)
+    public byte[] PackageTerminator { get; set; }
+
+    // Segment-level (Optional - choose one)
+    public byte[] SegmentDelimiter { get; set; }      // OR
+    public byte[] SegmentTerminator { get; set; }     // (mutually exclusive)
+
+    // Frame markers (Optional)
+    public byte[] StartMarker { get; set; }
+    public byte[] EndMarker { get; set; }
+
+    // Encoding (Required)
+    public EncodingType Encoding { get; set; }
+
+    // Detection metadata
+    public DetectionModeInfo ModeInfo { get; set; }
+}
+
+public class DetectionModeInfo
+{
+    public DetectionMode PackageTerminatorMode { get; set; }
+    public double PackageTerminatorConfidence { get; set; }
+
+    public DetectionMode SegmentDelimiterMode { get; set; }
+    public double SegmentDelimiterConfidence { get; set; }
+
+    public DetectionMode SegmentTerminatorMode { get; set; }  // NEW
+    public double SegmentTerminatorConfidence { get; set; }   // NEW
+
+    public DetectionMode StartMarkerMode { get; set; }
+    public DetectionMode EndMarkerMode { get; set; }
+    public DetectionMode EncodingMode { get; set; }
+}
+
+public enum DetectionMode
+{
+    Auto,      // Auto-detected
+    Manual,    // User-specified
+    None       // Not applicable
+}
+```
+
 ---
 
 ## Page 2: AnalyzerPage (Analysis)
