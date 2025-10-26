@@ -35,7 +35,7 @@
 
 ---
 
-## Next Session (Session 8) - Start Implementation
+## Next Session (Session 9) - Start Implementation
 
 ### Phase 1: Create Models
 
@@ -144,7 +144,7 @@ public class ProtocolAnalyzerModel : INotifyPropertyChanged
   - WORK-SUMMARY-2025-10-27-Session-8.md
   - WORK-SUMMARY-YYYY-MM-DD-Session-9.md (next session - use actual date)
 
-**For Next Session (Session 8):**
+**For Next Session (Session 9):**
 - Create work summary at start or end of session following naming format
 - Document all accomplishments, decisions, and code changes
 - Update this file (last_session.txt) with concise next steps for Session 9
