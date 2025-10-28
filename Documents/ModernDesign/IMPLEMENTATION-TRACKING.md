@@ -177,68 +177,162 @@
   - GroupBox with "Log Data" header
   - Status: ⏳ Not Started
 
-### 3.2 Detection Configuration Panel Components
+### 3.2 Detection Configuration Panel - UI Components
 - [ ] **Package Start Marker Row**
-  - Mode: Auto/Manual/None RadioButtons
-  - TextBox for detected/manual value
+  - 3 RadioButtons: "Auto", "Manual", "None" (Horizontal StackPanel)
+  - TextBox for detected/manual value (enabled based on mode)
+  - Label showing detected result (if Auto mode)
   - Status: ⏳ Not Started
+  - Reference: Doc 06 Section 4.1.1
 
 - [ ] **Package End Marker Row**
-  - Mode: Auto/Manual/None RadioButtons
+  - 3 RadioButtons: "Auto", "Manual", "None" (Horizontal StackPanel)
   - TextBox for detected/manual value
+  - Label showing detected result (if Auto mode)
   - Status: ⏳ Not Started
+  - Reference: Doc 06 Section 4.1.1
 
 - [ ] **Segment Separator Row**
-  - Mode: Auto/Manual/None RadioButtons
+  - 3 RadioButtons: "Auto", "Manual", "None" (Horizontal StackPanel)
   - TextBox for detected/manual value
+  - Label showing detected result (if Auto mode)
   - Status: ⏳ Not Started
+  - Reference: Doc 06 Section 4.1.1
 
 - [ ] **Encoding Row**
-  - Mode: Auto/Manual RadioButtons
-  - ComboBox: ASCII, UTF-8, UTF-16, Latin-1
+  - 2 RadioButtons: "Auto", "Manual" (Horizontal StackPanel)
+  - ComboBox with 4 options: ASCII, UTF-8, UTF-16, Latin-1
+  - Label showing detected result (if Auto mode)
+  - Status: ⏳ Not Started
+  - Reference: Doc 06 Section 4.1.1
+
+- [ ] **Action Buttons Row**
+  - "Apply Configuration" button (saves to model)
+  - "Clear All" button (resets all detection)
+  - Horizontal StackPanel, right-aligned
   - Status: ⏳ Not Started
 
-- [ ] **Action Buttons**
-  - "Apply Configuration" button
-  - "Clear All" button
+### 3.3 Log Data Panel - UI Components
+- [ ] **Toolbar** (DockPanel.Dock="Top")
+  - "Load Log File" button (OpenFileDialog)
+  - "Clear" button (clears loaded log)
+  - File info label (shows: "entries_file.log - 1,234 entries")
+  - Horizontal StackPanel
   - Status: ⏳ Not Started
 
-### 3.3 Log Data Panel Components
-- [ ] **Toolbar**
-  - "Load Log File" button
-  - "Clear" button
+- [ ] **DataGrid** (Fills remaining space)
+  - Column 1: # (Entry number, right-aligned, width 60)
+  - Column 2: Timestamp (DateTime, width 150)
+  - Column 3: Direction (TX/RX, width 60)
+  - Column 4: RawHex (Hex string, width *)
+  - Column 5: RawText (Text representation, width *)
+  - Column 6: Length (Bytes, right-aligned, width 80)
+  - Bind to: model.LogFile.Entries (ObservableCollection)
+  - Status: ⏳ Not Started
+  - Reference: Doc 06 Section 4.1.2
+
+### 3.4 LogDataPage.xaml.cs - Code-Behind Structure
+- [ ] **Class Setup**
+  - Private field: `ProtocolAnalyzerModel _model`
   - Status: ⏳ Not Started
 
-- [ ] **DataGrid**
-  - Columns: #, Timestamp, Direction, Raw Data, Length
-  - Bind to LogFile.Entries
+- [ ] **Setup() Method**
+  - Signature: `public void Setup(ProtocolAnalyzerModel model)`
+  - Store model reference
+  - Initialize UI from model (if data exists)
+  - Wire up event handlers
   - Status: ⏳ Not Started
 
-### 3.4 Code-Behind Logic
-- [ ] **LogDataPage.xaml.cs** - Page code
-  - Setup() method (receive model)
-  - LoadLogFile() - Open file, parse entries
-  - AutoDetectDelimiters() - Detect markers/separators
-  - ApplyConfiguration() - Save to model
-  - ClearConfiguration() - Reset detection
-  - Status: ⏳ Not Started
-  - Reference: Doc 03 v6.0 (Detection algorithms)
-
-### 3.5 Detection Algorithms Implementation
-- [ ] **Auto-detect Package Start Marker**
-  - Frequency analysis (Doc 03 Section 4.1)
+- [ ] **Event Handlers**
+  - LoadLogFile_Click() - Button click handler
+  - ClearLog_Click() - Button click handler
+  - ApplyConfiguration_Click() - Button click handler
+  - ClearConfiguration_Click() - Button click handler
+  - RadioButton_Checked() - Mode change handlers (x3)
   - Status: ⏳ Not Started
 
-- [ ] **Auto-detect Package End Marker**
-  - Frequency analysis (Doc 03 Section 4.2)
+### 3.5 Core Method Implementations
+- [ ] **LoadLogFile() Method**
+  - Open OpenFileDialog (filter: *.log, *.txt)
+  - Parse log file line by line
+  - Create LogEntry objects with RawBytes
+  - Populate model.LogFile
+  - Update DataGrid
   - Status: ⏳ Not Started
 
-- [ ] **Auto-detect Segment Separator**
-  - Frequency analysis (Doc 03 Section 4.3)
+- [ ] **AutoDetectDelimiters() Method**
+  - Called after log file loaded
+  - Run 4 auto-detection algorithms (see 3.6)
+  - Update DetectionConfiguration in model (AutoDetected values)
+  - Update UI labels with detected results
+  - Status: ⏳ Not Started
+  - Reference: Doc 03 Section 4
+
+- [ ] **ApplyConfiguration() Method**
+  - Read selected modes (Auto/Manual/None)
+  - Read manual values from TextBoxes
+  - Update model.DetectionConfig with effective values
+  - Show confirmation message
   - Status: ⏳ Not Started
 
-- [ ] **Auto-detect Encoding**
-  - Valid character analysis (Doc 03 Section 4.4)
+- [ ] **ClearConfiguration() Method**
+  - Reset all DetectionModeInfo objects to None
+  - Clear all TextBoxes
+  - Clear all detection result labels
+  - Status: ⏳ Not Started
+
+### 3.6 Auto-Detection Algorithms (4 Algorithms)
+- [ ] **Algorithm 1: Auto-detect Package Start Marker**
+  - Method: `DetectPackageStartMarker(List<LogEntry> entries)`
+  - Strategy: Frequency analysis at beginning of entries
+  - Find most common 1-4 byte sequences at start
+  - Check frequency > 30% threshold
+  - Return detected marker or null
+  - Status: ⏳ Not Started
+  - Reference: Doc 03 Section 4.1
+
+- [ ] **Algorithm 2: Auto-detect Package End Marker**
+  - Method: `DetectPackageEndMarker(List<LogEntry> entries)`
+  - Strategy: Frequency analysis at end of entries
+  - Find most common 1-4 byte sequences at end (CRLF, LF, CR, etc.)
+  - Check frequency > 30% threshold
+  - Return detected marker or null
+  - Status: ⏳ Not Started
+  - Reference: Doc 03 Section 4.2
+
+- [ ] **Algorithm 3: Auto-detect Segment Separator**
+  - Method: `DetectSegmentSeparator(List<LogEntry> entries)`
+  - Strategy: Frequency analysis within entries
+  - Exclude start/end markers from search
+  - Find most common 1-2 byte sequences (CRLF, LF, CR, TAB, comma, etc.)
+  - Check frequency > 20% threshold
+  - Return detected separator or null
+  - Status: ⏳ Not Started
+  - Reference: Doc 03 Section 4.3
+
+- [ ] **Algorithm 4: Auto-detect Encoding**
+  - Method: `DetectEncoding(List<LogEntry> entries)`
+  - Strategy: Valid character ratio analysis
+  - Test ASCII: Count valid ASCII chars (0x20-0x7E + CR/LF/TAB)
+  - Test UTF-8: Try decode, check valid UTF-8 sequences
+  - Test UTF-16: Try decode, check valid UTF-16 sequences
+  - Return encoding with highest valid character ratio (> 95%)
+  - Default to ASCII if uncertain
+  - Status: ⏳ Not Started
+  - Reference: Doc 03 Section 4.4
+
+### 3.7 Testing & Validation
+- [ ] **Test with sample log files**
+  - Use logs from: Documents/LuckyTex Devices/
+  - Test DEFENDER3000 (binary protocol)
+  - Test JIK6CAB (14-segment text protocol)
+  - Test WeightQA (nested delimiter protocol)
+  - Status: ⏳ Not Started
+
+- [ ] **Verify detection accuracy**
+  - Check detected markers match expected values
+  - Verify encoding detection is correct
+  - Test edge cases (empty files, single entry, etc.)
   - Status: ⏳ Not Started
 
 ---
