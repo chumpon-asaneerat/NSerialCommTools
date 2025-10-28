@@ -1965,14 +1965,25 @@ This JSON schema enables:
 ✅ **Production-Tested** - Based on real device protocols
 
 ### Complete Examples Provided:
-1. ✅ CordDEFENDER3000 - Simple space-delimited (text protocol)
-2. ✅ WeightQA - Nested delimiters with reconstruction (text protocol)
-3. ✅ TFO1 - Fixed-position with binary bytes (mixed text/binary)
-4. ✅ PHMeter - Content-based multi-segment (text protocol)
-5. ✅ JIK6CAB - Most complex: State machine multi-segment package with markers (text protocol)
-6. ✅ BinaryScaleDevice - Pure binary/hex protocol with checksum (binary protocol)
+1. ✅ **CordDEFENDER3000** - Simple space-delimited (text protocol)
+   - Shows: Hex + Text format, ASCII encoding, CR LF terminator
+2. ✅ **WeightQA** - Nested delimiters with reconstruction (text protocol)
+   - Shows: Hex + Text format, nested parsing (slash + space delimiters)
+3. ✅ **TFO1** - Fixed-position with binary bytes (mixed text/binary)
+   - Shows: Segment-by-segment hex breakdown, special binary bytes (0xF4, 0xF3, 0xF2)
+4. ✅ **PHMeter** - Content-based multi-segment (text protocol)
+   - Shows: UTF-8 special characters (°C), content-based parsing
+5. ✅ **JIK6CAB** - Most complex: State machine multi-segment package with markers (text protocol)
+   - Shows: Complete 14-segment breakdown with hex for each segment
+6. ✅ **BinaryScaleDevice** - Pure binary/hex protocol with checksum (binary protocol)
+   - Shows: Binary parsing, big-endian conversion, bit masking, XOR checksum
 
-All examples include both **parse** and **serialize** configurations for every field.
+**All examples now include:**
+- ✅ Hex byte representation
+- ✅ Text/ASCII representation
+- ✅ Visual byte-by-byte breakdown
+- ✅ Parse and serialize configurations
+- ✅ Production code examples
 
 ---
 
