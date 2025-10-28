@@ -2,9 +2,9 @@
 
 ## Protocol Definition File Format
 
-**Document Version**: 2.1
+**Document Version**: 2.2
 **Last Updated**: 2025-10-28
-**Status**: Design Phase - Complete (Terminology Updated)
+**Status**: Design Phase - Complete (Enhanced with Hex Examples)
 
 **Related Documents**:
 - **00-Requirements-Specification.md** - Requirements for definition files
