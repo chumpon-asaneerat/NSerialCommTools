@@ -163,6 +163,18 @@
     <Compile Include="Models\PackageInfo.cs" />
     <Compile Include="Models\ProtocolAnalyzerModel.cs" />
     <Compile Include="Models\SegmentInfo.cs" />
+    <Compile Include="Pages\AnalyzerPage.xaml.cs">
+      <DependentUpon>AnalyzerPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ExportPage.xaml.cs">
+      <DependentUpon>ExportPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\FieldEditorPage.xaml.cs">
+      <DependentUpon>FieldEditorPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\LogDataPage.xaml.cs">
+      <DependentUpon>LogDataPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -203,6 +215,22 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
+    <Page Include="Pages\AnalyzerPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\ExportPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\FieldEditorPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\LogDataPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <None Include="v2\Analyzers\DelimiterDetector.cs" />
@@ -225,7 +253,6 @@
     <None Include="v2\Parsers\StateMachineParser.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Pages\" />
     <Folder Include="v2\Generators\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
