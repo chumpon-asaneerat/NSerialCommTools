@@ -1,9 +1,13 @@
 # Dual-Format Design Pattern (Hex + Text)
 
 **Document:** Dual-Format Data Model Design
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2025-10-28
 **Purpose:** Explain the Hex + Text dual representation pattern used throughout the Protocol Analyzer
+
+**Updates:**
+- v1.0: Initial dual-format design
+- v1.1: Removed obsolete RawData properties - clean implementation
 
 ---
 
@@ -273,4 +277,14 @@ public string RawHex
 **This design ensures the Protocol Analyzer can handle ANY serial protocol - from simple ASCII text to complex binary formats with checksums!**
 
 **Last Updated:** 2025-10-28
-**Version:** 1.0
+**Version:** 1.1
+
+---
+
+## Summary of Changes
+
+### v1.1 Updates (2025-10-28)
+- ✅ Removed all `[Obsolete]` RawData properties
+- ✅ Clean, modern API with only RawBytes, RawHex, RawText
+- ✅ Simplified Length property (direct computation)
+- ✅ No backward compatibility needed (fresh implementation)
