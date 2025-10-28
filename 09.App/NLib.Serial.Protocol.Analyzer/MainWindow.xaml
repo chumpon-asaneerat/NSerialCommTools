@@ -3,11 +3,78 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NLib.Serial.Protocol.Analyzer.Pages"
         mc:Ignorable="d"
-        Title="Protocol Analyzer Tool"
+        Title="Serial Protocol Analyzer"
         Height="700"
         Width="1000"
         WindowStartupLocation="CenterScreen">
-    <Grid>
-    </Grid>
+
+    <DockPanel>
+
+        <!-- STATUS BAR (Bottom) -->
+        <StatusBar DockPanel.Dock="Bottom" Height="25" Background="#F0F0F0">
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="StatusText" Text="Ready" Margin="5,0,20,0"/>
+                    <TextBlock Text="│" Foreground="Gray" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="EntryCountText" Text="0 entries" Margin="5,0,20,0"/>
+                    <TextBlock Text="│" Foreground="Gray" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="ConfidenceStatusText" Text="Confidence: N/A" Margin="5,0,0,0"/>
+                </StackPanel>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- MAIN TABCONTROL (Center - fills space) -->
+        <TabControl x:Name="MainTabControl"
+                    Margin="10"
+                    SelectionChanged="MainTabControl_SelectionChanged">
+
+            <!-- Tab 1: Input Data -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="1" FontSize="16" FontWeight="Bold" Margin="0,0,5,0"/>
+                        <TextBlock Text="Input Data" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:LogDataPage x:Name="LogDataPage" />
+            </TabItem>
+
+            <!-- Tab 2: Analysis -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="2" FontSize="16" FontWeight="Bold" Margin="0,0,5,0"/>
+                        <TextBlock Text="Analysis" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:AnalyzerPage x:Name="AnalyzerPage" />
+            </TabItem>
+
+            <!-- Tab 3: Field Editor -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="3" FontSize="16" FontWeight="Bold" Margin="0,0,5,0"/>
+                        <TextBlock Text="Field Editor" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:FieldEditorPage x:Name="FieldEditorPage" />
+            </TabItem>
+
+            <!-- Tab 4: Export -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="4" FontSize="16" FontWeight="Bold" Margin="0,0,5,0"/>
+                        <TextBlock Text="Export" FontSize="13" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <local:ExportPage x:Name="ExportPage" />
+            </TabItem>
+
+        </TabControl>
+
+    </DockPanel>
 </Window>
