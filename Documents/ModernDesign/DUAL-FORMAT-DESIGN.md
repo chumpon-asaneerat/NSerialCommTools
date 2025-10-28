@@ -72,16 +72,10 @@ public class DataClass
         }
     }
 
-    // LEGACY COMPATIBILITY (obsolete)
-    [Obsolete("Use RawHex or RawText instead")]
-    public string RawData
+    // LENGTH (computed)
+    public int Length
     {
-        get { return RawText; }
-        set
-        {
-            if (!string.IsNullOrEmpty(value))
-                RawBytes = System.Text.Encoding.ASCII.GetBytes(value);
-        }
+        get { return (RawBytes != null) ? RawBytes.Length : 0; }
     }
 }
 ```
@@ -208,30 +202,6 @@ This handles:
 - UTF-8 multi-byte characters (°C = C2 B0)
 - UTF-16 wide characters
 - Latin-1 extended ASCII
-
----
-
-## Migration Strategy
-
-### Obsolete Properties
-
-Old code using `RawData` will still work but shows warning:
-
-```csharp
-[Obsolete("Use RawHex or RawText instead")]
-public string RawData { get; set; }
-```
-
-### Recommended Migration
-
-```csharp
-// OLD (discouraged)
-string data = entry.RawData;
-
-// NEW (explicit)
-string textView = entry.RawText;  // For text protocols
-string hexView = entry.RawHex;    // For binary protocols or debugging
-```
 
 ---
 

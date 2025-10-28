@@ -56,31 +56,13 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         }
 
         /// <summary>
-        /// Legacy property for backward compatibility (same as RawText)
-        /// </summary>
-        [Obsolete("Use RawHex or RawText instead")]
-        public string RawData
-        {
-            get { return RawText; }
-            set
-            {
-                if (!string.IsNullOrEmpty(value))
-                    RawBytes = System.Text.Encoding.ASCII.GetBytes(value);
-            }
-        }
-
-        /// <summary>
         /// Length of segment in bytes
         /// </summary>
         public int Length
         {
             get
             {
-                if (RawBytes != null)
-                    return RawBytes.Length;
-                if (!string.IsNullOrEmpty(RawData))
-                    return RawData.Length;
-                return 0;
+                return (RawBytes != null) ? RawBytes.Length : 0;
             }
         }
 
