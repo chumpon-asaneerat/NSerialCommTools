@@ -992,9 +992,9 @@ Blank\r\n
 
 ---
 
-### Example 5: JIK6CAB (Most Complex - State Machine Multi-Line)
+### Example 5: JIK6CAB (Most Complex - State Machine Multi-Segment)
 
-**Protocol**: 14-line package with start/end markers and state machine parsing
+**Protocol**: 14-segment package with start/end markers and state machine parsing
 
 ```
 ^KJIK000\r\n
@@ -1013,15 +1013,15 @@ E\r\n
 ~P1\r\n
 ```
 
-**Production Code Strategy**: State machine with package markers (^KJIK000 start, ~P1 end), line-by-line extraction with content detection (Contains("kg"), Contains("pcs"), Contains(":"), Contains("-"))
+**Production Code Strategy**: State machine with package markers (^KJIK000 start, ~P1 end), segment-by-segment extraction with content detection (Contains("kg"), Contains("pcs"), Contains(":"), Contains("-"))
 
 **Complexity Features**:
-- Multi-line package (14 lines)
-- Start marker detection
-- End marker validation
+- Multi-segment package (14 segments)
+- Package start marker detection
+- Package end marker validation
 - Combined DateTime (date + time)
 - Multiple weight fields with units
-- Reserved/skip lines
+- Reserved/skip segments
 - State tracking (bCompleted flag)
 
 ```json
@@ -1029,12 +1029,13 @@ E\r\n
   "deviceName": "JIK6CAB",
   "version": "1.0",
   "generatedDate": "2025-10-19T12:00:00Z",
-  "description": "JADEVER JIK-6CAB - Complex multi-line package protocol with state machine",
+  "description": "JADEVER JIK-6CAB - Complex multi-segment package protocol with state machine",
   "encoding": "ASCII",
-  "messageTerminator": "0D 0A",
-  "messageStructure": "multi-line-frame",
-  "messageHeader": "^KJIK000",
-  "messageFooter": "~P1",
+  "packageTerminator": "0D 0A",
+  "packageStructure": "package-based",
+  "packageStartMarker": "^KJIK000",
+  "packageEndMarker": "~P1",
+  "segmentSeparator": "0D 0A",
 
   "fields": [
     {
