@@ -1583,8 +1583,8 @@ All examples include both **parse** and **serialize** configurations for every f
 ---
 
 **Document Version**: 2.1
-**Last Updated**: 2025-10-21
-**Status**: Complete - Ready for Implementation
+**Last Updated**: 2025-10-28
+**Status**: Complete - Ready for Implementation (Terminology Updated)
 **Changes**:
 - v2.0: Complete rewrite with full schema and 4 device examples
-- v2.1: Added JIK6CAB example (most complex protocol)
+- v2.1: Updated terminology (Message→Package, Line→Segment, Frame→Package, MultiLine→PackageBased)
