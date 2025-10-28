@@ -144,12 +144,38 @@
 **Location:** `09.App/NLib.Serial.Protocol.Analyzer/Pages/`
 **Reference:** Document 06 v3.0 (Section 4.1)
 
-### 3.1 XAML Layout
-- [ ] **LogDataPage.xaml** - Page 1 layout
-  - Detection Configuration Panel (top, 30%)
-  - Log Data Panel (bottom, 70%)
+**Implementation Order**: Create stubs first, then implement incrementally
+
+### 3.0 Preparation - Create Page Stubs (All 4 Pages)
+- [ ] **LogDataPage.xaml / .cs** - Empty UserControl with Setup() method
+  - Status: ⏳ Not Started
+  - Priority: 🔴 Do FIRST
+
+- [ ] **AnalyzerPage.xaml / .cs** - Empty UserControl with Setup() method
+  - Status: ⏳ Not Started
+  - Priority: 🔴 Do FIRST
+
+- [ ] **FieldEditorPage.xaml / .cs** - Empty UserControl with Setup() method
+  - Status: ⏳ Not Started
+  - Priority: 🔴 Do FIRST
+
+- [ ] **ExportPage.xaml / .cs** - Empty UserControl with Setup() method
+  - Status: ⏳ Not Started
+  - Priority: 🔴 Do FIRST
+
+### 3.1 LogDataPage - Main Layout Structure
+- [ ] **LogDataPage.xaml** - DockPanel layout
+  - DockPanel with two main sections
   - Status: ⏳ Not Started
   - Reference: Doc 06 Section 4.1
+
+- [ ] **Detection Configuration Panel** (DockPanel.Dock="Top", Height="200")
+  - GroupBox with "Detection Configuration" header
+  - Status: ⏳ Not Started
+
+- [ ] **Log Data Panel** (Fills remaining space)
+  - GroupBox with "Log Data" header
+  - Status: ⏳ Not Started
 
 ### 3.2 Detection Configuration Panel Components
 - [ ] **Package Start Marker Row**
