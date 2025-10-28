@@ -1558,15 +1558,36 @@ E\r\n                 ← Segment 13: Status Indicator
 
 ### Example 6: Binary Protocol Device (Hex/Binary Format)
 
-**Protocol**: Pure binary protocol with hex bytes, typical for industrial devices
+**Protocol Format:** Pure binary protocol with hex bytes, typical for industrial devices
 
-**Example Package**: `02 41 00 64 12 34 03 C5` (8 bytes)
-- Byte 0: STX (Start of Text) = 0x02
-- Byte 1: Device ID = 0x41 ('A')
-- Bytes 2-3: Weight (16-bit integer, big-endian) = 0x0064 = 100
-- Bytes 4-5: Status flags (16-bit) = 0x1234
-- Byte 6: ETX (End of Text) = 0x03
-- Byte 7: Checksum (XOR) = 0xC5
+**Complete Package (8 bytes):**
+```
+Hex:    02 41 00 64 12 34 03 C5
+        │  │  │  │  │  │  │  │
+        │  │  │  │  │  │  │  └─ Byte 7: Checksum (XOR of bytes 1-6) = 0xC5
+        │  │  │  │  │  │  └──── Byte 6: ETX (End of Text) = 0x03
+        │  │  │  │  └──┴────── Bytes 4-5: Status Flags (16-bit BE) = 0x1234
+        │  │  └──┴──────────── Bytes 2-3: Weight (16-bit BE) = 0x0064 = 100
+        │  └─────────────────── Byte 1: Device ID = 0x41 ('A')
+        └────────────────────── Byte 0: STX (Start of Text) = 0x02
+
+Breakdown:
+┌─────────┬────────┬──────────────────────────────────────────┐
+│ Offset  │ Hex    │ Description                              │
+├─────────┼────────┼──────────────────────────────────────────┤
+│ 0       │ 02     │ STX marker                               │
+│ 1       │ 41     │ Device ID ('A' in ASCII)                 │
+│ 2-3     │ 00 64  │ Weight = 100 (big-endian)               │
+│ 4-5     │ 12 34  │ Status = 0x1234 (bit flags)             │
+│         │        │   Bit 0 (0x0001): Stable = 0            │
+│         │        │   Bit 1 (0x0002): Overload = 0          │
+│ 6       │ 03     │ ETX marker                               │
+│ 7       │ C5     │ Checksum = 0x41^0x00^0x64^0x12^0x34^0x03│
+└─────────┴────────┴──────────────────────────────────────────┘
+
+Text Equivalent: <STX>A\x00d\x12\x34<ETX>Å
+(Not human readable - binary protocol)
+```
 
 **Production Code Strategy**: Fixed-position binary parsing with byte conversion
 
