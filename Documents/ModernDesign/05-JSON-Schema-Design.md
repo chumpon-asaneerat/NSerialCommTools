@@ -1987,9 +1987,10 @@ This JSON schema enables:
 
 ---
 
-**Document Version**: 2.1
+**Document Version**: 2.2
 **Last Updated**: 2025-10-28
-**Status**: Complete - Ready for Implementation (Terminology Updated)
+**Status**: Complete - Ready for Implementation (Enhanced with Hex Examples)
 **Changes**:
 - v2.0: Complete rewrite with full schema and 4 device examples
 - v2.1: Updated terminology (Message→Package, Line→Segment, Frame→Package, MultiLine→PackageBased)
+- v2.2: Enhanced ALL examples with hex byte representation + text format for better clarity
