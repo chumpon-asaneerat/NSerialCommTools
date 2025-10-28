@@ -633,9 +633,28 @@ Hex:    2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A
 
 ### Example 3: TFO1 (Header Byte + Fixed Position)
 
-**Protocol**: Multi-segment package with header byte switch
+**Protocol Format:** Multi-segment package with header byte switch
 
+**Segment Example 1 (F-field):**
 ```
+Text:   "F      0.0\r"
+Hex:    46 20 20 20 20 20 20 30 2E 30 0D
+        │  │  │  │  │  │  │  │  │  │  │
+        └─'F'└──── Spaces ────┘  └─"0.0"┘  └─CR
+```
+
+**Segment Example 2 (Date/Time with special bytes):**
+```
+Text:   "C20<0xF4> 02<0xF3> 2023<0xF2> MON 09:20AM\r"
+Hex:    43 32 30 F4 20 30 32 F3 20 32 30 32 33 F2 20 4D 4F 4E 20 30 39 3A 32 30 41 4D 0D
+        │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │
+        └─'C'       │     │     │         │     └────── "MON 09:20AM" ──────────┘        │
+           └─"20"──┘     │     │         │                                               │
+                         │     │         │                                               │
+                    Binary 0xF4│    Binary 0xF2                                          │
+                         └─"02"┘    └─"2023"┘                                           └─CR
+
+Full Package Structure:
 F      0.0\r
 H      0.0\r
 Q      0.0\r
