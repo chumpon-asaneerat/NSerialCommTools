@@ -844,17 +844,36 @@ V<0x31>\r\n
 
 ### Example 4: PHMeter (Content-Based Multi-Segment)
 
-**Protocol**: Multi-segment package with different content types
+**Protocol Format:** Multi-segment package with different content types
 
+**Segment 1 (pH + Temperature):**
 ```
-3.01pH 25.5°C ATC\r\n
-20-Feb-2023\r\n
-11:11\r\n
- \r\n
-3.01pH\r\n
-25.5°C ATC\r\n
-Auto EP Standard\r\n
-Blank\r\n
+Text:   "3.01pH 25.5°C ATC\r\n"
+Hex:    33 2E 30 31 70 48 20 32 35 2E 35 C2 B0 43 20 41 54 43 0D 0A
+        │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │
+        └───"3.01"──┘  │  │  └────"25.5"────┘  │  │  └──"ATC"──┘  │
+                       │  │                     │  │               │
+                    "pH" ─┘              UTF-8 "°C"            CR LF
+```
+
+**Segment 2 (Date):**
+```
+Text:   "20-Feb-2023\r\n"
+Hex:    32 30 2D 46 65 62 2D 32 30 32 33 0D 0A
+        │  │  │  │  │  │  │  │  │  │  │  │  │
+        └──────────"20-Feb-2023"───────────┘  └─CR LF
+```
+
+**Full Package Structure:**
+```
+3.01pH 25.5°C ATC\r\n      ← Main reading
+20-Feb-2023\r\n            ← Date
+11:11\r\n                  ← Time
+ \r\n                      ← Blank segment
+3.01pH\r\n                 ← pH only
+25.5°C ATC\r\n             ← Temp only
+Auto EP Standard\r\n       ← Method
+Blank\r\n                  ← Sample type
 ```
 
 **Production Code Strategy**: if/else on segment content (Contains("pH"), Contains("-"), Contains(":"))
