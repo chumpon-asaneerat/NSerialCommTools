@@ -150,6 +150,19 @@
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\AnalysisResult.cs" />
+    <Compile Include="Models\DataType.cs" />
+    <Compile Include="Models\DetectionConfiguration.cs" />
+    <Compile Include="Models\DetectionMode.cs" />
+    <Compile Include="Models\DetectionModeInfo.cs" />
+    <Compile Include="Models\EncodingType.cs" />
+    <Compile Include="Models\EndianType.cs" />
+    <Compile Include="Models\FieldInfo.cs" />
+    <Compile Include="Models\LogEntry.cs" />
+    <Compile Include="Models\LogFile.cs" />
+    <Compile Include="Models\PackageInfo.cs" />
+    <Compile Include="Models\ProtocolAnalyzerModel.cs" />
+    <Compile Include="Models\SegmentInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -212,6 +225,7 @@
     <None Include="v2\Parsers\StateMachineParser.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Pages\" />
     <Folder Include="v2\Generators\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

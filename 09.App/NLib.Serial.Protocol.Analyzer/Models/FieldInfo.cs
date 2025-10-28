@@ -44,9 +44,46 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         public string Format { get; set; }
 
         /// <summary>
-        /// Sample value from analysis
+        /// Sample value as raw bytes (source of truth)
         /// </summary>
-        public string SampleValue { get; set; }
+        public byte[] SampleBytes { get; set; }
+
+        /// <summary>
+        /// Sample value as hex string (computed from SampleBytes)
+        /// Example: "02 41 00 64"
+        /// </summary>
+        public string SampleHex
+        {
+            get
+            {
+                if (SampleBytes == null || SampleBytes.Length == 0)
+                    return string.Empty;
+                return BitConverter.ToString(SampleBytes).Replace("-", " ");
+            }
+        }
+
+        /// <summary>
+        /// Sample value as text string (computed from SampleBytes using encoding)
+        /// Example: "AB\x00d"
+        /// </summary>
+        public string SampleText
+        {
+            get
+            {
+                if (SampleBytes == null || SampleBytes.Length == 0)
+                    return string.Empty;
+
+                try
+                {
+                    var encoding = GetEncoding();
+                    return encoding.GetString(SampleBytes);
+                }
+                catch
+                {
+                    return "[Binary Data]";
+                }
+            }
+        }
 
         /// <summary>
         /// Segment index (if field belongs to a specific segment in multi-segment package)
@@ -71,7 +108,7 @@ namespace NLib.Serial.Protocol.Analyzer.Models
             EncodingType = EncodingType.ASCII;
             EndianType = EndianType.LittleEndian;
             Format = string.Empty;
-            SampleValue = string.Empty;
+            SampleBytes = null;
             SegmentIndex = -1;
             Description = string.Empty;
         }
@@ -92,9 +129,30 @@ namespace NLib.Serial.Protocol.Analyzer.Models
             EncodingType = EncodingType.ASCII;
             EndianType = EndianType.LittleEndian;
             Format = string.Empty;
-            SampleValue = string.Empty;
+            SampleBytes = null;
             SegmentIndex = -1;
             Description = string.Empty;
+        }
+
+        /// <summary>
+        /// Gets the System.Text.Encoding based on EncodingType
+        /// </summary>
+        /// <returns>Encoding instance</returns>
+        private System.Text.Encoding GetEncoding()
+        {
+            switch (EncodingType)
+            {
+                case EncodingType.ASCII:
+                    return System.Text.Encoding.ASCII;
+                case EncodingType.UTF8:
+                    return System.Text.Encoding.UTF8;
+                case EncodingType.UTF16:
+                    return System.Text.Encoding.Unicode;
+                case EncodingType.Latin1:
+                    return System.Text.Encoding.GetEncoding("ISO-8859-1");
+                default:
+                    return System.Text.Encoding.ASCII;
+            }
         }
 
         /// <summary>

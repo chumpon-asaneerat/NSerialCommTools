@@ -26,14 +26,59 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         public int EndIndex { get; set; }
 
         /// <summary>
-        /// Raw data of the entire package
-        /// </summary>
-        public string RawData { get; set; }
-
-        /// <summary>
-        /// Raw data as byte array
+        /// Raw data as byte array (source of truth)
         /// </summary>
         public byte[] RawBytes { get; set; }
+
+        /// <summary>
+        /// Raw data as hex string (computed from RawBytes)
+        /// Example: "02 41 00 64 12 34 03 C5"
+        /// </summary>
+        public string RawHex
+        {
+            get
+            {
+                if (RawBytes == null || RawBytes.Length == 0)
+                    return string.Empty;
+                return BitConverter.ToString(RawBytes).Replace("-", " ");
+            }
+        }
+
+        /// <summary>
+        /// Raw data as text string (computed from RawBytes)
+        /// Example: "^KJIK000\r\n2023-11-07\r\n..."
+        /// </summary>
+        public string RawText
+        {
+            get
+            {
+                if (RawBytes == null || RawBytes.Length == 0)
+                    return string.Empty;
+
+                try
+                {
+                    return System.Text.Encoding.ASCII.GetString(RawBytes);
+                }
+                catch
+                {
+                    return "[Binary Data]";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Legacy property for backward compatibility (same as RawText)
+        /// </summary>
+        [Obsolete("Use RawHex or RawText instead")]
+        public string RawData
+        {
+            get { return RawText; }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                    RawBytes = System.Text.Encoding.ASCII.GetBytes(value);
+            }
+        }
 
         /// <summary>
         /// List of segments within this package
@@ -76,13 +121,28 @@ namespace NLib.Serial.Protocol.Analyzer.Models
             PackageNumber = 0;
             StartIndex = 0;
             EndIndex = 0;
-            RawData = string.Empty;
+            RawBytes = null;
             Segments = new List<SegmentInfo>();
             Timestamp = DateTime.Now;
         }
 
         /// <summary>
-        /// Constructor with parameters
+        /// Constructor with byte array (PREFERRED)
+        /// </summary>
+        /// <param name="packageNumber">Package number</param>
+        /// <param name="rawBytes">Raw package data bytes</param>
+        public PackageInfo(int packageNumber, byte[] rawBytes)
+        {
+            PackageNumber = packageNumber;
+            StartIndex = 0;
+            EndIndex = 0;
+            RawBytes = rawBytes;
+            Segments = new List<SegmentInfo>();
+            Timestamp = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Constructor with text string (converts to bytes)
         /// </summary>
         /// <param name="packageNumber">Package number</param>
         /// <param name="rawData">Raw package data</param>
@@ -91,7 +151,7 @@ namespace NLib.Serial.Protocol.Analyzer.Models
             PackageNumber = packageNumber;
             StartIndex = 0;
             EndIndex = 0;
-            RawData = rawData ?? string.Empty;
+            RawBytes = System.Text.Encoding.ASCII.GetBytes(rawData ?? string.Empty);
             Segments = new List<SegmentInfo>();
             Timestamp = DateTime.Now;
         }

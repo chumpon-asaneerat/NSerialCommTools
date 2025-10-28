@@ -13,14 +13,60 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         public DateTime Timestamp { get; set; }
 
         /// <summary>
-        /// Raw data as string (may contain hex representation or text)
-        /// </summary>
-        public string RawData { get; set; }
-
-        /// <summary>
-        /// Raw data as byte array (original binary form)
+        /// Raw data as byte array (source of truth - original binary form)
         /// </summary>
         public byte[] RawBytes { get; set; }
+
+        /// <summary>
+        /// Raw data as hex string (computed from RawBytes)
+        /// Example: "02 41 00 64 12 34 03 C5"
+        /// </summary>
+        public string RawHex
+        {
+            get
+            {
+                if (RawBytes == null || RawBytes.Length == 0)
+                    return string.Empty;
+                return BitConverter.ToString(RawBytes).Replace("-", " ");
+            }
+        }
+
+        /// <summary>
+        /// Raw data as text string (computed from RawBytes using ASCII)
+        /// Example: "  0.360 kg    G"
+        /// </summary>
+        public string RawText
+        {
+            get
+            {
+                if (RawBytes == null || RawBytes.Length == 0)
+                    return string.Empty;
+
+                try
+                {
+                    return System.Text.Encoding.ASCII.GetString(RawBytes);
+                }
+                catch
+                {
+                    return "[Binary Data]";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Legacy property for backward compatibility (same as RawText)
+        /// </summary>
+        [Obsolete("Use RawHex or RawText instead")]
+        public string RawData
+        {
+            get { return RawText; }
+            set
+            {
+                // If setting from text, convert to bytes
+                if (!string.IsNullOrEmpty(value))
+                    RawBytes = System.Text.Encoding.ASCII.GetBytes(value);
+            }
+        }
 
         /// <summary>
         /// Direction of communication (TX/RX, Send/Receive, etc.)
@@ -48,25 +94,12 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         public LogEntry()
         {
             Timestamp = DateTime.Now;
-            RawData = string.Empty;
+            RawBytes = null;
             Direction = string.Empty;
         }
 
         /// <summary>
-        /// Constructor with parameters
-        /// </summary>
-        /// <param name="timestamp">Timestamp</param>
-        /// <param name="rawData">Raw data string</param>
-        /// <param name="direction">Direction (TX/RX)</param>
-        public LogEntry(DateTime timestamp, string rawData, string direction)
-        {
-            Timestamp = timestamp;
-            RawData = rawData ?? string.Empty;
-            Direction = direction ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Constructor with byte array
+        /// Constructor with byte array (PREFERRED)
         /// </summary>
         /// <param name="timestamp">Timestamp</param>
         /// <param name="rawBytes">Raw data bytes</param>
@@ -75,7 +108,19 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         {
             Timestamp = timestamp;
             RawBytes = rawBytes;
-            RawData = BitConverter.ToString(rawBytes).Replace("-", " "); // Hex representation
+            Direction = direction ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Constructor with text string (converts to bytes)
+        /// </summary>
+        /// <param name="timestamp">Timestamp</param>
+        /// <param name="rawData">Raw data string</param>
+        /// <param name="direction">Direction (TX/RX)</param>
+        public LogEntry(DateTime timestamp, string rawData, string direction)
+        {
+            Timestamp = timestamp;
+            RawBytes = System.Text.Encoding.ASCII.GetBytes(rawData ?? string.Empty);
             Direction = direction ?? string.Empty;
         }
     }
