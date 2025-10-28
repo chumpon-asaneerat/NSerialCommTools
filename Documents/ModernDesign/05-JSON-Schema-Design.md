@@ -433,8 +433,8 @@ How **NDevice<T>** converts T properties to bytes.
   "generatedDate": "2025-10-19T12:00:00Z",
   "description": "Cord weight scale - simple space-delimited protocol",
   "encoding": "ASCII",
-  "messageTerminator": "0D 0A",
-  "messageStructure": "single-line",
+  "packageTerminator": "0D 0A",
+  "packageStructure": "single-package",
 
   "fields": [
     {
@@ -522,8 +522,8 @@ How **NDevice<T>** converts T properties to bytes.
   "generatedDate": "2025-10-19T12:00:00Z",
   "description": "Quality assurance weight scale - nested delimiter protocol",
   "encoding": "ASCII",
-  "messageTerminator": "0D 0A",
-  "messageStructure": "single-line",
+  "packageTerminator": "0D 0A",
+  "packageStructure": "single-package",
 
   "fields": [
     {
@@ -613,7 +613,7 @@ How **NDevice<T>** converts T properties to bytes.
 
 ### Example 3: TFO1 (Header Byte + Fixed Position)
 
-**Protocol**: Multi-line frame with header byte switch
+**Protocol**: Multi-segment package with header byte switch
 
 ```
 F      0.0\r
@@ -625,19 +625,20 @@ C20<0xF4> 02<0xF3> 2023<0xF2> MON 09:20AM\r
 V<0x31>\r\n
 ```
 
-**Production Code Strategy**: Switch on first byte, GetString(offset, length)
+**Production Code Strategy**: Switch on first byte of each segment, GetString(offset, length)
 
 ```json
 {
   "deviceName": "TFO1",
   "version": "1.0",
   "generatedDate": "2025-10-19T12:00:00Z",
-  "description": "TFO1 device - complex multi-line protocol with binary bytes",
+  "description": "TFO1 device - complex multi-segment package protocol with binary bytes",
   "encoding": "ASCII",
-  "messageTerminator": "0D",
-  "messageStructure": "multi-line-frame",
-  "messageHeader": "V31 0D 0A",
-  "messageFooter": "56 0D 0A",
+  "packageTerminator": "56 0D 0A",
+  "packageStructure": "package-based",
+  "packageStartMarker": "V31 0D 0A",
+  "packageEndMarker": "56 0D 0A",
+  "segmentSeparator": "0D",
 
   "fields": [
     {
@@ -802,9 +803,9 @@ V<0x31>\r\n
 
 ---
 
-### Example 4: PHMeter (Content-Based Multi-Line)
+### Example 4: PHMeter (Content-Based Multi-Segment)
 
-**Protocol**: Multi-line with different content types
+**Protocol**: Multi-segment package with different content types
 
 ```
 3.01pH 25.5°C ATC\r\n
@@ -817,17 +818,18 @@ Auto EP Standard\r\n
 Blank\r\n
 ```
 
-**Production Code Strategy**: if/else on line content (Contains("pH"), Contains("-"), Contains(":"))
+**Production Code Strategy**: if/else on segment content (Contains("pH"), Contains("-"), Contains(":"))
 
 ```json
 {
   "deviceName": "PHMeter",
   "version": "1.0",
   "generatedDate": "2025-10-19T12:00:00Z",
-  "description": "pH Meter - content-based multi-line protocol",
+  "description": "pH Meter - content-based multi-segment package protocol",
   "encoding": "ASCII",
-  "messageTerminator": "0D 0A",
-  "messageStructure": "multi-line-block",
+  "packageTerminator": "0D 0A",
+  "packageStructure": "package-based",
+  "segmentSeparator": "0D 0A",
 
   "fields": [
     {
