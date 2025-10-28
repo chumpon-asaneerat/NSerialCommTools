@@ -2,9 +2,9 @@
 
 ## Protocol Definition File Format
 
-**Document Version**: 2.0
-**Last Updated**: 2025-10-19
-**Status**: Design Phase - Complete
+**Document Version**: 2.1
+**Last Updated**: 2025-10-28
+**Status**: Design Phase - Complete (Terminology Updated)
 
 **Related Documents**:
 - **00-Requirements-Specification.md** - Requirements for definition files
@@ -82,25 +82,30 @@ The Protocol Definition File is a JSON document that describes how to:
       "description": "Text encoding for protocol"
     },
 
-    "messageTerminator": {
+    "packageTerminator": {
       "type": "string",
-      "description": "Message terminator (hex string, e.g., '0D 0A')"
+      "description": "Package terminator (hex string, e.g., '0D 0A')"
     },
 
-    "messageStructure": {
+    "packageStructure": {
       "type": "string",
-      "enum": ["single-line", "multi-line-frame", "multi-line-block", "variable-length"],
-      "description": "Message structure type"
+      "enum": ["single-package", "package-based"],
+      "description": "Package structure type (single-package or package-based multi-segment)"
     },
 
-    "messageHeader": {
+    "packageStartMarker": {
       "type": "string",
-      "description": "Header pattern for multi-line messages"
+      "description": "Start marker pattern for package-based protocols"
     },
 
-    "messageFooter": {
+    "packageEndMarker": {
       "type": "string",
-      "description": "Footer pattern for multi-line messages"
+      "description": "End marker pattern for package-based protocols"
+    },
+
+    "segmentSeparator": {
+      "type": "string",
+      "description": "Separator between segments within a package (e.g., '0D 0A')"
     },
 
     "fields": {
