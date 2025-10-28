@@ -1457,6 +1457,279 @@ E\r\n
 
 ---
 
+### Example 6: Binary Protocol Device (Hex/Binary Format)
+
+**Protocol**: Pure binary protocol with hex bytes, typical for industrial devices
+
+**Example Package**: `02 41 00 64 12 34 03 C5` (8 bytes)
+- Byte 0: STX (Start of Text) = 0x02
+- Byte 1: Device ID = 0x41 ('A')
+- Bytes 2-3: Weight (16-bit integer, big-endian) = 0x0064 = 100
+- Bytes 4-5: Status flags (16-bit) = 0x1234
+- Byte 6: ETX (End of Text) = 0x03
+- Byte 7: Checksum (XOR) = 0xC5
+
+**Production Code Strategy**: Fixed-position binary parsing with byte conversion
+
+```json
+{
+  "deviceName": "BinaryScaleDevice",
+  "version": "1.0",
+  "generatedDate": "2025-10-28T12:00:00Z",
+  "description": "Binary protocol industrial scale - pure hex format",
+  "encoding": "ASCII",
+  "packageTerminator": "03",
+  "packageStructure": "single-package",
+  "packageStartMarker": "02",
+  "packageEndMarker": "03",
+
+  "fields": [
+    {
+      "name": "STX",
+      "dataType": "binary",
+      "position": 0,
+      "required": true,
+      "description": "Start byte (0x02)",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 0,
+        "length": 1
+      },
+
+      "serialize": {
+        "format": "X2"
+      }
+    },
+
+    {
+      "name": "DeviceId",
+      "dataType": "binary",
+      "position": 1,
+      "required": true,
+      "description": "Device ID byte",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 1,
+        "length": 1
+      },
+
+      "serialize": {
+        "format": "X2"
+      }
+    },
+
+    {
+      "name": "Weight",
+      "dataType": "int",
+      "position": 2,
+      "required": true,
+      "description": "Weight value (16-bit big-endian)",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 2,
+        "length": 2,
+        "format": "BigEndian16"
+      },
+
+      "serialize": {
+        "format": "X4",
+        "width": 4,
+        "alignment": "right"
+      }
+    },
+
+    {
+      "name": "StatusFlags",
+      "dataType": "binary",
+      "position": 3,
+      "required": true,
+      "description": "Status flags (16-bit)",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 4,
+        "length": 2,
+        "format": "BigEndian16"
+      },
+
+      "serialize": {
+        "format": "X4"
+      }
+    },
+
+    {
+      "name": "Stable",
+      "dataType": "bool",
+      "position": 4,
+      "required": false,
+      "description": "Stable flag (bit 0 of StatusFlags)",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 4,
+        "length": 2,
+        "format": "BitMask",
+        "pattern": "0x0001"
+      },
+
+      "serialize": {
+        "format": null
+      }
+    },
+
+    {
+      "name": "Overload",
+      "dataType": "bool",
+      "position": 5,
+      "required": false,
+      "description": "Overload flag (bit 1 of StatusFlags)",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 4,
+        "length": 2,
+        "format": "BitMask",
+        "pattern": "0x0002"
+      },
+
+      "serialize": {
+        "format": null
+      }
+    },
+
+    {
+      "name": "ETX",
+      "dataType": "binary",
+      "position": 6,
+      "required": true,
+      "description": "End byte (0x03)",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 6,
+        "length": 1
+      },
+
+      "serialize": {
+        "format": "X2"
+      }
+    },
+
+    {
+      "name": "Checksum",
+      "dataType": "binary",
+      "position": 7,
+      "required": true,
+      "description": "XOR checksum of bytes 1-6",
+
+      "parse": {
+        "method": "fixed-position",
+        "offset": 7,
+        "length": 1,
+        "format": "Checksum-XOR"
+      },
+
+      "serialize": {
+        "format": "X2"
+      }
+    }
+  ],
+
+  "messages": [
+    {
+      "messageId": "WeightReading",
+      "messageType": "response",
+      "pattern": "^02",
+      "fieldNames": ["STX", "DeviceId", "Weight", "StatusFlags", "Stable", "Overload", "ETX", "Checksum"],
+      "terminator": "03"
+    }
+  ],
+
+  "validation": {
+    "rules": [
+      {
+        "name": "STX_Validation",
+        "type": "exact-value",
+        "field": "STX",
+        "expectedValue": "02"
+      },
+      {
+        "name": "ETX_Validation",
+        "type": "exact-value",
+        "field": "ETX",
+        "expectedValue": "03"
+      },
+      {
+        "name": "Checksum_Validation",
+        "type": "checksum",
+        "algorithm": "XOR",
+        "startOffset": 1,
+        "endOffset": 6,
+        "checksumOffset": 7
+      }
+    ]
+  }
+}
+```
+
+**Key Implementation Notes**:
+
+1. **Binary Parsing**:
+   ```csharp
+   // Read binary bytes directly
+   byte[] package = new byte[] { 0x02, 0x41, 0x00, 0x64, 0x12, 0x34, 0x03, 0xC5 };
+
+   // Parse fields
+   byte stx = package[0];  // 0x02
+   byte deviceId = package[1];  // 0x41
+
+   // 16-bit big-endian conversion
+   int weight = (package[2] << 8) | package[3];  // 0x0064 = 100
+
+   // Status flags
+   ushort statusFlags = (ushort)((package[4] << 8) | package[5]);  // 0x1234
+   bool stable = (statusFlags & 0x0001) != 0;
+   bool overload = (statusFlags & 0x0002) != 0;
+   ```
+
+2. **Checksum Calculation**:
+   ```csharp
+   // XOR checksum of bytes 1-6
+   byte checksum = 0x00;
+   for (int i = 1; i <= 6; i++)
+   {
+       checksum ^= package[i];
+   }
+   // Verify: checksum == package[7]
+   ```
+
+3. **Bit Masking**:
+   - Extract individual flags from status word
+   - Pattern: `(statusFlags & 0x0001) != 0` for bit 0
+   - Pattern: `(statusFlags & 0x0002) != 0` for bit 1
+
+4. **Endianness Handling**:
+   - Big-endian: Most significant byte first
+   - Conversion: `(byte1 << 8) | byte2`
+   - Alternative: `BitConverter.ToInt16()` with endian swap
+
+5. **Production Code Mapping**:
+   ```csharp
+   // Existing C# class
+   public class BinaryScaleData
+   {
+       public byte DeviceId { get; set; }
+       public int Weight { get; set; }
+       public bool Stable { get; set; }
+       public bool Overload { get; set; }
+   }
+   ```
+
+---
+
 ## Validation Rules
 
 ### Definition File Validation
@@ -1572,11 +1845,12 @@ This JSON schema enables:
 ✅ **Production-Tested** - Based on real device protocols
 
 ### Complete Examples Provided:
-1. ✅ CordDEFENDER3000 - Simple space-delimited
-2. ✅ WeightQA - Nested delimiters with reconstruction
-3. ✅ TFO1 - Fixed-position with binary bytes
-4. ✅ PHMeter - Content-based multi-line
-5. ✅ JIK6CAB - Most complex: State machine multi-line package with markers
+1. ✅ CordDEFENDER3000 - Simple space-delimited (text protocol)
+2. ✅ WeightQA - Nested delimiters with reconstruction (text protocol)
+3. ✅ TFO1 - Fixed-position with binary bytes (mixed text/binary)
+4. ✅ PHMeter - Content-based multi-segment (text protocol)
+5. ✅ JIK6CAB - Most complex: State machine multi-segment package with markers (text protocol)
+6. ✅ BinaryScaleDevice - Pure binary/hex protocol with checksum (binary protocol)
 
 All examples include both **parse** and **serialize** configurations for every field.
 
