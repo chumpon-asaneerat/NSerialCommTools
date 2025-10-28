@@ -1052,23 +1052,64 @@ Blank\r\n                  ← Sample type
 
 ### Example 5: JIK6CAB (Most Complex - State Machine Multi-Segment)
 
-**Protocol**: 14-segment package with start/end markers and state machine parsing
+**Protocol Format:** 14-segment package with start/end markers and state machine parsing
 
+**Segment 1 (Start Marker):**
 ```
-^KJIK000\r\n
-2023-11-07\r\n
-17:19:38\r\n
-  0.00 kg\r\n
-  1.94 kg\r\n
-0\r\n
-0\r\n
-  1.94 kg\r\n
-  1.94 kg\r\n
-    0 pcs\r\n
- \r\n
- \r\n
-E\r\n
-~P1\r\n
+Text:   "^KJIK000\r\n"
+Hex:    5E 4B 4A 49 4B 30 30 30 0D 0A
+        │  │  │  │  │  │  │  │  │  │
+        └──────"^KJIK000"────────┘  └─CR LF
+```
+
+**Segment 2 (Date):**
+```
+Text:   "2023-11-07\r\n"
+Hex:    32 30 32 33 2D 31 31 2D 30 37 0D 0A
+        │  │  │  │  │  │  │  │  │  │  │  │
+        └────────"2023-11-07"────────┘  └─CR LF
+```
+
+**Segment 3 (Time):**
+```
+Text:   "17:19:38\r\n"
+Hex:    31 37 3A 31 39 3A 33 38 0D 0A
+        │  │  │  │  │  │  │  │  │  │
+        └──────"17:19:38"───────┘  └─CR LF
+```
+
+**Segment 4 (Tare Weight):**
+```
+Text:   "  0.00 kg\r\n"
+Hex:    20 20 30 2E 30 30 20 6B 67 0D 0A
+        │  │  │  │  │  │  │  │  │  │  │
+        └─Sp─┘  └──"0.00"─┘  └─"kg"┘  └─CR LF
+```
+
+**Segment 14 (End Marker):**
+```
+Text:   "~P1\r\n"
+Hex:    7E 50 31 0D 0A
+        │  │  │  │  │
+        └─"~P1"┘  └─CR LF
+```
+
+**Full Package Structure (14 segments):**
+```
+^KJIK000\r\n          ← Segment 1: Start marker
+2023-11-07\r\n        ← Segment 2: Date
+17:19:38\r\n          ← Segment 3: Time
+  0.00 kg\r\n         ← Segment 4: Tare Weight (TW)
+  1.94 kg\r\n         ← Segment 5: Gross Weight (GW)
+0\r\n                 ← Segment 6: Reserved 1
+0\r\n                 ← Segment 7: Reserved 2
+  1.94 kg\r\n         ← Segment 8: Net Weight (NW)
+  1.94 kg\r\n         ← Segment 9: Display Weight
+    0 pcs\r\n         ← Segment 10: Piece Count
+ \r\n                 ← Segment 11: Blank
+ \r\n                 ← Segment 12: Blank
+E\r\n                 ← Segment 13: Status Indicator
+~P1\r\n               ← Segment 14: End marker
 ```
 
 **Production Code Strategy**: State machine with package markers (^KJIK000 start, ~P1 end), segment-by-segment extraction with content detection (Contains("kg"), Contains("pcs"), Contains(":"), Contains("-"))
