@@ -422,7 +422,16 @@ How **NDevice<T>** converts T properties to bytes.
 
 ### Example 1: CordDEFENDER3000 (Simple Space-Delimited)
 
-**Protocol**: `   0.360 kg    G\r\n`
+**Protocol Format:**
+```
+Text:   "   0.360 kg    G\r\n"
+Hex:    20 20 20 30 2E 33 36 30 20 6B 67 20 20 20 20 47 0D 0A
+        │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │
+        └─ Spaces  └─── "0.360" ──┘ │  │  │  │  │  │  │  │  │
+                                    └─ "kg" ─┘  └─Spaces─┘  │  │
+                                                            └─"G"┘
+                                                               └─ CR LF
+```
 
 **Production Code Strategy**: String.Split(" ", RemoveEmptyEntries)
 
@@ -511,7 +520,18 @@ How **NDevice<T>** converts T properties to bytes.
 
 ### Example 2: WeightQA (Nested Delimiters)
 
-**Protocol**: `+007.12/3 G S\r\n`
+**Protocol Format:**
+```
+Text:   "+007.12/3 G S\r\n"
+Hex:    2B 30 30 37 2E 31 32 2F 33 20 47 20 53 0D 0A
+        │  │  │  │  │  │  │  │  │  │  │  │  │  │  │
+        │  └───── "007.12" ────┘  │  │  │  │  │  │  │
+        └─ "+" (sign)             │  │  │  │  │  │  │
+                                  └─"/"┘  │  │  │  │
+                                          └─"G"┘  │  │
+                                                  └─"S"┘
+                                                     └─ CR LF
+```
 
 **Production Code Strategy**: Split("/") then Split(" "), reconstruct weight
 
