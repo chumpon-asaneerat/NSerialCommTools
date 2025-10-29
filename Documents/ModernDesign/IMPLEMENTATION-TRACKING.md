@@ -186,39 +186,39 @@
   - Status: ✅ Completed (2025-10-29)
 
 ### 3.2 Detection Configuration Panel - UI Components
-- [ ] **Package Start Marker Row**
+- [x] **Package Start Marker Row**
   - 3 RadioButtons: "Auto", "Manual", "None" (Horizontal StackPanel)
   - TextBox for detected/manual value (enabled based on mode)
   - Label showing detected result (if Auto mode)
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 06 Section 4.1.1
 
-- [ ] **Package End Marker Row**
+- [x] **Package End Marker Row**
   - 3 RadioButtons: "Auto", "Manual", "None" (Horizontal StackPanel)
   - TextBox for detected/manual value
   - Label showing detected result (if Auto mode)
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 06 Section 4.1.1
 
-- [ ] **Segment Separator Row**
+- [x] **Segment Separator Row**
   - 3 RadioButtons: "Auto", "Manual", "None" (Horizontal StackPanel)
   - TextBox for detected/manual value
   - Label showing detected result (if Auto mode)
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 06 Section 4.1.1
 
-- [ ] **Encoding Row**
+- [x] **Encoding Row**
   - 2 RadioButtons: "Auto", "Manual" (Horizontal StackPanel)
   - ComboBox with 4 options: ASCII, UTF-8, UTF-16, Latin-1
   - Label showing detected result (if Auto mode)
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 06 Section 4.1.1
 
-- [ ] **Action Buttons Row**
+- [x] **Action Buttons Row**
   - "Apply Configuration" button (saves to model)
   - "Clear All" button (resets all detection)
   - Horizontal StackPanel, right-aligned
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
 
 ### 3.3 Log Data Panel - UI Components
 - [ ] **Toolbar** (DockPanel.Dock="Top")
