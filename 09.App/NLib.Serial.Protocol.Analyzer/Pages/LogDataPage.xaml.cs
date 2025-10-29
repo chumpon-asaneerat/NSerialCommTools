@@ -31,6 +31,12 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Phase 3.4 - Wire up event handlers
             WireUpEventHandlers();
 
+            // Phase 3.3/3.4 - Bind DataGrid to model's LogFile.Entries
+            if (_model.LogFile != null)
+            {
+                LogEntriesDataGrid.ItemsSource = _model.LogFile.Entries;
+            }
+
             // TODO: Phase 3.4 - Initialize UI from model if data exists
         }
 
