@@ -151,12 +151,20 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         }
 
         /// <summary>
+        /// Display text for UI binding (e.g., "Package #1 (120 bytes)")
+        /// </summary>
+        public string DisplayText
+        {
+            get { return $"Package #{PackageNumber} ({Length} bytes)"; }
+        }
+
+        /// <summary>
         /// Gets a display string for this package
         /// </summary>
         /// <returns>Display string (e.g., "Package #1 (120 bytes)")</returns>
         public string GetDisplayString()
         {
-            return $"Package #{PackageNumber} ({Length} bytes)";
+            return DisplayText;
         }
     }
 }
