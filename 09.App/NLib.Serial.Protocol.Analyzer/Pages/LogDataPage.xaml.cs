@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows.Controls;
 using NLib.Serial.Protocol.Analyzer.Models;
 
