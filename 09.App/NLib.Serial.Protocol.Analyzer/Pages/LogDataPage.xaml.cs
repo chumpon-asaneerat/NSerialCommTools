@@ -477,12 +477,10 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             return bytes;
         }
 
-        // Phase 3.6 - Auto-Detection Algorithms
-
-        /// <summary>
-        /// Auto-detect package start marker using frequency analysis
-        /// </summary>
-        private byte[] DetectPackageStartMarker(System.Collections.Generic.List<LogEntry> entries)
+        // Note: Auto-detection algorithms moved to LogFileAnalyzer class (Analyzers/LogFileAnalyzer.cs)
+        // This separation of concerns keeps UI logic separate from business logic
+    }
+}
         {
             if (entries == null || entries.Count < 5)
                 return null; // Need minimum sample size
