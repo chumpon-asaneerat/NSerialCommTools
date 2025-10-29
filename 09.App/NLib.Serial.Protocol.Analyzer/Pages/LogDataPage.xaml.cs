@@ -163,11 +163,25 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private void ApplyConfiguration_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            // TODO: Phase 3.5 - Implement configuration application logic
-            System.Windows.MessageBox.Show("Apply Configuration - To be implemented in Phase 3.5",
-                "Not Implemented",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+            try
+            {
+                ApplyConfigurationToModel();
+
+                System.Windows.MessageBox.Show(
+                    "Detection configuration has been applied to the model.\n\n" +
+                    "You can now proceed to the Analyzer page to view the detected package structure.",
+                    "Configuration Applied",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Error applying configuration:\n{ex.Message}",
+                    "Configuration Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
         }
 
         /// <summary>
@@ -246,15 +260,271 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             }
         }
 
-        // TODO: Phase 3.5 - Core Method Implementations
-        // - LoadLogFile() - Open file, parse entries
-        // - AutoDetectDelimiters() - Run 4 detection algorithms
-        // - ApplyConfiguration() - Save to model
+        // Phase 3.5 - Core Method Implementations
 
-        // TODO: Phase 3.6 - Auto-Detection Algorithms
-        // - DetectPackageStartMarker()
-        // - DetectPackageEndMarker()
-        // - DetectSegmentSeparator()
-        // - DetectEncoding()
+        /// <summary>
+        /// Load and parse a log file
+        /// </summary>
+        /// <param name="filePath">Path to the log file</param>
+        private void LoadLogFile(string filePath)
+        {
+            FileInfoLabel.Text = "Loading...";
+
+            // Clear existing entries
+            _model.LogFile.Entries.Clear();
+
+            // Read all lines from the file
+            string[] lines = System.IO.File.ReadAllLines(filePath);
+
+            // Parse each line into a LogEntry
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+
+                // Create a LogEntry
+                LogEntry entry = new LogEntry
+                {
+                    EntryNumber = i + 1,
+                    Timestamp = System.DateTime.Now, // Placeholder - real logs may have timestamps
+                    Direction = "RX", // Placeholder - real logs may have direction markers
+                    RawBytes = System.Text.Encoding.ASCII.GetBytes(line) // Convert line to bytes
+                };
+
+                // Add to model (RawHex and RawText are computed properties)
+                _model.LogFile.Entries.Add(entry);
+            }
+
+            // Update model file path
+            _model.LogFile.FilePath = filePath;
+
+            // Update file info label
+            string fileName = System.IO.Path.GetFileName(filePath);
+            FileInfoLabel.Text = $"{fileName} - {lines.Length:N0} entries";
+
+            // Run auto-detection if in Auto mode
+            if (StartMarkerAutoRadio.IsChecked == true ||
+                EndMarkerAutoRadio.IsChecked == true ||
+                SeparatorAutoRadio.IsChecked == true ||
+                EncodingAutoRadio.IsChecked == true)
+            {
+                AutoDetectDelimiters();
+            }
+        }
+
+        /// <summary>
+        /// Auto-detect package markers, separators, and encoding
+        /// </summary>
+        private void AutoDetectDelimiters()
+        {
+            // TODO: Phase 3.6 - Implement auto-detection algorithms
+
+            // Algorithm 1: Detect Package Start Marker
+            if (StartMarkerAutoRadio.IsChecked == true)
+            {
+                byte[] startMarker = DetectPackageStartMarker(_model.LogFile.Entries.ToList());
+                if (startMarker != null)
+                {
+                    string hexValue = System.BitConverter.ToString(startMarker).Replace("-", " ");
+                    StartMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
+                    _model.DetectionConfig.PackageStartMarker.AutoDetectedValue = startMarker;
+                }
+                else
+                {
+                    StartMarkerDetectedLabel.Text = "(Auto-detected: None found)";
+                }
+            }
+
+            // Algorithm 2: Detect Package End Marker
+            if (EndMarkerAutoRadio.IsChecked == true)
+            {
+                byte[] endMarker = DetectPackageEndMarker(_model.LogFile.Entries.ToList());
+                if (endMarker != null)
+                {
+                    string hexValue = System.BitConverter.ToString(endMarker).Replace("-", " ");
+                    EndMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
+                    _model.DetectionConfig.PackageEndMarker.AutoDetectedValue = endMarker;
+                }
+                else
+                {
+                    EndMarkerDetectedLabel.Text = "(Auto-detected: None found)";
+                }
+            }
+
+            // Algorithm 3: Detect Segment Separator
+            if (SeparatorAutoRadio.IsChecked == true)
+            {
+                byte[] separator = DetectSegmentSeparator(_model.LogFile.Entries.ToList());
+                if (separator != null)
+                {
+                    string hexValue = System.BitConverter.ToString(separator).Replace("-", " ");
+                    SeparatorDetectedLabel.Text = $"(Auto-detected: {hexValue})";
+                    _model.DetectionConfig.SegmentSeparator.AutoDetectedValue = separator;
+                }
+                else
+                {
+                    SeparatorDetectedLabel.Text = "(Auto-detected: None found)";
+                }
+            }
+
+            // Algorithm 4: Detect Encoding
+            if (EncodingAutoRadio.IsChecked == true)
+            {
+                EncodingType encoding = DetectEncoding(_model.LogFile.Entries.ToList());
+                EncodingDetectedLabel.Text = $"(Auto-detected: {encoding})";
+                _model.DetectionConfig.Encoding.AutoDetectedValue = new byte[] { (byte)encoding };
+            }
+        }
+
+        /// <summary>
+        /// Apply the selected detection configuration to the model
+        /// </summary>
+        private void ApplyConfigurationToModel()
+        {
+            // Apply Package Start Marker
+            if (StartMarkerAutoRadio.IsChecked == true)
+            {
+                _model.DetectionConfig.PackageStartMarker.Mode = DetectionMode.Auto;
+            }
+            else if (StartMarkerManualRadio.IsChecked == true)
+            {
+                _model.DetectionConfig.PackageStartMarker.Mode = DetectionMode.Manual;
+                // Parse manual value from TextBox (hex format)
+                if (!string.IsNullOrWhiteSpace(StartMarkerTextBox.Text))
+                {
+                    _model.DetectionConfig.PackageStartMarker.ManualValue = ParseHexString(StartMarkerTextBox.Text);
+                }
+            }
+            else
+            {
+                _model.DetectionConfig.PackageStartMarker.Mode = DetectionMode.None;
+            }
+
+            // Apply Package End Marker
+            if (EndMarkerAutoRadio.IsChecked == true)
+            {
+                _model.DetectionConfig.PackageEndMarker.Mode = DetectionMode.Auto;
+            }
+            else if (EndMarkerManualRadio.IsChecked == true)
+            {
+                _model.DetectionConfig.PackageEndMarker.Mode = DetectionMode.Manual;
+                if (!string.IsNullOrWhiteSpace(EndMarkerTextBox.Text))
+                {
+                    _model.DetectionConfig.PackageEndMarker.ManualValue = ParseHexString(EndMarkerTextBox.Text);
+                }
+            }
+            else
+            {
+                _model.DetectionConfig.PackageEndMarker.Mode = DetectionMode.None;
+            }
+
+            // Apply Segment Separator
+            if (SeparatorAutoRadio.IsChecked == true)
+            {
+                _model.DetectionConfig.SegmentSeparator.Mode = DetectionMode.Auto;
+            }
+            else if (SeparatorManualRadio.IsChecked == true)
+            {
+                _model.DetectionConfig.SegmentSeparator.Mode = DetectionMode.Manual;
+                if (!string.IsNullOrWhiteSpace(SeparatorTextBox.Text))
+                {
+                    _model.DetectionConfig.SegmentSeparator.ManualValue = ParseHexString(SeparatorTextBox.Text);
+                }
+            }
+            else
+            {
+                _model.DetectionConfig.SegmentSeparator.Mode = DetectionMode.None;
+            }
+
+            // Apply Encoding
+            if (EncodingAutoRadio.IsChecked == true)
+            {
+                _model.DetectionConfig.Encoding.Mode = DetectionMode.Auto;
+            }
+            else
+            {
+                _model.DetectionConfig.Encoding.Mode = DetectionMode.Manual;
+                // Get selected encoding from ComboBox
+                EncodingType selectedEncoding = EncodingType.ASCII;
+                if (EncodingComboBox.SelectedIndex == 1) selectedEncoding = EncodingType.UTF8;
+                else if (EncodingComboBox.SelectedIndex == 2) selectedEncoding = EncodingType.UTF16;
+                else if (EncodingComboBox.SelectedIndex == 3) selectedEncoding = EncodingType.Latin1;
+
+                _model.DetectionConfig.Encoding.ManualValue = new byte[] { (byte)selectedEncoding };
+            }
+        }
+
+        /// <summary>
+        /// Parse hex string (e.g., "0D 0A" or "0D0A") to byte array
+        /// </summary>
+        private byte[] ParseHexString(string hex)
+        {
+            // Remove spaces and convert to byte array
+            hex = hex.Replace(" ", "").Replace("-", "");
+
+            if (hex.Length % 2 != 0)
+            {
+                throw new System.FormatException("Hex string must have even number of characters");
+            }
+
+            byte[] bytes = new byte[hex.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = System.Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            }
+
+            return bytes;
+        }
+
+        // Phase 3.6 - Auto-Detection Algorithms
+
+        /// <summary>
+        /// Auto-detect package start marker using frequency analysis
+        /// </summary>
+        private byte[] DetectPackageStartMarker(System.Collections.Generic.List<LogEntry> entries)
+        {
+            // TODO: Phase 3.6 - Implement Algorithm 1
+            // Frequency analysis at beginning of entries
+            // Find most common 1-4 byte sequences at start
+            // Check frequency > 30% threshold
+            return null; // Placeholder
+        }
+
+        /// <summary>
+        /// Auto-detect package end marker using frequency analysis
+        /// </summary>
+        private byte[] DetectPackageEndMarker(System.Collections.Generic.List<LogEntry> entries)
+        {
+            // TODO: Phase 3.6 - Implement Algorithm 2
+            // Frequency analysis at end of entries
+            // Find most common 1-4 byte sequences at end (CRLF, LF, CR, etc.)
+            // Check frequency > 30% threshold
+            return null; // Placeholder
+        }
+
+        /// <summary>
+        /// Auto-detect segment separator using frequency analysis
+        /// </summary>
+        private byte[] DetectSegmentSeparator(System.Collections.Generic.List<LogEntry> entries)
+        {
+            // TODO: Phase 3.6 - Implement Algorithm 3
+            // Frequency analysis within entries
+            // Exclude start/end markers from search
+            // Find most common 1-2 byte sequences
+            // Check frequency > 20% threshold
+            return null; // Placeholder
+        }
+
+        /// <summary>
+        /// Auto-detect encoding using valid character ratio analysis
+        /// </summary>
+        private EncodingType DetectEncoding(System.Collections.Generic.List<LogEntry> entries)
+        {
+            // TODO: Phase 3.6 - Implement Algorithm 4
+            // Test ASCII: Count valid ASCII chars
+            // Test UTF-8: Try decode, check valid UTF-8 sequences
+            // Test UTF-16: Try decode, check valid UTF-16 sequences
+            // Return encoding with highest valid character ratio
+            return EncodingType.ASCII; // Placeholder - default to ASCII
+        }
     }
 }
