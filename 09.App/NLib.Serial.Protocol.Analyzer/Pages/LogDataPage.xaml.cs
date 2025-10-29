@@ -258,6 +258,9 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 _model.LogFile.Entries.Clear();
                 _model.LogFile.FilePath = string.Empty;
             }
+
+            // Hide detection summary
+            DetectionSummaryExpander.Visibility = System.Windows.Visibility.Collapsed;
         }
 
         // Phase 3.5 - Core Method Implementations
