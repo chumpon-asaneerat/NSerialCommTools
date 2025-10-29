@@ -334,6 +334,108 @@
   - Reference: Doc 03 Section 4.4
   - Implementation: LogDataPage.xaml.cs:718-881 (includes helper methods: TestASCII, TestUTF8, TestUTF16, TestLatin1)
 
+### 3.6.1 Architecture Refactoring & Post-Implementation Fixes ⚠️ CRITICAL LESSONS
+
+**Status**: ✅ Completed (2025-10-29)
+**Impact**: Affects ALL future pages (AnalyzerPage, FieldEditorPage, ExportPage)
+
+#### Refactoring #1: Separation of Business Logic from UI
+**Problem**: Initial implementation placed all detection algorithms (400+ lines) in LogDataPage.xaml.cs code-behind
+**User Feedback**: "Why not separate logic from UI for example you has Algorithms in MainWindow code why not separate the LogFileAnalyzer class?"
+
+**Solution**:
+- [x] Created `Analyzers/LogFileAnalyzer.cs` (433 lines)
+  - Moved all 4 detection algorithms
+  - Moved all 4 encoding test helpers
+  - Pure business logic with no UI dependencies
+  - Status: ✅ Completed
+
+**Result**: Code-behind reduced from 884 → 483 lines (46% reduction)
+
+#### Refactoring #2: Configuration Over Hardcoding
+**Problem**: Magic numbers hardcoded throughout algorithms (5, 4, 0.30, 0x20, 0x7E, etc.)
+**User Feedback**: "Why you has hard code like entries.Count < 5, int seqLength = 1; seqLength <= 4, if ((b >= 0x20 && b <= 0x7E)..."
+
+**Solution**:
+- [x] Created `Analyzers/LogFileAnalyzerConfig.cs` (133 lines)
+  - 13 configurable parameters
+  - 3 preset factory methods (Strict, Lenient, BinaryProtocol)
+  - All thresholds and ranges parameterized
+  - Status: ✅ Completed
+
+**Examples**:
+```csharp
+// BEFORE (hardcoded):
+if (entries.Count < 5) return null;
+for (int seqLength = 1; seqLength <= 4; seqLength++)
+if (frequency >= 0.30)
+
+// AFTER (configurable):
+if (entries.Count < _config.MinimumSampleSize) return null;
+for (int seqLength = _config.MinSequenceLength; seqLength <= _config.MaxSequenceLength; seqLength++)
+if (frequency >= _config.MarkerFrequencyThreshold)
+```
+
+#### Post-Implementation Fixes (Applied After Session 10)
+
+**Fix #1: Missing EntryNumber Property**
+- [x] Added `EntryNumber` property to LogEntry.cs
+  - Used for DataGrid row numbering (1-based index)
+  - Status: ✅ Completed
+
+**Fix #2: Improper Analyzer Encapsulation** ⚠️ CRITICAL PATTERN
+- [x] **Problem**: LogFileAnalyzer was instantiated in UI layer (LogDataPage)
+  - Code: `private LogFileAnalyzer _analyzer = new LogFileAnalyzer();` ❌ WRONG
+  - Violates encapsulation - UI managing business logic lifecycle
+
+- [x] **Solution**: Moved analyzer to ProtocolAnalyzerModel
+  - Added: `public LogFileAnalyzer Analyzer { get; private set; }`
+  - Initialized in model constructor
+  - UI now uses: `_model.Analyzer.DetectXXX()` ✅ CORRECT
+  - Status: ✅ Completed
+
+**Fix #3: Type Mismatches in DetectionModeInfo**
+- [x] Fixed wrong property name: `AutoDetectedValue` → `DetectedValue`
+- [x] Fixed type conversions: byte[] → hex string, EncodingType → string
+- [x] Fixed manual value storage: stores text input, not parsed bytes
+- Status: ✅ Completed
+
+#### 🔥 CRITICAL ARCHITECTURAL PATTERN (APPLY TO ALL PAGES)
+
+**Rule**: All business logic objects MUST be owned by the Model, NOT UI pages
+
+**Pattern for ALL future pages**:
+```csharp
+// ❌ WRONG - DO NOT DO THIS:
+// In LogDataPage.xaml.cs:
+private LogFileAnalyzer _analyzer = new LogFileAnalyzer();
+
+// ✅ CORRECT - DO THIS INSTEAD:
+// In ProtocolAnalyzerModel.cs:
+public LogFileAnalyzer Analyzer { get; private set; }
+
+// In UI page:
+public void Setup(ProtocolAnalyzerModel model)
+{
+    _model = model;
+    // Use: _model.Analyzer.DetectXXX()
+}
+```
+
+**Benefits**:
+- ✅ Model owns business logic lifecycle (proper encapsulation)
+- ✅ UI doesn't manage business logic objects
+- ✅ Single source of truth for configuration
+- ✅ Easier to test and maintain
+- ✅ Reusable across multiple pages
+
+**Apply This Pattern To**:
+- Phase 4 (AnalyzerPage): Package parser should be in model
+- Phase 5 (FieldEditorPage): Field editor logic should be in model
+- Phase 6 (ExportPage): Export logic should be in model
+
+**Reference**: See WORK-SUMMARY-2025-10-29-Session-10.md Section 9 for detailed examples
+
 ### 3.7 Testing & Validation
 - [ ] **Test with sample log files**
   - Use logs from: Documents/LuckyTex Devices/
@@ -357,6 +459,19 @@
 **Purpose**: Parse log entries into packages and segments using detection configuration
 
 **Implementation Note**: AnalyzerPage stub already created in Phase 3.0
+
+⚠️ **CRITICAL ARCHITECTURE REQUIREMENT** (See Phase 3.6.1):
+- DO NOT create parsing logic objects in UI code-behind
+- All parsing algorithms MUST be in separate classes (e.g., `Parsers/PackageParser.cs`)
+- Parser instances MUST be owned by ProtocolAnalyzerModel, NOT the page
+- Example pattern:
+  ```csharp
+  // ✅ CORRECT: In ProtocolAnalyzerModel.cs
+  public PackageParser Parser { get; private set; }
+
+  // ❌ WRONG: In AnalyzerPage.xaml.cs
+  private PackageParser _parser = new PackageParser();
+  ```
 
 ### 4.1 AnalyzerPage - Main Layout Structure
 - [ ] **AnalyzerPage.xaml** - DockPanel layout
@@ -500,6 +615,19 @@
 **Purpose**: Define fields within packages/segments and analyze their data types
 
 **Implementation Note**: FieldEditorPage stub already created in Phase 3.0
+
+⚠️ **CRITICAL ARCHITECTURE REQUIREMENT** (See Phase 3.6.1):
+- DO NOT create field analysis logic objects in UI code-behind
+- All field analysis MUST be in separate classes (e.g., `Analyzers/FieldAnalyzer.cs`)
+- Analyzer instances MUST be owned by ProtocolAnalyzerModel, NOT the page
+- Example pattern:
+  ```csharp
+  // ✅ CORRECT: In ProtocolAnalyzerModel.cs
+  public FieldAnalyzer FieldAnalyzer { get; private set; }
+
+  // ❌ WRONG: In FieldEditorPage.xaml.cs
+  private FieldAnalyzer _analyzer = new FieldAnalyzer();
+  ```
 
 ### 5.1 FieldEditorPage - Main Layout Structure
 - [ ] **FieldEditorPage.xaml** - DockPanel layout
@@ -701,6 +829,20 @@
 **Purpose**: Generate and export JSON schema definition from field analysis
 
 **Implementation Note**: ExportPage stub already created in Phase 3.0
+
+⚠️ **CRITICAL ARCHITECTURE REQUIREMENT** (See Phase 3.6.1):
+- DO NOT create schema generation/export logic in UI code-behind
+- All export logic MUST be in separate classes (e.g., `Exporters/SchemaExporter.cs`, `Exporters/PackageExporter.cs`)
+- Exporter instances MUST be owned by ProtocolAnalyzerModel, NOT the page
+- Example pattern:
+  ```csharp
+  // ✅ CORRECT: In ProtocolAnalyzerModel.cs
+  public SchemaExporter SchemaExporter { get; private set; }
+  public PackageExporter PackageExporter { get; private set; }
+
+  // ❌ WRONG: In ExportPage.xaml.cs
+  private SchemaExporter _exporter = new SchemaExporter();
+  ```
 
 ### 6.1 ExportPage - Main Layout Structure
 - [ ] **ExportPage.xaml** - DockPanel layout
