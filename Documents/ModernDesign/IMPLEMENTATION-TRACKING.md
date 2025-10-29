@@ -467,159 +467,186 @@ public void Setup(ProtocolAnalyzerModel model)
 
 ---
 
-## 🔍 PHASE 4: PAGE 2 - ANALYZER PAGE (Parsing)
+## 🔍 PHASE 4: PAGE 2 - ANALYZER PAGE (Statistical Analysis)
 
 **Location:** `09.App/NLib.Serial.Protocol.Analyzer/Pages/`
-**Reference:** Document 06 v3.0 (Section 4.2)
-**Purpose**: Parse log entries into packages and segments using detection configuration
+**Reference:** Document 06 v3.0 (Section 4.2), Document 03 (5-Stage Pipeline)
+**Purpose**: Run statistical analysis and display detected patterns
 
-**Implementation Note**: AnalyzerPage stub already created in Phase 3.0
+**⚠️ CORRECTED (2025-10-30 Session 11)**:
+- Previous implementation (Session 10) was INCORRECT - built package viewer instead of analysis results viewer
+- Correct purpose: Execute 5-stage analysis pipeline and visualize results
+- See WORK-SUMMARY-2025-10-30-Session-11.md for detailed investigation
+
+**Implementation Note**: AnalyzerPage stub already created in Phase 3.0 (WILL BE REPLACED)
 
 ⚠️ **CRITICAL ARCHITECTURE REQUIREMENT** (See Phase 3.6.1):
-- DO NOT create parsing logic objects in UI code-behind
-- All parsing algorithms MUST be in separate classes (e.g., `Parsers/PackageParser.cs`)
-- Parser instances MUST be owned by ProtocolAnalyzerModel, NOT the page
+- DO NOT create analysis logic objects in UI code-behind
+- All analysis algorithms MUST be in separate classes (e.g., `Analyzers/FieldAnalyzer.cs`)
+- Analyzer instances MUST be owned by ProtocolAnalyzerModel, NOT the page
 - Example pattern:
   ```csharp
   // ✅ CORRECT: In ProtocolAnalyzerModel.cs
-  public PackageParser Parser { get; private set; }
+  public FieldAnalyzer Analyzer { get; private set; }
 
   // ❌ WRONG: In AnalyzerPage.xaml.cs
-  private PackageParser _parser = new PackageParser();
+  private FieldAnalyzer _analyzer = new FieldAnalyzer();
   ```
 
 ### 4.1 AnalyzerPage - Main Layout Structure
-- [x] **AnalyzerPage.xaml** - DockPanel layout
-  - Left Panel: Package List (30% width)
-  - Right Panel: Package Details (70% width)
-  - Status: ✅ Completed (2025-10-29)
-  - Implementation: AnalyzerPage.xaml (138 lines)
+- [ ] **AnalyzerPage.xaml** - DockPanel layout ⚠️ NEEDS REWORK
+  - Top: "Run Analysis" button with status text
+  - Below: Overall Confidence GroupBox with ProgressBar
+  - Middle: Three detection result panels (Terminator, Delimiter, Protocol Type)
+  - Bottom: Detected Fields Preview DataGrid
+  - Status: ⚠️ Previous implementation (2025-10-29) was WRONG - needs replacement
+  - Reference: Document 06 lines 737-823
 
-### 4.2 Package List Panel (Left Side) - UI Components
-- [x] **Toolbar** (DockPanel.Dock="Top")
-  - "Parse Packages" button (runs parsing algorithm)
-  - Package count label (shows: "Found: 123 packages")
-  - "Clear Results" button
+### 4.2 Analysis Button and Status (Top Section)
+- [ ] **Run Analysis Button** (DockPanel.Dock="Top")
+  - Button: "🔬 Run Analysis"
+  - TextBlock: Status text (e.g., "Click 'Run Analysis' to start")
   - Horizontal StackPanel
-  - Status: ✅ Completed (2025-10-29)
+  - Status: ⏳ Not Started
+  - Reference: Document 06 lines 781-785
 
-- [x] **Package ListBox** (Fills remaining space)
-  - ItemTemplate: "Package #{PackageNumber} ({Length} bytes) - {Timestamp}"
-  - Bind to: model.Packages (ObservableCollection<PackageInfo>)
-  - SelectionMode: Single
-  - Status: ✅ Completed (2025-10-29)
+### 4.3 Overall Confidence Display
+- [ ] **Overall Confidence GroupBox** (DockPanel.Dock="Top")
+  - Header: "📈 Overall Analysis Confidence"
+  - TextBlock: "Confidence: {percentage}%"
+  - ProgressBar: Visual confidence indicator
+  - Status: ⏳ Not Started
+  - Reference: Document 06 lines 788-796
 
-### 4.3 Package Detail Panel (Right Side) - UI Components
-- [x] **Header Section** (DockPanel.Dock="Top")
-  - Package number label (e.g., "Package #42")
-  - Total bytes label (e.g., "Total: 156 bytes")
-  - Segment count label (e.g., "Segments: 14")
-  - Timestamp label
-  - Status: ✅ Completed (2025-10-29)
+### 4.4 Detection Results Panels (Middle Section)
+- [ ] **Three Side-by-Side GroupBoxes** (Horizontal StackPanel)
+  - Status: ⏳ Not Started
 
-- [x] **Segments DataGrid** (DockPanel.Dock="Top", Height="50%")
-  - Column 1: Segment # (right-aligned, width 80)
-  - Column 2: RawHex (hex representation, width *)
-  - Column 3: RawText (text representation, width *)
-  - Column 4: Length (bytes, right-aligned, width 80)
-  - Bind to: SelectedPackage.Segments
-  - Status: ✅ Completed (2025-10-29)
+  **Panel 1: Terminator Detection** (Width 280)
+  - Header: "🔚 Terminator"
+  - Display: Hex bytes (e.g., "0x0D 0x0A")
+  - Display: Text representation (e.g., "CRLF")
+  - Display: Occurrence count (e.g., "Occurs: 1247/1247")
+  - Display: Confidence percentage
+  - Reference: Document 06 lines 810-812
 
-- [x] **Raw Package Display** (Fills remaining space)
-  - TabControl with 2 tabs:
-    - Tab 1: "Hex View" (shows RawHex with line breaks every 32 bytes)
-    - Tab 2: "Text View" (shows RawText)
-  - Read-only TextBox for each tab
-  - Status: ✅ Completed (2025-10-29)
+  **Panel 2: Delimiter Detection** (Width 300)
+  - Header: "✂️ Delimiter"
+  - DataGrid: Character | Frequency
+  - Shows detected delimiters with frequency percentages
+  - Reference: Document 06 lines 813-815
 
-### 4.4 AnalyzerPage.xaml.cs - Code-Behind Structure
-- [x] **Class Setup**
+  **Panel 3: Protocol Type** (Width 260)
+  - Header: "📋 Protocol Type"
+  - Display: Protocol type (SinglePackage or PackageBased)
+  - Display: Strategy used (Delimiter, Position, etc.)
+  - Display: Detected field count
+  - Reference: Document 06 lines 816-819
+
+### 4.5 Fields Preview DataGrid (Bottom Section)
+- [ ] **Fields Preview GroupBox** (DockPanel.Dock="Bottom")
+  - Header: "📊 Detected Fields Preview"
+  - DataGrid Columns:
+    - Position (Pos)
+    - Auto-generated Name (e.g., Field0, Field1)
+    - Data Type (String, Decimal, Integer, etc.)
+    - Sample Values (preview of data)
+    - Confidence percentage
+    - Variance indicator (Low/Med/High)
+  - Hint TextBlock: "💡 Variance: Low=constant, High=data field"
+  - Bind to: model.AnalysisResult.FieldList
+  - Status: ⏳ Not Started
+  - Reference: Document 06 lines 799-807, 863-871
+
+### 4.6 AnalyzerPage.xaml.cs - Code-Behind Structure
+- [ ] **Class Setup**
   - Private field: `ProtocolAnalyzerModel _model`
-  - Private field: `PackageInfo _selectedPackage`
-  - Status: ✅ Completed (2025-10-29)
+  - Status: ⏳ Not Started
 
-- [x] **Setup() Method**
+- [ ] **Setup() Method**
   - Signature: `public void Setup(ProtocolAnalyzerModel model)`
   - Store model reference
-  - Check if detection config is complete
+  - Validate detection config is complete
   - Wire up event handlers
-  - Status: ✅ Completed (2025-10-29)
+  - Status: ⏳ Not Started
 
-- [x] **Event Handlers**
-  - ParsePackages_Click() - Button click handler
-  - ClearResults_Click() - Button click handler
-  - PackageListBox_SelectionChanged() - Package selection handler
-  - Status: ✅ Completed (2025-10-29)
+- [ ] **Event Handlers**
+  - RunAnalysis_Click() - Execute analysis pipeline
+  - Status: ⏳ Not Started
 
-### 4.5 Core Method Implementations
-- [x] **ParsePackages() Method**
-  - Validate detection configuration exists (model.DetectionConfig.IsComplete())
-  - Call SplitIntoPackages() to parse log entries
-  - Populate model.Packages collection
-  - Update package count label
+### 4.7 Core Method Implementations
+- [ ] **RunAnalysis() Method**
+  - Validate detection configuration exists
+  - Call _model.Analyzer.RunFullAnalysis(model.LogFile, model.DetectionConfig)
+  - Get AnalysisResult from analyzer
+  - Store in model.AnalysisResult
+  - Update overall confidence display
+  - Update detection results panels
+  - Populate fields preview DataGrid
   - Show completion message
-  - Status: ✅ Completed (2025-10-29)
-  - Reference: Doc 03 Section 5
+  - Status: ⏳ Not Started
+  - Reference: Document 03 (5-Stage Pipeline)
 
-- [x] **OnPackageSelected() Method**
-  - Get selected PackageInfo from ListBox
-  - Update header labels (package #, bytes, segment count)
-  - Bind Segments DataGrid to package.Segments
-  - Update Raw Package display (Hex and Text tabs)
-  - Status: ✅ Completed (2025-10-29)
+### 4.8 FieldAnalyzer Implementation (Business Logic)
+- [ ] **Create Analyzers/FieldAnalyzer.cs**
+  - Implement 5-stage analysis pipeline
+  - Status: ⏳ Not Started
+  - Reference: Document 03 (All Algorithms)
 
-- [x] **ClearResults() Method**
-  - Clear model.Packages collection
-  - Clear package detail panel
-  - Reset package count label
-  - Status: ✅ Completed (2025-10-29)
+- [ ] **Stage 2: Package Boundary Detection**
+  - Use DetectionConfiguration markers/terminators
+  - Split raw data into packages
+  - Store boundaries (not full package objects)
+  - Status: ⏳ Not Started
+  - Reference: Document 03 Algorithm 1
 
-### 4.6 Parsing Algorithms Implementation
-- [x] **SplitIntoPackages() Algorithm**
-  - Method: `List<PackageInfo> SplitIntoPackages(List<LogEntry> entries, DetectionConfiguration config)`
-  - Strategy: Use package start/end markers from config
-  - Handle 3 cases:
-    1. Both start and end markers defined
-    2. Only start marker (end = next start)
-    3. Only end marker (start = previous end + 1)
-  - Create PackageInfo for each package with PackageNumber, StartIndex, EndIndex, RawBytes
-  - Status: ✅ Completed (2025-10-29)
-  - Reference: Doc 03 Section 5.1
+- [ ] **Stage 3: Field Structure Analysis**
+  - Analyze delimiter patterns or fixed positions
+  - Determine if delimiter-based or position-based parsing
+  - Identify field boundaries within packages
+  - Status: ⏳ Not Started
+  - Reference: Document 03 Algorithms 2 & 3
 
-- [x] **SplitIntoSegments() Algorithm**
-  - Method: `List<SegmentInfo> SplitIntoSegments(byte[] packageBytes, DetectionConfiguration config)`
-  - Strategy: Use segment separator from config
-  - If no separator: Return single segment (SinglePackage protocol)
-  - If separator defined: Split by separator bytes
-  - Create SegmentInfo for each segment with SegmentIndex, RawBytes
-  - Status: ✅ Completed (2025-10-29)
-  - Reference: Doc 03 Section 5.2
+- [ ] **Stage 4: Field Classification**
+  - Detect data types for each field (String, Integer, Decimal, etc.)
+  - Pattern matching for dates, times, decimals
+  - Calculate variance (constant vs variable fields)
+  - Status: ⏳ Not Started
+  - Reference: Document 03 Algorithm 4
 
-- [x] **Handle Edge Cases**
-  - Empty packages (0 bytes)
-  - Packages with no segments
-  - Partial packages at log end
-  - Missing markers (incomplete data)
-  - Status: ✅ Completed (2025-10-29)
+- [ ] **Stage 5: Relationship Detection**
+  - Detect date+time combinations
+  - Detect split fields (compound data)
+  - Detect calculated fields (formulas)
+  - Status: ⏳ Not Started
+  - Reference: Document 03 Algorithm 5
 
-### 4.7 Testing & Validation
-- [ ] **Test with parsed detection config**
-  - Use results from Phase 3 (auto-detected configs)
-  - Verify package count matches expected
-  - Check segment splitting is correct
-  - Status: ✅ Completed (2025-10-29)
+- [ ] **Output: AnalysisResult**
+  - Create List<FieldInfo> with detected fields
+  - Include metadata: confidence, variance, sample values
+  - Include detection summary (terminators, delimiters, protocol type)
+  - Status: ⏳ Not Started
 
+### 4.9 Model Integration
+- [ ] **Update ProtocolAnalyzerModel.cs**
+  - Add: `public FieldAnalyzer Analyzer { get; private set; }`
+  - Initialize in constructor
+  - Status: ⏳ Not Started
+
+### 4.10 Testing & Validation
 - [ ] **Test with device logs**
-  - DEFENDER3000: SinglePackage (no segments)
-  - JIK6CAB: PackageBased with 14 segments
+  - DEFENDER3000: SinglePackage with delimiter-based fields
+  - JIK6CAB: PackageBased with 14 position-based segments
   - WeightQA: PackageBased with nested delimiters
-  - Status: ✅ Completed (2025-10-29)
+  - Verify detected fields match expected patterns
+  - Status: ⏳ Not Started
 
-- [ ] **Verify dual-format display**
-  - Check RawHex shows hex bytes correctly
-  - Check RawText shows readable text
-  - Verify both views synchronized
-  - Status: ✅ Completed (2025-10-29)
+- [ ] **Verify analysis results display**
+  - Check confidence scores are calculated correctly
+  - Check detection results show correct terminators/delimiters
+  - Check protocol type classification is accurate
+  - Check fields preview shows correct field metadata
+  - Status: ⏳ Not Started
 
 ---
 
