@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NLib.Serial.Protocol.Analyzer.Analyzers;
+using NLib.Serial.Protocol.Analyzer.Parsers;
 
 namespace NLib.Serial.Protocol.Analyzer.Models
 {
@@ -44,6 +45,12 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         {
             get { return Packages != null ? Packages.Count : 0; }
         }
+
+        /// <summary>
+        /// Package parser for splitting log entries into packages and segments
+        /// Encapsulated in model to hide implementation from UI
+        /// </summary>
+        public PackageParser Parser { get; private set; }
 
         #endregion
 
@@ -101,6 +108,7 @@ namespace NLib.Serial.Protocol.Analyzer.Models
 
             // Page 2
             Packages = new List<PackageInfo>();
+            Parser = new PackageParser();
 
             // Page 3
             AnalysisResult = new AnalysisResult();

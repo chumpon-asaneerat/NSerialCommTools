@@ -177,6 +177,7 @@
     <Compile Include="Pages\LogDataPage.xaml.cs">
       <DependentUpon>LogDataPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Parsers\PackageParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

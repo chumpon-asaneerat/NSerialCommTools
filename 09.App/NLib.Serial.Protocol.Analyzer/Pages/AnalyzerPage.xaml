@@ -5,12 +5,134 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
-    <DockPanel>
-        <!-- Content will be implemented in Phase 4.1-4.3 -->
-        <TextBlock Text="Analyzer Page - To Be Implemented"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   FontSize="16"
-                   Foreground="Gray"/>
+
+    <UserControl.Resources>
+        <Style x:Key="RightAlignedTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel Margin="10">
+
+        <!-- LEFT PANEL: Package List (30% width) -->
+        <DockPanel DockPanel.Dock="Left" Width="350" Margin="0,0,10,0">
+
+            <!-- Toolbar -->
+            <StackPanel DockPanel.Dock="Top" Orientation="Vertical" Margin="0,0,0,10">
+                <DockPanel Margin="0,0,0,5">
+                    <Button x:Name="ParsePackagesButton"
+                            Content="Parse Packages"
+                            Width="120"
+                            Height="30"
+                            DockPanel.Dock="Left"
+                            Margin="0,0,5,0"/>
+                    <Button x:Name="ClearResultsButton"
+                            Content="Clear"
+                            Width="80"
+                            Height="30"
+                            DockPanel.Dock="Right"/>
+                    <TextBlock x:Name="PackageCountLabel"
+                               Text="Packages: 0"
+                               VerticalAlignment="Center"
+                               Margin="5,0"/>
+                </DockPanel>
+            </StackPanel>
+
+            <!-- Package ListBox -->
+            <ListBox x:Name="PackageListBox"
+                     SelectionMode="Single"
+                     DisplayMemberPath="DisplayText"/>
+
+        </DockPanel>
+
+        <!-- RIGHT PANEL: Package Details (70% width - fills remaining space) -->
+        <DockPanel Background="White">
+
+            <!-- Header Section -->
+            <DockPanel DockPanel.Dock="Top" Height="80" Background="#F5F5F5" Margin="0,0,0,10">
+                <StackPanel Margin="10">
+                    <DockPanel Margin="0,0,0,5">
+                        <TextBlock x:Name="PackageNumberLabel"
+                                   Text="Package #: -"
+                                   FontWeight="Bold"
+                                   FontSize="14"
+                                   DockPanel.Dock="Left"/>
+                        <TextBlock x:Name="PackageTotalBytesLabel"
+                                   Text="Total: 0 bytes"
+                                   DockPanel.Dock="Right"
+                                   Margin="10,0,0,0"/>
+                    </DockPanel>
+                    <DockPanel>
+                        <TextBlock x:Name="PackageSegmentCountLabel"
+                                   Text="Segments: 0"
+                                   DockPanel.Dock="Left"/>
+                        <TextBlock x:Name="PackageTimestampLabel"
+                                   Text="Timestamp: -"
+                                   DockPanel.Dock="Right"
+                                   Margin="10,0,0,0"/>
+                    </DockPanel>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- Segments DataGrid (Top 50% of remaining space) -->
+            <DockPanel DockPanel.Dock="Top" Height="250" Margin="0,0,0,10">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="Segments:"
+                           FontWeight="Bold"
+                           Margin="0,0,0,5"/>
+                <DataGrid x:Name="SegmentsDataGrid"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Segment #"
+                                            Width="80"
+                                            Binding="{Binding SegmentIndex}"
+                                            ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
+                        <DataGridTextColumn Header="Raw Hex"
+                                            Width="*"
+                                            Binding="{Binding RawHex}"/>
+                        <DataGridTextColumn Header="Raw Text"
+                                            Width="*"
+                                            Binding="{Binding RawText}"/>
+                        <DataGridTextColumn Header="Length (Bytes)"
+                                            Width="100"
+                                            Binding="{Binding RawBytes.Length}"
+                                            ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+
+            <!-- Raw Package Display (Bottom - fills remaining space) -->
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top"
+                           Text="Raw Package Data:"
+                           FontWeight="Bold"
+                           Margin="0,0,0,5"/>
+                <TabControl>
+                    <TabItem Header="Hex View">
+                        <TextBox x:Name="HexViewTextBox"
+                                 IsReadOnly="True"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"/>
+                    </TabItem>
+                    <TabItem Header="Text View">
+                        <TextBox x:Name="TextViewTextBox"
+                                 IsReadOnly="True"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"/>
+                    </TabItem>
+                </TabControl>
+            </DockPanel>
+
+        </DockPanel>
+
     </DockPanel>
 </UserControl>
