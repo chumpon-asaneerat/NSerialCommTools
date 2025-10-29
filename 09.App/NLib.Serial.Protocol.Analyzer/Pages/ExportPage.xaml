@@ -5,12 +5,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
-    <DockPanel>
-        <!-- Content will be implemented in Phase 6.1-6.3 -->
-        <TextBlock Text="Export Page - To Be Implemented"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   FontSize="16"
-                   Foreground="Gray"/>
-    </DockPanel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <DockPanel>
+            <!-- Content will be implemented in Phase 6.1-6.3 -->
+            <TextBlock Text="Export Page - To Be Implemented"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       FontSize="16"
+                       Foreground="Gray"/>
+        </DockPanel>
+    </ScrollViewer>
 </UserControl>
