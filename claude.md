@@ -75,6 +75,45 @@ Create detailed documentation that explains how the code works, including:
 
 ## CRITICAL PROJECT RULES
 
+### 🔥 RULE #1: NEVER Code Based on Log Data Appearance (Updated 2025-10-29)
+
+**THE MOST CRITICAL RULE - HAS CAUSED MULTIPLE IMPLEMENTATION FAILURES**
+
+**The Dangerous Pattern (Occurs Repeatedly)**:
+When analyzing log data files, DO NOT make parsing assumptions based on what the data LOOKS like:
+
+❌ **WRONG Approach**:
+1. See CRLF in log data → Assume "use CRLF as line terminator"
+2. See ASCII characters → Assume "parse as text strings"
+3. See commas/pipes → Assume "use as delimiter"
+4. Start coding based on log appearance
+5. Ignore design documents
+6. Break architecture with wrong assumptions
+7. Argue implementation is "correct"
+8. After hours of discussion, finally check design → Was wrong
+9. OR blame design as "flawed" → Design was actually correct
+
+✅ **CORRECT Approach**:
+1. **ALL protocols send BYTES** (not "text")
+2. Classification is by **STRUCTURE** only:
+   - ✅ **SinglePackage Protocol** (single data unit)
+   - ✅ **PackageBased Protocol** (multiple segments)
+3. **CHECK DESIGN DOCUMENTS FIRST** before any code
+4. Design documents specify HOW to parse bytes
+5. Follow design exactly - DO NOT assume from log appearance
+6. Bytes may LOOK like ASCII text - parse per DESIGN, not appearance
+
+**Forbidden Terminology (Triggers Bad Assumptions)**:
+- ❌ "Text Protocol" → Assumes text terminators/delimiters
+- ❌ "Binary Protocol" → Creates false dichotomy
+- ❌ "Text-based" / "Line-based" → Assumes string operations
+- ❌ Any classification based on data content
+
+**Why This Rule Exists**:
+User feedback: "This occur multiple times already... you will ask me back that you are correct implements but after i conversation a couple hours you a last accept that you missing check design or you make accues that it design flaw which actually not but bcause you assume Text prorocol is used."
+
+**Remember**: Check design documents FIRST. Never code based on what log data LOOKS like.
+
 ### Protocol Analyzer Project Status (Updated 2025-10-26)
 **The Protocol Analyzer has been cleaned up and reset:**
 - ✅ MainWindow.xaml/.cs are EMPTY - ready for fresh implementation
