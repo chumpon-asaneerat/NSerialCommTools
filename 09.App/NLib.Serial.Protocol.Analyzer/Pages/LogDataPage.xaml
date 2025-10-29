@@ -9,14 +9,75 @@
         <!-- Phase 3.1: Main Layout Structure -->
 
         <!-- Detection Configuration Panel (Top, 30% height) -->
-        <DockPanel DockPanel.Dock="Top" Height="250" Background="#F5F5F5">
+        <DockPanel DockPanel.Dock="Top" Height="280" Background="#F5F5F5">
             <Border BorderBrush="#CCCCCC" BorderThickness="0,0,0,1" Padding="10">
                 <StackPanel>
                     <TextBlock Text="Detection Configuration"
                                FontSize="14"
                                FontWeight="Bold"
                                Margin="0,0,0,10"/>
-                    <!-- Phase 3.2: Detection Configuration controls will be added here -->
+
+                    <!-- Phase 3.2: Detection Configuration Controls -->
+
+                    <!-- Package Start Marker Row -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Package Start Marker:" Width="150" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" Margin="10,0">
+                            <RadioButton x:Name="StartMarkerAutoRadio" Content="Auto" GroupName="StartMarker" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="StartMarkerManualRadio" Content="Manual" GroupName="StartMarker" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="StartMarkerNoneRadio" Content="None" GroupName="StartMarker" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        </StackPanel>
+                        <TextBox x:Name="StartMarkerTextBox" Width="120" Height="22" VerticalAlignment="Center" DockPanel.Dock="Left" Margin="0,0,10,0" IsEnabled="False"/>
+                        <TextBlock x:Name="StartMarkerDetectedLabel" Text="(Auto-detected: ...)" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                    </DockPanel>
+
+                    <!-- Package End Marker Row -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Package End Marker:" Width="150" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" Margin="10,0">
+                            <RadioButton x:Name="EndMarkerAutoRadio" Content="Auto" GroupName="EndMarker" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="EndMarkerManualRadio" Content="Manual" GroupName="EndMarker" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="EndMarkerNoneRadio" Content="None" GroupName="EndMarker" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        </StackPanel>
+                        <TextBox x:Name="EndMarkerTextBox" Width="120" Height="22" VerticalAlignment="Center" DockPanel.Dock="Left" Margin="0,0,10,0" IsEnabled="False"/>
+                        <TextBlock x:Name="EndMarkerDetectedLabel" Text="(Auto-detected: ...)" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                    </DockPanel>
+
+                    <!-- Segment Separator Row -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Segment Separator:" Width="150" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" Margin="10,0">
+                            <RadioButton x:Name="SeparatorAutoRadio" Content="Auto" GroupName="Separator" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="SeparatorManualRadio" Content="Manual" GroupName="Separator" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="SeparatorNoneRadio" Content="None" GroupName="Separator" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        </StackPanel>
+                        <TextBox x:Name="SeparatorTextBox" Width="120" Height="22" VerticalAlignment="Center" DockPanel.Dock="Left" Margin="0,0,10,0" IsEnabled="False"/>
+                        <TextBlock x:Name="SeparatorDetectedLabel" Text="(Auto-detected: ...)" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                    </DockPanel>
+
+                    <!-- Encoding Row -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Encoding:" Width="150" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" Margin="10,0">
+                            <RadioButton x:Name="EncodingAutoRadio" Content="Auto" GroupName="Encoding" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="EncodingManualRadio" Content="Manual" GroupName="Encoding" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        </StackPanel>
+                        <ComboBox x:Name="EncodingComboBox" Width="120" Height="22" VerticalAlignment="Center" DockPanel.Dock="Left" Margin="0,0,10,0" IsEnabled="False">
+                            <ComboBoxItem Content="ASCII" IsSelected="True"/>
+                            <ComboBoxItem Content="UTF-8"/>
+                            <ComboBoxItem Content="UTF-16"/>
+                            <ComboBoxItem Content="Latin-1"/>
+                        </ComboBox>
+                        <TextBlock x:Name="EncodingDetectedLabel" Text="(Auto-detected: ...)" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                    </DockPanel>
+
+                    <!-- Action Buttons Row -->
+                    <DockPanel Margin="0,15,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="ApplyConfigButton" Content="Apply Configuration" Width="140" Height="28" Margin="0,0,10,0"/>
+                            <Button x:Name="ClearConfigButton" Content="Clear All" Width="100" Height="28"/>
+                        </StackPanel>
+                    </DockPanel>
                 </StackPanel>
             </Border>
         </DockPanel>
