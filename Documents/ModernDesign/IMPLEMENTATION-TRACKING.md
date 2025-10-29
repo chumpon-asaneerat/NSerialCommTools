@@ -172,18 +172,18 @@
   - Includes: DockPanel layout, Setup() method, _currentSchemaJson field
 
 ### 3.1 LogDataPage - Main Layout Structure
-- [ ] **LogDataPage.xaml** - DockPanel layout
+- [x] **LogDataPage.xaml** - DockPanel layout
   - DockPanel with two main sections
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 06 Section 4.1
 
-- [ ] **Detection Configuration Panel** (DockPanel.Dock="Top", Height="200")
-  - GroupBox with "Detection Configuration" header
-  - Status: ⏳ Not Started
+- [x] **Detection Configuration Panel** (DockPanel.Dock="Top", Height="280")
+  - Section with "Detection Configuration" header
+  - Status: ✅ Completed (2025-10-29)
 
-- [ ] **Log Data Panel** (Fills remaining space)
-  - GroupBox with "Log Data" header
-  - Status: ⏳ Not Started
+- [x] **Log Data Panel** (Fills remaining space)
+  - Section with "Log Data View" header
+  - Status: ✅ Completed (2025-10-29)
 
 ### 3.2 Detection Configuration Panel - UI Components
 - [ ] **Package Start Marker Row**
