@@ -618,12 +618,98 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private byte[] DetectSegmentSeparator(System.Collections.Generic.List<LogEntry> entries)
         {
-            // TODO: Phase 3.6 - Implement Algorithm 3
-            // Frequency analysis within entries
-            // Exclude start/end markers from search
-            // Find most common 1-2 byte sequences
-            // Check frequency > 20% threshold
-            return null; // Placeholder
+            if (entries == null || entries.Count < 5)
+                return null; // Need minimum sample size
+
+            // Dictionary to track frequency of byte sequences within entries
+            var sequenceFrequency = new System.Collections.Generic.Dictionary<string, int>();
+            int totalEntries = 0;
+
+            // Analyze 1-2 byte sequences within each entry (excluding start/end)
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes == null || entry.RawBytes.Length < 5)
+                    continue; // Need sufficient length to have middle portion
+
+                totalEntries++;
+
+                // Skip first 2 and last 2 bytes to avoid start/end markers
+                int startPos = System.Math.Min(2, entry.RawBytes.Length / 4);
+                int endPos = entry.RawBytes.Length - System.Math.Min(2, entry.RawBytes.Length / 4);
+
+                if (endPos <= startPos)
+                    continue;
+
+                // Track which sequences appear in this entry (for consistency)
+                var seenInThisEntry = new System.Collections.Generic.HashSet<string>();
+
+                // Try 1-byte and 2-byte sequences in the middle portion
+                for (int i = startPos; i < endPos; i++)
+                {
+                    // 1-byte sequence
+                    byte[] seq1 = new byte[] { entry.RawBytes[i] };
+                    string key1 = System.BitConverter.ToString(seq1);
+
+                    if (!seenInThisEntry.Contains(key1))
+                    {
+                        seenInThisEntry.Add(key1);
+                        if (!sequenceFrequency.ContainsKey(key1))
+                            sequenceFrequency[key1] = 0;
+                        sequenceFrequency[key1]++;
+                    }
+
+                    // 2-byte sequence
+                    if (i < endPos - 1)
+                    {
+                        byte[] seq2 = new byte[] { entry.RawBytes[i], entry.RawBytes[i + 1] };
+                        string key2 = System.BitConverter.ToString(seq2);
+
+                        if (!seenInThisEntry.Contains(key2))
+                        {
+                            seenInThisEntry.Add(key2);
+                            if (!sequenceFrequency.ContainsKey(key2))
+                                sequenceFrequency[key2] = 0;
+                            sequenceFrequency[key2]++;
+                        }
+                    }
+                }
+            }
+
+            if (totalEntries == 0)
+                return null;
+
+            // Find sequence with highest frequency
+            string mostCommonKey = null;
+            int maxCount = 0;
+
+            foreach (var kvp in sequenceFrequency)
+            {
+                if (kvp.Value > maxCount)
+                {
+                    maxCount = kvp.Value;
+                    mostCommonKey = kvp.Key;
+                }
+            }
+
+            // Check if frequency meets threshold (20% of entries must contain it)
+            double threshold = 0.20;
+            double frequency = (double)maxCount / totalEntries;
+
+            if (frequency >= threshold && mostCommonKey != null)
+            {
+                // Convert hex string back to byte array
+                string[] hexBytes = mostCommonKey.Split('-');
+                byte[] result = new byte[hexBytes.Length];
+
+                for (int i = 0; i < hexBytes.Length; i++)
+                {
+                    result[i] = System.Convert.ToByte(hexBytes[i], 16);
+                }
+
+                return result;
+            }
+
+            return null; // No consistent separator found
         }
 
         /// <summary>
