@@ -58,9 +58,13 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             EncodingAutoRadio.Checked += EncodingMode_Changed;
             EncodingManualRadio.Checked += EncodingMode_Changed;
 
-            // Button click handlers
+            // Detection Configuration button handlers
             ApplyConfigButton.Click += ApplyConfiguration_Click;
             ClearConfigButton.Click += ClearConfiguration_Click;
+
+            // Log Data toolbar button handlers
+            LoadLogFileButton.Click += LoadLogFile_Click;
+            ClearLogButton.Click += ClearLog_Click;
         }
 
         // Phase 3.4 - Event Handlers
@@ -184,6 +188,55 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
 
             // Reset ComboBox to default
             EncodingComboBox.SelectedIndex = 0; // ASCII
+        }
+
+        /// <summary>
+        /// Load a log file for analysis
+        /// </summary>
+        private void LoadLogFile_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // TODO: Phase 3.5 - Implement log file loading logic
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Select Log File",
+                Filter = "Log Files (*.log;*.txt)|*.log;*.txt|All Files (*.*)|*.*",
+                Multiselect = false
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string fileName = System.IO.Path.GetFileName(openFileDialog.FileName);
+
+                // Placeholder - will be implemented in Phase 3.5
+                FileInfoLabel.Text = $"{fileName} - Loading...";
+
+                System.Windows.MessageBox.Show(
+                    $"File selected: {openFileDialog.FileName}\n\nLog file parsing will be implemented in Phase 3.5",
+                    "Load Log File",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+
+                FileInfoLabel.Text = "No file loaded";
+            }
+        }
+
+        /// <summary>
+        /// Clear the loaded log data
+        /// </summary>
+        private void ClearLog_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // Clear the DataGrid
+            LogEntriesDataGrid.ItemsSource = null;
+
+            // Reset file info label
+            FileInfoLabel.Text = "No file loaded";
+
+            // Clear the model's log file if it exists
+            if (_model != null && _model.LogFile != null)
+            {
+                _model.LogFile.Entries.Clear();
+                _model.LogFile.FilePath = string.Empty;
+            }
         }
 
         // TODO: Phase 3.5 - Core Method Implementations
