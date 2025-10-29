@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Windows.Controls;
 using NLib.Serial.Protocol.Analyzer.Models;
+using NLib.Serial.Protocol.Analyzer.Analyzers;
 
 namespace NLib.Serial.Protocol.Analyzer.Pages
 {
@@ -11,6 +12,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
     public partial class LogDataPage : UserControl
     {
         private ProtocolAnalyzerModel _model;
+        private LogFileAnalyzer _analyzer;
 
         /// <summary>
         /// Initializes a new instance of the LogDataPage
@@ -18,6 +20,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         public LogDataPage()
         {
             InitializeComponent();
+            _analyzer = new LogFileAnalyzer();
         }
 
         /// <summary>
@@ -313,16 +316,14 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         }
 
         /// <summary>
-        /// Auto-detect package markers, separators, and encoding
+        /// Auto-detect package markers, separators, and encoding using the analyzer
         /// </summary>
         private void AutoDetectDelimiters()
         {
-            // TODO: Phase 3.6 - Implement auto-detection algorithms
-
             // Algorithm 1: Detect Package Start Marker
             if (StartMarkerAutoRadio.IsChecked == true)
             {
-                byte[] startMarker = DetectPackageStartMarker(_model.LogFile.Entries.ToList());
+                byte[] startMarker = _analyzer.DetectPackageStartMarker(_model.LogFile.Entries.ToList());
                 if (startMarker != null)
                 {
                     string hexValue = System.BitConverter.ToString(startMarker).Replace("-", " ");
@@ -338,7 +339,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Algorithm 2: Detect Package End Marker
             if (EndMarkerAutoRadio.IsChecked == true)
             {
-                byte[] endMarker = DetectPackageEndMarker(_model.LogFile.Entries.ToList());
+                byte[] endMarker = _analyzer.DetectPackageEndMarker(_model.LogFile.Entries.ToList());
                 if (endMarker != null)
                 {
                     string hexValue = System.BitConverter.ToString(endMarker).Replace("-", " ");
@@ -354,7 +355,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Algorithm 3: Detect Segment Separator
             if (SeparatorAutoRadio.IsChecked == true)
             {
-                byte[] separator = DetectSegmentSeparator(_model.LogFile.Entries.ToList());
+                byte[] separator = _analyzer.DetectSegmentSeparator(_model.LogFile.Entries.ToList());
                 if (separator != null)
                 {
                     string hexValue = System.BitConverter.ToString(separator).Replace("-", " ");
@@ -370,7 +371,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Algorithm 4: Detect Encoding
             if (EncodingAutoRadio.IsChecked == true)
             {
-                EncodingType encoding = DetectEncoding(_model.LogFile.Entries.ToList());
+                EncodingType encoding = _analyzer.DetectEncoding(_model.LogFile.Entries.ToList());
                 EncodingDetectedLabel.Text = $"(Auto-detected: {encoding})";
                 _model.DetectionConfig.Encoding.AutoDetectedValue = new byte[] { (byte)encoding };
             }
