@@ -90,6 +90,60 @@
             </Border>
         </DockPanel>
 
+        <!-- Detection Summary Panel (Collapsible) -->
+        <Expander x:Name="DetectionSummaryExpander"
+                  Header="📊 Detection Summary"
+                  IsExpanded="False"
+                  DockPanel.Dock="Top"
+                  Background="#FFFACD"
+                  BorderBrush="#FFD700"
+                  BorderThickness="1"
+                  Margin="10,5"
+                  Visibility="Collapsed">
+            <Border Padding="10" Background="White">
+                <StackPanel>
+                    <!-- Protocol Type -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Protocol Type:" FontWeight="Bold" Width="150" DockPanel.Dock="Left"/>
+                        <TextBlock x:Name="ProtocolTypeText" Text="Not determined" Foreground="DarkBlue"/>
+                    </DockPanel>
+
+                    <!-- Package Start Marker Stats -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Start Marker:" FontWeight="Bold" Width="150" DockPanel.Dock="Left"/>
+                        <TextBlock x:Name="StartMarkerStatsText" Text="No data" TextWrapping="Wrap"/>
+                    </DockPanel>
+
+                    <!-- Package End Marker Stats -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="End Marker:" FontWeight="Bold" Width="150" DockPanel.Dock="Left"/>
+                        <TextBlock x:Name="EndMarkerStatsText" Text="No data" TextWrapping="Wrap"/>
+                    </DockPanel>
+
+                    <!-- Segment Separator Stats -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Segment Separator:" FontWeight="Bold" Width="150" DockPanel.Dock="Left"/>
+                        <TextBlock x:Name="SeparatorStatsText" Text="No data" TextWrapping="Wrap"/>
+                    </DockPanel>
+
+                    <!-- Encoding Stats -->
+                    <DockPanel Margin="0,5">
+                        <TextBlock Text="Encoding:" FontWeight="Bold" Width="150" DockPanel.Dock="Left"/>
+                        <TextBlock x:Name="EncodingStatsText" Text="No data" TextWrapping="Wrap"/>
+                    </DockPanel>
+
+                    <!-- Overall Confidence -->
+                    <DockPanel Margin="0,10,0,5">
+                        <TextBlock Text="Overall Confidence:" FontWeight="Bold" Width="150" DockPanel.Dock="Left"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="OverallConfidenceText" Text="0%" Margin="0,0,10,0"/>
+                            <ProgressBar x:Name="OverallConfidenceBar" Width="200" Height="18" Minimum="0" Maximum="100" Value="0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+        </Expander>
+
         <!-- Log Data Panel (Bottom, 70% height - fills remaining space) -->
         <DockPanel Background="White">
             <Border BorderBrush="#CCCCCC" BorderThickness="0" Padding="10">
