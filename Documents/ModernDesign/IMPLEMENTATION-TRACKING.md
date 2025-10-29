@@ -221,22 +221,22 @@
   - Status: ✅ Completed (2025-10-29)
 
 ### 3.3 Log Data Panel - UI Components
-- [ ] **Toolbar** (DockPanel.Dock="Top")
+- [x] **Toolbar** (DockPanel.Dock="Top")
   - "Load Log File" button (OpenFileDialog)
   - "Clear" button (clears loaded log)
   - File info label (shows: "entries_file.log - 1,234 entries")
   - Horizontal StackPanel
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
 
-- [ ] **DataGrid** (Fills remaining space)
+- [x] **DataGrid** (Fills remaining space)
   - Column 1: # (Entry number, right-aligned, width 60)
   - Column 2: Timestamp (DateTime, width 150)
-  - Column 3: Direction (TX/RX, width 60)
+  - Column 3: Direction (TX/RX, width 70)
   - Column 4: RawHex (Hex string, width *)
   - Column 5: RawText (Text representation, width *)
-  - Column 6: Length (Bytes, right-aligned, width 80)
+  - Column 6: Length (Bytes, right-aligned, width 100)
   - Bind to: model.LogFile.Entries (ObservableCollection)
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 06 Section 4.1.2
 
 ### 3.4 LogDataPage.xaml.cs - Code-Behind Structure
