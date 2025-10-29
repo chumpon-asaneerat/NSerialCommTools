@@ -85,13 +85,76 @@
         <!-- Log Data Panel (Bottom, 70% height - fills remaining space) -->
         <DockPanel Background="White">
             <Border BorderBrush="#CCCCCC" BorderThickness="0" Padding="10">
-                <StackPanel>
+                <DockPanel>
+                    <!-- Section Header -->
                     <TextBlock Text="Log Data View"
                                FontSize="14"
                                FontWeight="Bold"
-                               Margin="0,0,0,10"/>
-                    <!-- Phase 3.3: Log Data controls will be added here -->
-                </StackPanel>
+                               Margin="0,0,0,10"
+                               DockPanel.Dock="Top"/>
+
+                    <!-- Phase 3.3: Toolbar -->
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                            <Button x:Name="LoadLogFileButton" Content="Load Log File" Width="110" Height="28" Margin="0,0,10,0"/>
+                            <Button x:Name="ClearLogButton" Content="Clear" Width="80" Height="28" Margin="0,0,15,0"/>
+                            <TextBlock x:Name="FileInfoLabel"
+                                       Text="No file loaded"
+                                       VerticalAlignment="Center"
+                                       Foreground="Gray"
+                                       FontStyle="Italic"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Phase 3.3: DataGrid -->
+                    <DataGrid x:Name="LogEntriesDataGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeRows="False"
+                              AlternatingRowBackground="#F9F9F9"
+                              BorderBrush="#CCCCCC"
+                              BorderThickness="1">
+                        <DataGrid.Columns>
+                            <!-- Column 1: Entry Number -->
+                            <DataGridTextColumn Header="#"
+                                                Width="60"
+                                                Binding="{Binding EntryNumber}"
+                                                ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
+
+                            <!-- Column 2: Timestamp -->
+                            <DataGridTextColumn Header="Timestamp"
+                                                Width="150"
+                                                Binding="{Binding Timestamp, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}"/>
+
+                            <!-- Column 3: Direction -->
+                            <DataGridTextColumn Header="Direction"
+                                                Width="70"
+                                                Binding="{Binding Direction}"/>
+
+                            <!-- Column 4: RawHex -->
+                            <DataGridTextColumn Header="Raw Hex"
+                                                Width="*"
+                                                Binding="{Binding RawHex}"/>
+
+                            <!-- Column 5: RawText -->
+                            <DataGridTextColumn Header="Raw Text"
+                                                Width="*"
+                                                Binding="{Binding RawText}"/>
+
+                            <!-- Column 6: Length -->
+                            <DataGridTextColumn Header="Length (Bytes)"
+                                                Width="100"
+                                                Binding="{Binding RawBytes.Length}"
+                                                ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
             </Border>
         </DockPanel>
     </DockPanel>
