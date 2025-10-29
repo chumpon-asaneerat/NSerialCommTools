@@ -12,7 +12,6 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
     public partial class LogDataPage : UserControl
     {
         private ProtocolAnalyzerModel _model;
-        private LogFileAnalyzer _analyzer;
 
         /// <summary>
         /// Initializes a new instance of the LogDataPage
@@ -20,7 +19,6 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         public LogDataPage()
         {
             InitializeComponent();
-            _analyzer = new LogFileAnalyzer();
         }
 
         /// <summary>
