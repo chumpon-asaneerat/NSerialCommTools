@@ -1,0 +1,45 @@
+Problem with last session.
+
+**** Q1
+- When switch to Analyze tab it show nothing? "Parse Packages" button is disable. 
+  The packages : 0 show on screen. Why?
+
+**** Q2
+- From code Implemetation when you generate code i see you check documents and todo and found some topics not match 
+  then you thiking that Phase 4 is about:
+
+  ----------------
+  1. Taking the log entries that were loaded in Phase 3 (LogDataPage)
+  2. Using the DetectionConfiguration that was auto-detected (start/end markers, segment separator)
+  3. SPLITTING the raw data into Packages (using markers)
+  4. SPLITTING each package into Segments (using separator)
+  5. DISPLAYING them in a UI
+
+  This is about PARSING/SPLITTING, not statistical analysis. 
+  The statistical analysis already happened in Phase 3 (LogDataPage auto-detection). 
+  So Phase 4 AnalyzerPage is about: Running the SplitIntoPackages() and SplitIntoSegments() algorithms
+  Displaying the results (packages list, segments grid, raw hex/text views)
+
+  This is different from what Document 06 shows. Let me confirm what IMPLEMENTATION-TRACKING wants by checking the reference it mentions: "Doc 03 Section 5"
+
+  ** after this you check document and summary below 
+
+  Okay, so Document 03 doesn't have a "Section 5". The reference in IMPLEMENTATION-TRACKING is wrong. Let me just proceed with what IMPLEMENTATION-TRACKING Phase 4 describes: creating an AnalyzerPage that splits data into packages and segments using the detection configuration from Phase 3. The user wants me to move forward efficiently, so let me:
+  Create a simple plan for Phase 4
+  Start implementing the AnalyzerPage XAML layout (Phase 4.1-4.3)
+  Create the PackageParser class (following encapsulation pattern)
+  Implement the code-behind  
+
+  ** then you start implementations
+
+  ----------------
+  
+  But let me confirm that in log analysys process are we really do Analyze all statistical data to use in Analysis Page? 
+  Let fully check and summaize it from both code and document and see is is match logical?
+
+**** Q3
+
+- Another thing i see i missing. When load log data file. Why i did not see any statistical data summary? 
+  I want to see and check that from statistic data why you assume/use which terminator/delimeter/etc. 
+  Also i what to see what Package type that you use after load log data file. So we need to show information 
+  on Log Data Page.
