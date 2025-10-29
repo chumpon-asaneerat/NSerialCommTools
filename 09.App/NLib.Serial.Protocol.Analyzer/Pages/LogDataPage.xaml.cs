@@ -717,12 +717,167 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private EncodingType DetectEncoding(System.Collections.Generic.List<LogEntry> entries)
         {
-            // TODO: Phase 3.6 - Implement Algorithm 4
-            // Test ASCII: Count valid ASCII chars
-            // Test UTF-8: Try decode, check valid UTF-8 sequences
-            // Test UTF-16: Try decode, check valid UTF-16 sequences
-            // Return encoding with highest valid character ratio
-            return EncodingType.ASCII; // Placeholder - default to ASCII
+            if (entries == null || entries.Count == 0)
+                return EncodingType.ASCII; // Default
+
+            // Collect all bytes from all entries
+            var allBytes = new System.Collections.Generic.List<byte>();
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes != null && entry.RawBytes.Length > 0)
+                {
+                    allBytes.AddRange(entry.RawBytes);
+                }
+            }
+
+            if (allBytes.Count == 0)
+                return EncodingType.ASCII;
+
+            byte[] data = allBytes.ToArray();
+
+            // Test each encoding and calculate valid character ratio
+            double asciiRatio = TestASCII(data);
+            double utf8Ratio = TestUTF8(data);
+            double utf16Ratio = TestUTF16(data);
+            double latin1Ratio = TestLatin1(data);
+
+            // Return encoding with highest ratio (must be > 95% to be confident)
+            double threshold = 0.95;
+
+            if (asciiRatio >= threshold && asciiRatio >= utf8Ratio && asciiRatio >= utf16Ratio && asciiRatio >= latin1Ratio)
+                return EncodingType.ASCII;
+
+            if (utf8Ratio >= threshold && utf8Ratio >= asciiRatio && utf8Ratio >= utf16Ratio && utf8Ratio >= latin1Ratio)
+                return EncodingType.UTF8;
+
+            if (utf16Ratio >= threshold && utf16Ratio >= asciiRatio && utf16Ratio >= utf8Ratio && utf16Ratio >= latin1Ratio)
+                return EncodingType.UTF16;
+
+            if (latin1Ratio >= threshold && latin1Ratio >= asciiRatio && latin1Ratio >= utf8Ratio && latin1Ratio >= utf16Ratio)
+                return EncodingType.Latin1;
+
+            // Default to ASCII if uncertain
+            return EncodingType.ASCII;
+        }
+
+        /// <summary>
+        /// Test if data is valid ASCII (printable + whitespace)
+        /// </summary>
+        private double TestASCII(byte[] data)
+        {
+            int validCount = 0;
+
+            foreach (byte b in data)
+            {
+                // Valid ASCII: printable (0x20-0x7E) + CR/LF/TAB
+                if ((b >= 0x20 && b <= 0x7E) || b == 0x09 || b == 0x0A || b == 0x0D)
+                {
+                    validCount++;
+                }
+            }
+
+            return (double)validCount / data.Length;
+        }
+
+        /// <summary>
+        /// Test if data is valid UTF-8
+        /// </summary>
+        private double TestUTF8(byte[] data)
+        {
+            try
+            {
+                // Try to decode as UTF-8
+                var encoding = System.Text.Encoding.UTF8;
+                string decoded = encoding.GetString(data);
+
+                // Re-encode and compare
+                byte[] reencoded = encoding.GetBytes(decoded);
+
+                // Calculate how many bytes match
+                int matchCount = 0;
+                int minLength = System.Math.Min(data.Length, reencoded.Length);
+
+                for (int i = 0; i < minLength; i++)
+                {
+                    if (data[i] == reencoded[i])
+                        matchCount++;
+                }
+
+                return (double)matchCount / data.Length;
+            }
+            catch
+            {
+                return 0.0; // Invalid UTF-8
+            }
+        }
+
+        /// <summary>
+        /// Test if data is valid UTF-16
+        /// </summary>
+        private double TestUTF16(byte[] data)
+        {
+            try
+            {
+                // UTF-16 requires even number of bytes
+                if (data.Length % 2 != 0)
+                    return 0.0;
+
+                // Try to decode as UTF-16
+                var encoding = System.Text.Encoding.Unicode;
+                string decoded = encoding.GetString(data);
+
+                // Re-encode and compare
+                byte[] reencoded = encoding.GetBytes(decoded);
+
+                // Calculate how many bytes match
+                int matchCount = 0;
+                int minLength = System.Math.Min(data.Length, reencoded.Length);
+
+                for (int i = 0; i < minLength; i++)
+                {
+                    if (data[i] == reencoded[i])
+                        matchCount++;
+                }
+
+                return (double)matchCount / data.Length;
+            }
+            catch
+            {
+                return 0.0; // Invalid UTF-16
+            }
+        }
+
+        /// <summary>
+        /// Test if data is valid Latin-1 (ISO-8859-1)
+        /// </summary>
+        private double TestLatin1(byte[] data)
+        {
+            try
+            {
+                // Latin-1 can encode all byte values 0x00-0xFF
+                // Test for common Latin-1 patterns
+                var encoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
+                string decoded = encoding.GetString(data);
+
+                // Re-encode and compare
+                byte[] reencoded = encoding.GetBytes(decoded);
+
+                // Calculate how many bytes match
+                int matchCount = 0;
+                int minLength = System.Math.Min(data.Length, reencoded.Length);
+
+                for (int i = 0; i < minLength; i++)
+                {
+                    if (data[i] == reencoded[i])
+                        matchCount++;
+                }
+
+                return (double)matchCount / data.Length;
+            }
+            catch
+            {
+                return 0.0; // Invalid Latin-1
+            }
         }
     }
 }
