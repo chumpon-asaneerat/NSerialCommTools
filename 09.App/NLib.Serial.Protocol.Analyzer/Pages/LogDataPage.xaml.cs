@@ -483,11 +483,66 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private byte[] DetectPackageStartMarker(System.Collections.Generic.List<LogEntry> entries)
         {
-            // TODO: Phase 3.6 - Implement Algorithm 1
-            // Frequency analysis at beginning of entries
-            // Find most common 1-4 byte sequences at start
-            // Check frequency > 30% threshold
-            return null; // Placeholder
+            if (entries == null || entries.Count < 5)
+                return null; // Need minimum sample size
+
+            // Dictionary to track frequency of byte sequences at the start
+            var sequenceFrequency = new System.Collections.Generic.Dictionary<string, int>();
+
+            // Analyze 1-4 byte sequences at the beginning of each entry
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes == null || entry.RawBytes.Length == 0)
+                    continue;
+
+                // Try 1-byte, 2-byte, 3-byte, and 4-byte sequences
+                for (int seqLength = 1; seqLength <= 4 && seqLength <= entry.RawBytes.Length; seqLength++)
+                {
+                    byte[] sequence = new byte[seqLength];
+                    System.Array.Copy(entry.RawBytes, 0, sequence, 0, seqLength);
+
+                    // Use hex string as dictionary key
+                    string key = System.BitConverter.ToString(sequence);
+
+                    if (!sequenceFrequency.ContainsKey(key))
+                        sequenceFrequency[key] = 0;
+
+                    sequenceFrequency[key]++;
+                }
+            }
+
+            // Find sequence with highest frequency
+            string mostCommonKey = null;
+            int maxCount = 0;
+
+            foreach (var kvp in sequenceFrequency)
+            {
+                if (kvp.Value > maxCount)
+                {
+                    maxCount = kvp.Value;
+                    mostCommonKey = kvp.Key;
+                }
+            }
+
+            // Check if frequency meets threshold (30% of entries)
+            double threshold = 0.30;
+            double frequency = (double)maxCount / entries.Count;
+
+            if (frequency >= threshold && mostCommonKey != null)
+            {
+                // Convert hex string back to byte array
+                string[] hexBytes = mostCommonKey.Split('-');
+                byte[] result = new byte[hexBytes.Length];
+
+                for (int i = 0; i < hexBytes.Length; i++)
+                {
+                    result[i] = System.Convert.ToByte(hexBytes[i], 16);
+                }
+
+                return result;
+            }
+
+            return null; // No consistent start marker found
         }
 
         /// <summary>
