@@ -260,28 +260,28 @@
   - Status: ✅ Completed (2025-10-29)
 
 ### 3.5 Core Method Implementations
-- [ ] **LoadLogFile() Method**
+- [x] **LoadLogFile() Method**
   - Open OpenFileDialog (filter: *.log, *.txt)
   - Parse log file line by line
   - Create LogEntry objects with RawBytes
   - Populate model.LogFile
   - Update DataGrid
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
 
-- [ ] **AutoDetectDelimiters() Method**
+- [x] **AutoDetectDelimiters() Method**
   - Called after log file loaded
   - Run 4 auto-detection algorithms (see 3.6)
   - Update DetectionConfiguration in model (AutoDetected values)
   - Update UI labels with detected results
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29) - Calls placeholder algorithms from 3.6
   - Reference: Doc 03 Section 4
 
-- [ ] **ApplyConfiguration() Method**
+- [x] **ApplyConfiguration() Method**
   - Read selected modes (Auto/Manual/None)
-  - Read manual values from TextBoxes
+  - Read manual values from TextBoxes (hex format)
   - Update model.DetectionConfig with effective values
   - Show confirmation message
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
 
 - [x] **ClearConfiguration() Method**
   - Reset all DetectionModeInfo objects to None
