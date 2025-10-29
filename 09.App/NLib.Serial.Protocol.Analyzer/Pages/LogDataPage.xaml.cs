@@ -28,8 +28,39 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         {
             _model = model;
 
+            // Phase 3.4 - Wire up event handlers
+            WireUpEventHandlers();
+
             // TODO: Phase 3.4 - Initialize UI from model if data exists
-            // TODO: Phase 3.4 - Wire up event handlers
+        }
+
+        /// <summary>
+        /// Wire up all event handlers for controls
+        /// </summary>
+        private void WireUpEventHandlers()
+        {
+            // Package Start Marker radio button handlers
+            StartMarkerAutoRadio.Checked += StartMarkerMode_Changed;
+            StartMarkerManualRadio.Checked += StartMarkerMode_Changed;
+            StartMarkerNoneRadio.Checked += StartMarkerMode_Changed;
+
+            // Package End Marker radio button handlers
+            EndMarkerAutoRadio.Checked += EndMarkerMode_Changed;
+            EndMarkerManualRadio.Checked += EndMarkerMode_Changed;
+            EndMarkerNoneRadio.Checked += EndMarkerMode_Changed;
+
+            // Segment Separator radio button handlers
+            SeparatorAutoRadio.Checked += SeparatorMode_Changed;
+            SeparatorManualRadio.Checked += SeparatorMode_Changed;
+            SeparatorNoneRadio.Checked += SeparatorMode_Changed;
+
+            // Encoding radio button handlers
+            EncodingAutoRadio.Checked += EncodingMode_Changed;
+            EncodingManualRadio.Checked += EncodingMode_Changed;
+
+            // Button click handlers
+            ApplyConfigButton.Click += ApplyConfiguration_Click;
+            ClearConfigButton.Click += ClearConfiguration_Click;
         }
 
         // TODO: Phase 3.4 - Event Handlers
