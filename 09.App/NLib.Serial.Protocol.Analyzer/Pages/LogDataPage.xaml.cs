@@ -201,7 +201,6 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private void LoadLogFile_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            // TODO: Phase 3.5 - Implement log file loading logic
             Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = "Select Log File",
@@ -211,18 +210,20 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
 
             if (openFileDialog.ShowDialog() == true)
             {
-                string fileName = System.IO.Path.GetFileName(openFileDialog.FileName);
+                try
+                {
+                    LoadLogFile(openFileDialog.FileName);
+                }
+                catch (System.Exception ex)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Error loading log file:\n{ex.Message}",
+                        "Load Error",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Error);
 
-                // Placeholder - will be implemented in Phase 3.5
-                FileInfoLabel.Text = $"{fileName} - Loading...";
-
-                System.Windows.MessageBox.Show(
-                    $"File selected: {openFileDialog.FileName}\n\nLog file parsing will be implemented in Phase 3.5",
-                    "Load Log File",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-
-                FileInfoLabel.Text = "No file loaded";
+                    FileInfoLabel.Text = "No file loaded";
+                }
             }
         }
 
