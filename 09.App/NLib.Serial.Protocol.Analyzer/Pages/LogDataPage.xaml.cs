@@ -330,7 +330,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 {
                     string hexValue = System.BitConverter.ToString(startMarker).Replace("-", " ");
                     StartMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.PackageStartMarker.DetectedValue = hexValue; // Store as hex string
+                    _model.DetectionConfig.PackageStartMarker.SetAutoDetected(hexValue); // Store as hex string
                 }
                 else
                 {
@@ -346,7 +346,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 {
                     string hexValue = System.BitConverter.ToString(endMarker).Replace("-", " ");
                     EndMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.PackageEndMarker.DetectedValue = hexValue; // Store as hex string
+                    _model.DetectionConfig.PackageEndMarker.SetAutoDetected(hexValue); // Store as hex string
                 }
                 else
                 {
@@ -362,7 +362,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 {
                     string hexValue = System.BitConverter.ToString(separator).Replace("-", " ");
                     SeparatorDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.SegmentSeparator.DetectedValue = hexValue; // Store as hex string
+                    _model.DetectionConfig.SegmentSeparator.SetAutoDetected(hexValue); // Store as hex string
                 }
                 else
                 {
@@ -375,7 +375,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             {
                 EncodingType encoding = _model.Analyzer.DetectEncoding(_model.LogFile.Entries.ToList());
                 EncodingDetectedLabel.Text = $"(Auto-detected: {encoding})";
-                _model.DetectionConfig.Encoding.DetectedValue = encoding.ToString(); // Store as string
+                _model.DetectionConfig.Encoding.SetAutoDetected(encoding.ToString()); // Store as string
             }
         }
 
