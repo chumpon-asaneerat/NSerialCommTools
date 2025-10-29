@@ -322,61 +322,250 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private void AutoDetectDelimiters()
         {
+            var entries = _model.LogFile.Entries.ToList();
+            int totalEntries = entries.Count;
+
             // Algorithm 1: Detect Package Start Marker
+            byte[] startMarker = null;
+            int startMarkerCount = 0;
             if (StartMarkerAutoRadio.IsChecked == true)
             {
-                byte[] startMarker = _model.Analyzer.DetectPackageStartMarker(_model.LogFile.Entries.ToList());
+                startMarker = _model.Analyzer.DetectPackageStartMarker(entries);
                 if (startMarker != null)
                 {
                     string hexValue = System.BitConverter.ToString(startMarker).Replace("-", " ");
                     StartMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.PackageStartMarker.SetAutoDetected(hexValue); // Store as hex string
+                    _model.DetectionConfig.PackageStartMarker.SetAutoDetected(hexValue);
+
+                    // Calculate frequency for statistics
+                    startMarkerCount = CountOccurrences(entries, startMarker, true);
+                    double frequency = (double)startMarkerCount / totalEntries * 100;
+                    StartMarkerStatsText.Text = $"{hexValue} - Found in {startMarkerCount}/{totalEntries} entries ({frequency:F1}% frequency)";
                 }
                 else
                 {
                     StartMarkerDetectedLabel.Text = "(Auto-detected: None found)";
+                    StartMarkerStatsText.Text = "None detected (< 30% frequency threshold)";
                 }
             }
 
             // Algorithm 2: Detect Package End Marker
+            byte[] endMarker = null;
+            int endMarkerCount = 0;
             if (EndMarkerAutoRadio.IsChecked == true)
             {
-                byte[] endMarker = _model.Analyzer.DetectPackageEndMarker(_model.LogFile.Entries.ToList());
+                endMarker = _model.Analyzer.DetectPackageEndMarker(entries);
                 if (endMarker != null)
                 {
                     string hexValue = System.BitConverter.ToString(endMarker).Replace("-", " ");
                     EndMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.PackageEndMarker.SetAutoDetected(hexValue); // Store as hex string
+                    _model.DetectionConfig.PackageEndMarker.SetAutoDetected(hexValue);
+
+                    // Calculate frequency for statistics
+                    endMarkerCount = CountOccurrences(entries, endMarker, false);
+                    double frequency = (double)endMarkerCount / totalEntries * 100;
+                    string textRepr = GetTextRepresentation(endMarker);
+                    EndMarkerStatsText.Text = $"{hexValue} ({textRepr}) - Found in {endMarkerCount}/{totalEntries} entries ({frequency:F1}% frequency)";
                 }
                 else
                 {
                     EndMarkerDetectedLabel.Text = "(Auto-detected: None found)";
+                    EndMarkerStatsText.Text = "None detected (< 30% frequency threshold)";
                 }
             }
 
             // Algorithm 3: Detect Segment Separator
+            byte[] separator = null;
             if (SeparatorAutoRadio.IsChecked == true)
             {
-                byte[] separator = _model.Analyzer.DetectSegmentSeparator(_model.LogFile.Entries.ToList());
+                separator = _model.Analyzer.DetectSegmentSeparator(entries);
                 if (separator != null)
                 {
                     string hexValue = System.BitConverter.ToString(separator).Replace("-", " ");
                     SeparatorDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.SegmentSeparator.SetAutoDetected(hexValue); // Store as hex string
+                    _model.DetectionConfig.SegmentSeparator.SetAutoDetected(hexValue);
+
+                    // Calculate internal occurrences for statistics
+                    int totalOccurrences = CountInternalOccurrences(entries, separator);
+                    string textRepr = GetTextRepresentation(separator);
+                    SeparatorStatsText.Text = $"{hexValue} ({textRepr}) - Found {totalOccurrences} times within entries (> 20% frequency threshold)";
                 }
                 else
                 {
                     SeparatorDetectedLabel.Text = "(Auto-detected: None found)";
+                    SeparatorStatsText.Text = "None detected (< 20% frequency threshold)";
                 }
             }
 
             // Algorithm 4: Detect Encoding
             if (EncodingAutoRadio.IsChecked == true)
             {
-                EncodingType encoding = _model.Analyzer.DetectEncoding(_model.LogFile.Entries.ToList());
+                EncodingType encoding = _model.Analyzer.DetectEncoding(entries);
                 EncodingDetectedLabel.Text = $"(Auto-detected: {encoding})";
-                _model.DetectionConfig.Encoding.SetAutoDetected(encoding.ToString()); // Store as string
+                _model.DetectionConfig.Encoding.SetAutoDetected(encoding.ToString());
+
+                EncodingStatsText.Text = $"{encoding} - Selected based on character validity analysis (> 95% valid characters)";
             }
+
+            // Determine Protocol Type
+            string protocolType = DetermineProtocolType(startMarker, endMarker, separator);
+            ProtocolTypeText.Text = protocolType;
+
+            // Calculate Overall Confidence
+            double overallConfidence = CalculateOverallConfidence(startMarker, endMarker, separator, startMarkerCount, endMarkerCount, totalEntries);
+            OverallConfidenceText.Text = $"{overallConfidence:F0}%";
+            OverallConfidenceBar.Value = overallConfidence;
+
+            // Show and expand the detection summary
+            DetectionSummaryExpander.Visibility = System.Windows.Visibility.Visible;
+            DetectionSummaryExpander.IsExpanded = true;
+        }
+
+        /// <summary>
+        /// Count occurrences of a byte sequence at start or end of entries
+        /// </summary>
+        private int CountOccurrences(List<LogEntry> entries, byte[] sequence, bool atStart)
+        {
+            int count = 0;
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes == null || entry.RawBytes.Length < sequence.Length)
+                    continue;
+
+                bool matches = true;
+                if (atStart)
+                {
+                    // Check at start
+                    for (int i = 0; i < sequence.Length; i++)
+                    {
+                        if (entry.RawBytes[i] != sequence[i])
+                        {
+                            matches = false;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    // Check at end
+                    int offset = entry.RawBytes.Length - sequence.Length;
+                    for (int i = 0; i < sequence.Length; i++)
+                    {
+                        if (entry.RawBytes[offset + i] != sequence[i])
+                        {
+                            matches = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (matches)
+                    count++;
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// Count total occurrences of a byte sequence within entries (not at ends)
+        /// </summary>
+        private int CountInternalOccurrences(List<LogEntry> entries, byte[] sequence)
+        {
+            int total = 0;
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes == null || entry.RawBytes.Length < sequence.Length)
+                    continue;
+
+                // Search within entry (skip first and last 25% to exclude markers)
+                int skipStart = entry.RawBytes.Length / 4;
+                int skipEnd = entry.RawBytes.Length - (entry.RawBytes.Length / 4);
+
+                for (int i = skipStart; i <= skipEnd - sequence.Length; i++)
+                {
+                    bool matches = true;
+                    for (int j = 0; j < sequence.Length; j++)
+                    {
+                        if (entry.RawBytes[i + j] != sequence[j])
+                        {
+                            matches = false;
+                            break;
+                        }
+                    }
+                    if (matches)
+                        total++;
+                }
+            }
+            return total;
+        }
+
+        /// <summary>
+        /// Get text representation of byte sequence for display
+        /// </summary>
+        private string GetTextRepresentation(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+                return "";
+
+            // Check for common sequences
+            if (bytes.Length == 2 && bytes[0] == 0x0D && bytes[1] == 0x0A)
+                return "CRLF \\r\\n";
+            if (bytes.Length == 1 && bytes[0] == 0x0A)
+                return "LF \\n";
+            if (bytes.Length == 1 && bytes[0] == 0x0D)
+                return "CR \\r";
+            if (bytes.Length == 1 && bytes[0] == 0x20)
+                return "Space";
+            if (bytes.Length == 1 && bytes[0] == 0x09)
+                return "Tab \\t";
+            if (bytes.Length == 1 && bytes[0] == 0x2C)
+                return "Comma";
+
+            // Try ASCII conversion for printable characters
+            string text = System.Text.Encoding.ASCII.GetString(bytes);
+            if (text.All(c => c >= 0x20 && c <= 0x7E))
+                return $"\"{text}\"";
+
+            return "binary";
+        }
+
+        /// <summary>
+        /// Determine protocol type based on detected markers
+        /// </summary>
+        private string DetermineProtocolType(byte[] startMarker, byte[] endMarker, byte[] separator)
+        {
+            bool hasStartMarker = startMarker != null;
+            bool hasEndMarker = endMarker != null;
+            bool hasSeparator = separator != null;
+
+            if (hasStartMarker && hasSeparator)
+                return "PackageBased with Segments (Multi-segment protocol)";
+            else if (hasStartMarker && !hasSeparator)
+                return "PackageBased without Segments (Frame protocol)";
+            else if (hasEndMarker && hasSeparator)
+                return "SinglePackage with Segments (Terminated multi-field protocol)";
+            else if (hasEndMarker && !hasSeparator)
+                return "SinglePackage without Segments (Simple terminated protocol)";
+            else
+                return "Unknown (Insufficient markers detected)";
+        }
+
+        /// <summary>
+        /// Calculate overall confidence score based on detection results
+        /// </summary>
+        private double CalculateOverallConfidence(byte[] startMarker, byte[] endMarker, byte[] separator,
+                                                  int startCount, int endCount, int totalEntries)
+        {
+            double startConfidence = startMarker != null ? (double)startCount / totalEntries * 100 : 0;
+            double endConfidence = endMarker != null ? (double)endCount / totalEntries * 100 : 0;
+            double separatorConfidence = separator != null ? 80.0 : 0; // Separator confidence is harder to measure
+
+            // Average of detected items
+            int detectedCount = (startMarker != null ? 1 : 0) + (endMarker != null ? 1 : 0) + (separator != null ? 1 : 0);
+            if (detectedCount == 0)
+                return 0;
+
+            double totalConfidence = startConfidence + endConfidence + separatorConfidence;
+            return totalConfidence / detectedCount;
         }
 
         /// <summary>
