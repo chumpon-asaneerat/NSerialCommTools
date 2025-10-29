@@ -63,18 +63,133 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             ClearConfigButton.Click += ClearConfiguration_Click;
         }
 
-        // TODO: Phase 3.4 - Event Handlers
-        // - LoadLogFile_Click()
-        // - ClearLog_Click()
-        // - ApplyConfiguration_Click()
-        // - ClearConfiguration_Click()
-        // - RadioButton_Checked() handlers
+        // Phase 3.4 - Event Handlers
+
+        /// <summary>
+        /// Handle Package Start Marker mode changes
+        /// </summary>
+        private void StartMarkerMode_Changed(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (StartMarkerAutoRadio.IsChecked == true)
+            {
+                StartMarkerTextBox.IsEnabled = false;
+                StartMarkerDetectedLabel.Visibility = System.Windows.Visibility.Visible;
+            }
+            else if (StartMarkerManualRadio.IsChecked == true)
+            {
+                StartMarkerTextBox.IsEnabled = true;
+                StartMarkerDetectedLabel.Visibility = System.Windows.Visibility.Collapsed;
+            }
+            else // None
+            {
+                StartMarkerTextBox.IsEnabled = false;
+                StartMarkerDetectedLabel.Visibility = System.Windows.Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Handle Package End Marker mode changes
+        /// </summary>
+        private void EndMarkerMode_Changed(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (EndMarkerAutoRadio.IsChecked == true)
+            {
+                EndMarkerTextBox.IsEnabled = false;
+                EndMarkerDetectedLabel.Visibility = System.Windows.Visibility.Visible;
+            }
+            else if (EndMarkerManualRadio.IsChecked == true)
+            {
+                EndMarkerTextBox.IsEnabled = true;
+                EndMarkerDetectedLabel.Visibility = System.Windows.Visibility.Collapsed;
+            }
+            else // None
+            {
+                EndMarkerTextBox.IsEnabled = false;
+                EndMarkerDetectedLabel.Visibility = System.Windows.Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Handle Segment Separator mode changes
+        /// </summary>
+        private void SeparatorMode_Changed(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (SeparatorAutoRadio.IsChecked == true)
+            {
+                SeparatorTextBox.IsEnabled = false;
+                SeparatorDetectedLabel.Visibility = System.Windows.Visibility.Visible;
+            }
+            else if (SeparatorManualRadio.IsChecked == true)
+            {
+                SeparatorTextBox.IsEnabled = true;
+                SeparatorDetectedLabel.Visibility = System.Windows.Visibility.Collapsed;
+            }
+            else // None
+            {
+                SeparatorTextBox.IsEnabled = false;
+                SeparatorDetectedLabel.Visibility = System.Windows.Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Handle Encoding mode changes
+        /// </summary>
+        private void EncodingMode_Changed(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (EncodingAutoRadio.IsChecked == true)
+            {
+                EncodingComboBox.IsEnabled = false;
+                EncodingDetectedLabel.Visibility = System.Windows.Visibility.Visible;
+            }
+            else // Manual
+            {
+                EncodingComboBox.IsEnabled = true;
+                EncodingDetectedLabel.Visibility = System.Windows.Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Apply detection configuration to the model
+        /// </summary>
+        private void ApplyConfiguration_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // TODO: Phase 3.5 - Implement configuration application logic
+            System.Windows.MessageBox.Show("Apply Configuration - To be implemented in Phase 3.5",
+                "Not Implemented",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+        }
+
+        /// <summary>
+        /// Clear all detection configuration
+        /// </summary>
+        private void ClearConfiguration_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // Reset all radio buttons to Auto/default state
+            StartMarkerAutoRadio.IsChecked = true;
+            EndMarkerAutoRadio.IsChecked = true;
+            SeparatorAutoRadio.IsChecked = true;
+            EncodingAutoRadio.IsChecked = true;
+
+            // Clear text boxes
+            StartMarkerTextBox.Text = string.Empty;
+            EndMarkerTextBox.Text = string.Empty;
+            SeparatorTextBox.Text = string.Empty;
+
+            // Reset labels
+            StartMarkerDetectedLabel.Text = "(Auto-detected: ...)";
+            EndMarkerDetectedLabel.Text = "(Auto-detected: ...)";
+            SeparatorDetectedLabel.Text = "(Auto-detected: ...)";
+            EncodingDetectedLabel.Text = "(Auto-detected: ...)";
+
+            // Reset ComboBox to default
+            EncodingComboBox.SelectedIndex = 0; // ASCII
+        }
 
         // TODO: Phase 3.5 - Core Method Implementations
         // - LoadLogFile() - Open file, parse entries
         // - AutoDetectDelimiters() - Run 4 detection algorithms
         // - ApplyConfiguration() - Save to model
-        // - ClearConfiguration() - Reset detection
 
         // TODO: Phase 3.6 - Auto-Detection Algorithms
         // - DetectPackageStartMarker()
