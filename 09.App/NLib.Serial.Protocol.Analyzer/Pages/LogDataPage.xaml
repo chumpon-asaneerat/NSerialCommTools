@@ -13,7 +13,8 @@
         </Style>
     </UserControl.Resources>
 
-    <DockPanel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <DockPanel>
         <!-- Phase 3.1: Main Layout Structure -->
 
         <!-- Detection Configuration Panel (Top, 30% height) -->
@@ -219,5 +220,6 @@
                 </DockPanel>
             </Border>
         </DockPanel>
-    </DockPanel>
+        </DockPanel>
+    </ScrollViewer>
 </UserControl>
