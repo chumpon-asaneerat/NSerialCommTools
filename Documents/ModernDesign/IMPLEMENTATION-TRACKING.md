@@ -240,24 +240,24 @@
   - Reference: Doc 06 Section 4.1.2
 
 ### 3.4 LogDataPage.xaml.cs - Code-Behind Structure
-- [ ] **Class Setup**
+- [x] **Class Setup**
   - Private field: `ProtocolAnalyzerModel _model`
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
 
-- [ ] **Setup() Method**
+- [x] **Setup() Method**
   - Signature: `public void Setup(ProtocolAnalyzerModel model)`
   - Store model reference
   - Initialize UI from model (if data exists)
   - Wire up event handlers
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
 
-- [ ] **Event Handlers**
+- [x] **Event Handlers**
   - LoadLogFile_Click() - Button click handler
   - ClearLog_Click() - Button click handler
-  - ApplyConfiguration_Click() - Button click handler
+  - ApplyConfiguration_Click() - Button click handler (placeholder)
   - ClearConfiguration_Click() - Button click handler
-  - RadioButton_Checked() - Mode change handlers (x3)
-  - Status: ⏳ Not Started
+  - RadioButton_Checked() - Mode change handlers (x4: StartMarker, EndMarker, Separator, Encoding)
+  - Status: ✅ Completed (2025-10-29)
 
 ### 3.5 Core Method Implementations
 - [ ] **LoadLogFile() Method**
