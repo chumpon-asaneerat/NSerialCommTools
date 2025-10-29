@@ -319,12 +319,12 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Algorithm 1: Detect Package Start Marker
             if (StartMarkerAutoRadio.IsChecked == true)
             {
-                byte[] startMarker = _analyzer.DetectPackageStartMarker(_model.LogFile.Entries.ToList());
+                byte[] startMarker = _model.Analyzer.DetectPackageStartMarker(_model.LogFile.Entries.ToList());
                 if (startMarker != null)
                 {
                     string hexValue = System.BitConverter.ToString(startMarker).Replace("-", " ");
                     StartMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.PackageStartMarker.AutoDetectedValue = startMarker;
+                    _model.DetectionConfig.PackageStartMarker.DetectedValue = hexValue; // Store as hex string
                 }
                 else
                 {
@@ -335,12 +335,12 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Algorithm 2: Detect Package End Marker
             if (EndMarkerAutoRadio.IsChecked == true)
             {
-                byte[] endMarker = _analyzer.DetectPackageEndMarker(_model.LogFile.Entries.ToList());
+                byte[] endMarker = _model.Analyzer.DetectPackageEndMarker(_model.LogFile.Entries.ToList());
                 if (endMarker != null)
                 {
                     string hexValue = System.BitConverter.ToString(endMarker).Replace("-", " ");
                     EndMarkerDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.PackageEndMarker.AutoDetectedValue = endMarker;
+                    _model.DetectionConfig.PackageEndMarker.DetectedValue = hexValue; // Store as hex string
                 }
                 else
                 {
@@ -351,12 +351,12 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Algorithm 3: Detect Segment Separator
             if (SeparatorAutoRadio.IsChecked == true)
             {
-                byte[] separator = _analyzer.DetectSegmentSeparator(_model.LogFile.Entries.ToList());
+                byte[] separator = _model.Analyzer.DetectSegmentSeparator(_model.LogFile.Entries.ToList());
                 if (separator != null)
                 {
                     string hexValue = System.BitConverter.ToString(separator).Replace("-", " ");
                     SeparatorDetectedLabel.Text = $"(Auto-detected: {hexValue})";
-                    _model.DetectionConfig.SegmentSeparator.AutoDetectedValue = separator;
+                    _model.DetectionConfig.SegmentSeparator.DetectedValue = hexValue; // Store as hex string
                 }
                 else
                 {
@@ -367,9 +367,9 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Algorithm 4: Detect Encoding
             if (EncodingAutoRadio.IsChecked == true)
             {
-                EncodingType encoding = _analyzer.DetectEncoding(_model.LogFile.Entries.ToList());
+                EncodingType encoding = _model.Analyzer.DetectEncoding(_model.LogFile.Entries.ToList());
                 EncodingDetectedLabel.Text = $"(Auto-detected: {encoding})";
-                _model.DetectionConfig.Encoding.AutoDetectedValue = new byte[] { (byte)encoding };
+                _model.DetectionConfig.Encoding.DetectedValue = encoding.ToString(); // Store as string
             }
         }
 
@@ -386,10 +386,10 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             else if (StartMarkerManualRadio.IsChecked == true)
             {
                 _model.DetectionConfig.PackageStartMarker.Mode = DetectionMode.Manual;
-                // Parse manual value from TextBox (hex format)
+                // Store manual value as hex string (e.g., "0D 0A")
                 if (!string.IsNullOrWhiteSpace(StartMarkerTextBox.Text))
                 {
-                    _model.DetectionConfig.PackageStartMarker.ManualValue = ParseHexString(StartMarkerTextBox.Text);
+                    _model.DetectionConfig.PackageStartMarker.ManualValue = StartMarkerTextBox.Text;
                 }
             }
             else
@@ -407,7 +407,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 _model.DetectionConfig.PackageEndMarker.Mode = DetectionMode.Manual;
                 if (!string.IsNullOrWhiteSpace(EndMarkerTextBox.Text))
                 {
-                    _model.DetectionConfig.PackageEndMarker.ManualValue = ParseHexString(EndMarkerTextBox.Text);
+                    _model.DetectionConfig.PackageEndMarker.ManualValue = EndMarkerTextBox.Text;
                 }
             }
             else
@@ -425,7 +425,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 _model.DetectionConfig.SegmentSeparator.Mode = DetectionMode.Manual;
                 if (!string.IsNullOrWhiteSpace(SeparatorTextBox.Text))
                 {
-                    _model.DetectionConfig.SegmentSeparator.ManualValue = ParseHexString(SeparatorTextBox.Text);
+                    _model.DetectionConfig.SegmentSeparator.ManualValue = SeparatorTextBox.Text;
                 }
             }
             else
@@ -447,7 +447,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 else if (EncodingComboBox.SelectedIndex == 2) selectedEncoding = EncodingType.UTF16;
                 else if (EncodingComboBox.SelectedIndex == 3) selectedEncoding = EncodingType.Latin1;
 
-                _model.DetectionConfig.Encoding.ManualValue = new byte[] { (byte)selectedEncoding };
+                _model.DetectionConfig.Encoding.ManualValue = selectedEncoding.ToString();
             }
         }
 
