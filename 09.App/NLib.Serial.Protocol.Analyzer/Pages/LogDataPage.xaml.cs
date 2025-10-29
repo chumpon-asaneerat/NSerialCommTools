@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
 using NLib.Serial.Protocol.Analyzer.Models;
@@ -325,7 +326,7 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private void AutoDetectDelimiters()
         {
-            var entries = _model.LogFile.Entries.ToList();
+            List<LogEntry> entries = _model.LogFile.Entries.ToList();
             int totalEntries = entries.Count;
 
             // Algorithm 1: Detect Package Start Marker
