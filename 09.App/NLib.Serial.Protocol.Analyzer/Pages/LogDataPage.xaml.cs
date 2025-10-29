@@ -550,11 +550,67 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         /// </summary>
         private byte[] DetectPackageEndMarker(System.Collections.Generic.List<LogEntry> entries)
         {
-            // TODO: Phase 3.6 - Implement Algorithm 2
-            // Frequency analysis at end of entries
-            // Find most common 1-4 byte sequences at end (CRLF, LF, CR, etc.)
-            // Check frequency > 30% threshold
-            return null; // Placeholder
+            if (entries == null || entries.Count < 5)
+                return null; // Need minimum sample size
+
+            // Dictionary to track frequency of byte sequences at the end
+            var sequenceFrequency = new System.Collections.Generic.Dictionary<string, int>();
+
+            // Analyze 1-4 byte sequences at the end of each entry
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes == null || entry.RawBytes.Length == 0)
+                    continue;
+
+                // Try 1-byte, 2-byte, 3-byte, and 4-byte sequences from the end
+                for (int seqLength = 1; seqLength <= 4 && seqLength <= entry.RawBytes.Length; seqLength++)
+                {
+                    byte[] sequence = new byte[seqLength];
+                    int startPos = entry.RawBytes.Length - seqLength;
+                    System.Array.Copy(entry.RawBytes, startPos, sequence, 0, seqLength);
+
+                    // Use hex string as dictionary key
+                    string key = System.BitConverter.ToString(sequence);
+
+                    if (!sequenceFrequency.ContainsKey(key))
+                        sequenceFrequency[key] = 0;
+
+                    sequenceFrequency[key]++;
+                }
+            }
+
+            // Find sequence with highest frequency
+            string mostCommonKey = null;
+            int maxCount = 0;
+
+            foreach (var kvp in sequenceFrequency)
+            {
+                if (kvp.Value > maxCount)
+                {
+                    maxCount = kvp.Value;
+                    mostCommonKey = kvp.Key;
+                }
+            }
+
+            // Check if frequency meets threshold (30% of entries)
+            double threshold = 0.30;
+            double frequency = (double)maxCount / entries.Count;
+
+            if (frequency >= threshold && mostCommonKey != null)
+            {
+                // Convert hex string back to byte array
+                string[] hexBytes = mostCommonKey.Split('-');
+                byte[] result = new byte[hexBytes.Length];
+
+                for (int i = 0; i < hexBytes.Length; i++)
+                {
+                    result[i] = System.Convert.ToByte(hexBytes[i], 16);
+                }
+
+                return result;
+            }
+
+            return null; // No consistent end marker found
         }
 
         /// <summary>
