@@ -135,5 +135,6 @@
 
         </DockPanel>
 
-    </DockPanel>
+        </DockPanel>
+    </ScrollViewer>
 </UserControl>
