@@ -7,9 +7,27 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 {
     /// <summary>
     /// Analyzes log files to automatically detect protocol patterns using statistical analysis
+    /// Uses configurable thresholds and parameters for flexible detection
     /// </summary>
     public class LogFileAnalyzer
     {
+        private readonly LogFileAnalyzerConfig _config;
+
+        /// <summary>
+        /// Creates analyzer with default configuration
+        /// </summary>
+        public LogFileAnalyzer() : this(new LogFileAnalyzerConfig())
+        {
+        }
+
+        /// <summary>
+        /// Creates analyzer with custom configuration
+        /// </summary>
+        /// <param name="config">Configuration parameters for detection algorithms</param>
+        public LogFileAnalyzer(LogFileAnalyzerConfig config)
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+        }
         /// <summary>
         /// Auto-detect package start marker using frequency analysis
         /// </summary>
@@ -17,20 +35,22 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         /// <returns>Detected start marker bytes, or null if none found</returns>
         public byte[] DetectPackageStartMarker(List<LogEntry> entries)
         {
-            if (entries == null || entries.Count < 5)
+            if (entries == null || entries.Count < _config.MinimumSampleSize)
                 return null; // Need minimum sample size
 
             // Dictionary to track frequency of byte sequences at the start
             var sequenceFrequency = new Dictionary<string, int>();
 
-            // Analyze 1-4 byte sequences at the beginning of each entry
+            // Analyze sequences at the beginning of each entry
             foreach (var entry in entries)
             {
                 if (entry.RawBytes == null || entry.RawBytes.Length == 0)
                     continue;
 
-                // Try 1-byte, 2-byte, 3-byte, and 4-byte sequences
-                for (int seqLength = 1; seqLength <= 4 && seqLength <= entry.RawBytes.Length; seqLength++)
+                // Try sequences of varying lengths (configurable)
+                for (int seqLength = _config.MinSequenceLength;
+                     seqLength <= _config.MaxSequenceLength && seqLength <= entry.RawBytes.Length;
+                     seqLength++)
                 {
                     byte[] sequence = new byte[seqLength];
                     Array.Copy(entry.RawBytes, 0, sequence, 0, seqLength);
@@ -58,11 +78,10 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                 }
             }
 
-            // Check if frequency meets threshold (30% of entries)
-            double threshold = 0.30;
+            // Check if frequency meets configured threshold
             double frequency = (double)maxCount / entries.Count;
 
-            if (frequency >= threshold && mostCommonKey != null)
+            if (frequency >= _config.MarkerFrequencyThreshold && mostCommonKey != null)
             {
                 // Convert hex string back to byte array
                 return ParseHexString(mostCommonKey);
@@ -78,20 +97,22 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         /// <returns>Detected end marker bytes, or null if none found</returns>
         public byte[] DetectPackageEndMarker(List<LogEntry> entries)
         {
-            if (entries == null || entries.Count < 5)
+            if (entries == null || entries.Count < _config.MinimumSampleSize)
                 return null; // Need minimum sample size
 
             // Dictionary to track frequency of byte sequences at the end
             var sequenceFrequency = new Dictionary<string, int>();
 
-            // Analyze 1-4 byte sequences at the end of each entry
+            // Analyze sequences at the end of each entry
             foreach (var entry in entries)
             {
                 if (entry.RawBytes == null || entry.RawBytes.Length == 0)
                     continue;
 
-                // Try 1-byte, 2-byte, 3-byte, and 4-byte sequences from the end
-                for (int seqLength = 1; seqLength <= 4 && seqLength <= entry.RawBytes.Length; seqLength++)
+                // Try sequences of varying lengths (configurable)
+                for (int seqLength = _config.MinSequenceLength;
+                     seqLength <= _config.MaxSequenceLength && seqLength <= entry.RawBytes.Length;
+                     seqLength++)
                 {
                     byte[] sequence = new byte[seqLength];
                     int startPos = entry.RawBytes.Length - seqLength;
@@ -120,11 +141,10 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                 }
             }
 
-            // Check if frequency meets threshold (30% of entries)
-            double threshold = 0.30;
+            // Check if frequency meets configured threshold
             double frequency = (double)maxCount / entries.Count;
 
-            if (frequency >= threshold && mostCommonKey != null)
+            if (frequency >= _config.MarkerFrequencyThreshold && mostCommonKey != null)
             {
                 // Convert hex string back to byte array
                 return ParseHexString(mostCommonKey);
@@ -140,24 +160,25 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         /// <returns>Detected separator bytes, or null if none found</returns>
         public byte[] DetectSegmentSeparator(List<LogEntry> entries)
         {
-            if (entries == null || entries.Count < 5)
+            if (entries == null || entries.Count < _config.MinimumSampleSize)
                 return null; // Need minimum sample size
 
             // Dictionary to track frequency of byte sequences within entries
             var sequenceFrequency = new Dictionary<string, int>();
             int totalEntries = 0;
 
-            // Analyze 1-2 byte sequences within each entry (excluding start/end)
+            // Analyze sequences within each entry (excluding start/end)
             foreach (var entry in entries)
             {
-                if (entry.RawBytes == null || entry.RawBytes.Length < 5)
+                int minLength = _config.SeparatorSkipBytesFromStart + _config.SeparatorSkipBytesFromEnd + 1;
+                if (entry.RawBytes == null || entry.RawBytes.Length < minLength)
                     continue; // Need sufficient length to have middle portion
 
                 totalEntries++;
 
-                // Skip first 2 and last 2 bytes to avoid start/end markers
-                int startPos = Math.Min(2, entry.RawBytes.Length / 4);
-                int endPos = entry.RawBytes.Length - Math.Min(2, entry.RawBytes.Length / 4);
+                // Skip configured bytes from start/end to avoid detecting markers as separators
+                int startPos = Math.Min(_config.SeparatorSkipBytesFromStart, entry.RawBytes.Length / 4);
+                int endPos = entry.RawBytes.Length - Math.Min(_config.SeparatorSkipBytesFromEnd, entry.RawBytes.Length / 4);
 
                 if (endPos <= startPos)
                     continue;
@@ -165,33 +186,24 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                 // Track which sequences appear in this entry (for consistency)
                 var seenInThisEntry = new HashSet<string>();
 
-                // Try 1-byte and 2-byte sequences in the middle portion
+                // Try sequences of varying lengths in the middle portion
                 for (int i = startPos; i < endPos; i++)
                 {
-                    // 1-byte sequence
-                    byte[] seq1 = new byte[] { entry.RawBytes[i] };
-                    string key1 = BitConverter.ToString(seq1);
-
-                    if (!seenInThisEntry.Contains(key1))
+                    for (int seqLength = _config.MinSequenceLength;
+                         seqLength <= _config.MaxSequenceLength && i + seqLength <= endPos;
+                         seqLength++)
                     {
-                        seenInThisEntry.Add(key1);
-                        if (!sequenceFrequency.ContainsKey(key1))
-                            sequenceFrequency[key1] = 0;
-                        sequenceFrequency[key1]++;
-                    }
+                        byte[] sequence = new byte[seqLength];
+                        Array.Copy(entry.RawBytes, i, sequence, 0, seqLength);
 
-                    // 2-byte sequence
-                    if (i < endPos - 1)
-                    {
-                        byte[] seq2 = new byte[] { entry.RawBytes[i], entry.RawBytes[i + 1] };
-                        string key2 = BitConverter.ToString(seq2);
+                        string key = BitConverter.ToString(sequence);
 
-                        if (!seenInThisEntry.Contains(key2))
+                        if (!seenInThisEntry.Contains(key))
                         {
-                            seenInThisEntry.Add(key2);
-                            if (!sequenceFrequency.ContainsKey(key2))
-                                sequenceFrequency[key2] = 0;
-                            sequenceFrequency[key2]++;
+                            seenInThisEntry.Add(key);
+                            if (!sequenceFrequency.ContainsKey(key))
+                                sequenceFrequency[key] = 0;
+                            sequenceFrequency[key]++;
                         }
                     }
                 }
@@ -213,11 +225,10 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                 }
             }
 
-            // Check if frequency meets threshold (20% of entries must contain it)
-            double threshold = 0.20;
+            // Check if frequency meets configured threshold
             double frequency = (double)maxCount / totalEntries;
 
-            if (frequency >= threshold && mostCommonKey != null)
+            if (frequency >= _config.SeparatorFrequencyThreshold && mostCommonKey != null)
             {
                 // Convert hex string back to byte array
                 return ParseHexString(mostCommonKey);
@@ -257,19 +268,17 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             double utf16Ratio = TestUTF16(data);
             double latin1Ratio = TestLatin1(data);
 
-            // Return encoding with highest ratio (must be > 95% to be confident)
-            double threshold = 0.95;
-
-            if (asciiRatio >= threshold && asciiRatio >= utf8Ratio && asciiRatio >= utf16Ratio && asciiRatio >= latin1Ratio)
+            // Return encoding with highest ratio (must meet configured confidence threshold)
+            if (asciiRatio >= _config.EncodingConfidenceThreshold && asciiRatio >= utf8Ratio && asciiRatio >= utf16Ratio && asciiRatio >= latin1Ratio)
                 return EncodingType.ASCII;
 
-            if (utf8Ratio >= threshold && utf8Ratio >= asciiRatio && utf8Ratio >= utf16Ratio && utf8Ratio >= latin1Ratio)
+            if (utf8Ratio >= _config.EncodingConfidenceThreshold && utf8Ratio >= asciiRatio && utf8Ratio >= utf16Ratio && utf8Ratio >= latin1Ratio)
                 return EncodingType.UTF8;
 
-            if (utf16Ratio >= threshold && utf16Ratio >= asciiRatio && utf16Ratio >= utf8Ratio && utf16Ratio >= latin1Ratio)
+            if (utf16Ratio >= _config.EncodingConfidenceThreshold && utf16Ratio >= asciiRatio && utf16Ratio >= utf8Ratio && utf16Ratio >= latin1Ratio)
                 return EncodingType.UTF16;
 
-            if (latin1Ratio >= threshold && latin1Ratio >= asciiRatio && latin1Ratio >= utf8Ratio && latin1Ratio >= utf16Ratio)
+            if (latin1Ratio >= _config.EncodingConfidenceThreshold && latin1Ratio >= asciiRatio && latin1Ratio >= utf8Ratio && latin1Ratio >= utf16Ratio)
                 return EncodingType.Latin1;
 
             // Default to ASCII if uncertain
@@ -296,6 +305,7 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 
         /// <summary>
         /// Test if data is valid ASCII (printable + whitespace)
+        /// Uses configured ASCII ranges and whitespace characters
         /// </summary>
         private double TestASCII(byte[] data)
         {
@@ -303,8 +313,11 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 
             foreach (byte b in data)
             {
-                // Valid ASCII: printable (0x20-0x7E) + CR/LF/TAB
-                if ((b >= 0x20 && b <= 0x7E) || b == 0x09 || b == 0x0A || b == 0x0D)
+                // Check if byte is in printable range or is a valid whitespace character
+                bool isInPrintableRange = (b >= _config.AsciiPrintableMin && b <= _config.AsciiPrintableMax);
+                bool isWhitespace = Array.IndexOf(_config.AsciiWhitespaceChars, b) >= 0;
+
+                if (isInPrintableRange || isWhitespace)
                 {
                     validCount++;
                 }
