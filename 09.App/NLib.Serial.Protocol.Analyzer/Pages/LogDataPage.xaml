@@ -6,11 +6,32 @@
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
     <DockPanel>
-        <!-- Content will be implemented in Phase 3.1-3.3 -->
-        <TextBlock Text="Log Data Page - To Be Implemented"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   FontSize="16"
-                   Foreground="Gray"/>
+        <!-- Phase 3.1: Main Layout Structure -->
+
+        <!-- Detection Configuration Panel (Top, 30% height) -->
+        <DockPanel DockPanel.Dock="Top" Height="250" Background="#F5F5F5">
+            <Border BorderBrush="#CCCCCC" BorderThickness="0,0,0,1" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Detection Configuration"
+                               FontSize="14"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"/>
+                    <!-- Phase 3.2: Detection Configuration controls will be added here -->
+                </StackPanel>
+            </Border>
+        </DockPanel>
+
+        <!-- Log Data Panel (Bottom, 70% height - fills remaining space) -->
+        <DockPanel Background="White">
+            <Border BorderBrush="#CCCCCC" BorderThickness="0" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Log Data View"
+                               FontSize="14"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"/>
+                    <!-- Phase 3.3: Log Data controls will be added here -->
+                </StackPanel>
+            </Border>
+        </DockPanel>
     </DockPanel>
 </UserControl>
