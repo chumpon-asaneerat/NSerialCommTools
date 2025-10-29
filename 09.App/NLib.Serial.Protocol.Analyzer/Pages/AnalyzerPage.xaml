@@ -13,7 +13,8 @@
         </Style>
     </UserControl.Resources>
 
-    <DockPanel Margin="10">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <DockPanel Margin="10">
 
         <!-- LEFT PANEL: Package List (30% width) -->
         <DockPanel DockPanel.Dock="Left" Width="350" Margin="0,0,10,0">
