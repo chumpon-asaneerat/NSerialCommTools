@@ -69,36 +69,51 @@ namespace NLib
             {
                 if (!_model.CanAccessPage2())
                 {
-                    MessageBox.Show(
-                        "Please load log data and configure detection settings first in the Input Data tab.",
-                        "Prerequisites Not Met",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                    MainTabControl.SelectedIndex = 0;
+                    // Use Dispatcher.BeginInvoke to defer MessageBox and tab change
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show(
+                            "Please load log data and configure detection settings first in the Input Data tab.",
+                            "Prerequisites Not Met",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        MainTabControl.SelectedIndex = 0;
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                    return;
                 }
             }
             else if (MainTabControl.SelectedIndex == 2) // Field Editor tab
             {
                 if (!_model.CanAccessPage3())
                 {
-                    MessageBox.Show(
-                        "Please run analysis first in the Analysis tab.",
-                        "Prerequisites Not Met",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                    MainTabControl.SelectedIndex = 1;
+                    // Use Dispatcher.BeginInvoke to defer MessageBox and tab change
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show(
+                            "Please run analysis first in the Analysis tab.",
+                            "Prerequisites Not Met",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        MainTabControl.SelectedIndex = 1;
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                    return;
                 }
             }
             else if (MainTabControl.SelectedIndex == 3) // Export tab
             {
                 if (!_model.CanAccessPage4())
                 {
-                    MessageBox.Show(
-                        "Please define fields first in the Field Editor tab.",
-                        "Prerequisites Not Met",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                    MainTabControl.SelectedIndex = 2;
+                    // Use Dispatcher.BeginInvoke to defer MessageBox and tab change
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show(
+                            "Please define fields first in the Field Editor tab.",
+                            "Prerequisites Not Met",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        MainTabControl.SelectedIndex = 2;
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                    return;
                 }
             }
 

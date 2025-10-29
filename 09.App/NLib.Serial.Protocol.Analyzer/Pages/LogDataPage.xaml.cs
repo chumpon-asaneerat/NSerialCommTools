@@ -270,6 +270,9 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
         {
             FileInfoLabel.Text = "Loading...";
 
+            // Unbind DataGrid to prevent ItemsControl inconsistency error
+            LogEntriesDataGrid.ItemsSource = null;
+
             // Clear existing entries
             _model.LogFile.Entries.Clear();
 
@@ -293,6 +296,9 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
                 // Add to model (RawHex and RawText are computed properties)
                 _model.LogFile.Entries.Add(entry);
             }
+
+            // Rebind DataGrid after all entries are loaded
+            LogEntriesDataGrid.ItemsSource = _model.LogFile.Entries;
 
             // Update model file path
             _model.LogFile.FilePath = filePath;
