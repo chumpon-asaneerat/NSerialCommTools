@@ -8,6 +8,13 @@ namespace NLib.Serial.Protocol.Analyzer.Models
     public class LogEntry
     {
         /// <summary>
+        /// Entry number (row index for UI binding, 1-based)
+        /// NOTE: This property is primarily used for DataGrid row numbering in the UI.
+        /// It is not a unique identifier and may change when entries are reordered.
+        /// </summary>
+        public int EntryNumber { get; set; }
+
+        /// <summary>
         /// Timestamp of the log entry
         /// </summary>
         public DateTime Timestamp { get; set; }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NLib.Serial.Protocol.Analyzer.Analyzers;
 
 namespace NLib.Serial.Protocol.Analyzer.Models
 {
@@ -20,6 +21,12 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         /// Loaded log file with all entries
         /// </summary>
         public LogFile LogFile { get; set; }
+
+        /// <summary>
+        /// Log file analyzer for auto-detection algorithms
+        /// Encapsulated in model to hide implementation from UI
+        /// </summary>
+        public LogFileAnalyzer Analyzer { get; private set; }
 
         #endregion
 
@@ -90,6 +97,7 @@ namespace NLib.Serial.Protocol.Analyzer.Models
             // Page 1
             DetectionConfig = new DetectionConfiguration();
             LogFile = new LogFile();
+            Analyzer = new LogFileAnalyzer(); // Uses default config
 
             // Page 2
             Packages = new List<PackageInfo>();
