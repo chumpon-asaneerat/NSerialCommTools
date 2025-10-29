@@ -290,44 +290,49 @@
   - Status: ✅ Completed (2025-10-29)
 
 ### 3.6 Auto-Detection Algorithms (4 Algorithms)
-- [ ] **Algorithm 1: Auto-detect Package Start Marker**
+- [x] **Algorithm 1: Auto-detect Package Start Marker**
   - Method: `DetectPackageStartMarker(List<LogEntry> entries)`
   - Strategy: Frequency analysis at beginning of entries
   - Find most common 1-4 byte sequences at start
   - Check frequency > 30% threshold
   - Return detected marker or null
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 03 Section 4.1
+  - Implementation: LogDataPage.xaml.cs:484-546
 
-- [ ] **Algorithm 2: Auto-detect Package End Marker**
+- [x] **Algorithm 2: Auto-detect Package End Marker**
   - Method: `DetectPackageEndMarker(List<LogEntry> entries)`
   - Strategy: Frequency analysis at end of entries
   - Find most common 1-4 byte sequences at end (CRLF, LF, CR, etc.)
   - Check frequency > 30% threshold
   - Return detected marker or null
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 03 Section 4.2
+  - Implementation: LogDataPage.xaml.cs:551-614
 
-- [ ] **Algorithm 3: Auto-detect Segment Separator**
+- [x] **Algorithm 3: Auto-detect Segment Separator**
   - Method: `DetectSegmentSeparator(List<LogEntry> entries)`
   - Strategy: Frequency analysis within entries
-  - Exclude start/end markers from search
-  - Find most common 1-2 byte sequences (CRLF, LF, CR, TAB, comma, etc.)
+  - Exclude start/end markers from search (skip first/last 25% of bytes)
+  - Find most common 1-2 byte sequences
   - Check frequency > 20% threshold
   - Return detected separator or null
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 03 Section 4.3
+  - Implementation: LogDataPage.xaml.cs:619-713
 
-- [ ] **Algorithm 4: Auto-detect Encoding**
+- [x] **Algorithm 4: Auto-detect Encoding**
   - Method: `DetectEncoding(List<LogEntry> entries)`
   - Strategy: Valid character ratio analysis
   - Test ASCII: Count valid ASCII chars (0x20-0x7E + CR/LF/TAB)
-  - Test UTF-8: Try decode, check valid UTF-8 sequences
-  - Test UTF-16: Try decode, check valid UTF-16 sequences
+  - Test UTF-8: Decode/re-encode and compare match ratio
+  - Test UTF-16: Decode/re-encode and compare match ratio
+  - Test Latin-1: Decode/re-encode and compare match ratio
   - Return encoding with highest valid character ratio (> 95%)
   - Default to ASCII if uncertain
-  - Status: ⏳ Not Started
+  - Status: ✅ Completed (2025-10-29)
   - Reference: Doc 03 Section 4.4
+  - Implementation: LogDataPage.xaml.cs:718-881 (includes helper methods: TestASCII, TestUTF8, TestUTF16, TestLatin1)
 
 ### 3.7 Testing & Validation
 - [ ] **Test with sample log files**
