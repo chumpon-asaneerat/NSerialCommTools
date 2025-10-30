@@ -66,6 +66,12 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         /// </summary>
         public int SelectedPackageIndex { get; set; }
 
+        /// <summary>
+        /// Field analyzer for running 5-stage statistical analysis pipeline
+        /// Encapsulated in model to hide implementation from UI
+        /// </summary>
+        public FieldAnalyzer FieldAnalyzer { get; private set; }
+
         #endregion
 
         #region Page 4: JSON Schema
@@ -113,6 +119,7 @@ namespace NLib.Serial.Protocol.Analyzer.Models
             // Page 3
             AnalysisResult = new AnalysisResult();
             SelectedPackageIndex = 0;
+            FieldAnalyzer = new FieldAnalyzer();
 
             // Page 4
             JsonSchema = string.Empty;
