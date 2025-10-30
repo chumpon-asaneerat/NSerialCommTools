@@ -58,17 +58,20 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 
         /// <summary>
         /// Stage 2: Detect package boundaries using configuration markers/terminators
+        /// PROPERLY splits byte stream by multi-byte markers (not placeholder!)
         /// </summary>
         private List<PackageData> DetectPackageBoundaries(List<LogEntry> entries, DetectionConfiguration config)
         {
             var packages = new List<PackageData>();
 
-            // Get active terminator/marker from configuration
-            byte[] packageTerminator = GetActiveTerminator(config);
+            // Get start and end markers from configuration
+            byte[] startMarker = GetStartMarker(config);
+            byte[] endMarker = GetEndMarker(config);
 
-            if (packageTerminator == null || packageTerminator.Length == 0)
+            if ((startMarker == null || startMarker.Length == 0) &&
+                (endMarker == null || endMarker.Length == 0))
             {
-                // No terminator - treat each entry as a package
+                // No markers - treat each entry as a package
                 for (int i = 0; i < entries.Count; i++)
                 {
                     packages.Add(new PackageData
@@ -81,16 +84,105 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             }
             else
             {
-                // Split entries by terminator
-                // For simplicity, assuming one package per entry for now
-                // (More complex splitting can be added later)
-                for (int i = 0; i < entries.Count; i++)
+                // Split entries by markers
+                // Concatenate all entry bytes into one stream
+                var allBytes = new List<byte>();
+                foreach (var entry in entries)
                 {
+                    if (entry.RawBytes != null && entry.RawBytes.Length > 0)
+                    {
+                        allBytes.AddRange(entry.RawBytes);
+                    }
+                }
+
+                byte[] byteStream = allBytes.ToArray();
+
+                // Split by markers
+                if (startMarker != null && startMarker.Length > 0)
+                {
+                    // PackageBased protocol: Split by start marker
+                    packages = SplitByStartMarker(byteStream, startMarker, endMarker);
+                }
+                else if (endMarker != null && endMarker.Length > 0)
+                {
+                    // SinglePackage protocol: Split by end marker
+                    packages = SplitByEndMarker(byteStream, endMarker);
+                }
+            }
+
+            return packages;
+        }
+
+        /// <summary>
+        /// Get start marker from configuration
+        /// </summary>
+        private byte[] GetStartMarker(DetectionConfiguration config)
+        {
+            if (config.PackageStartMarker != null && !string.IsNullOrWhiteSpace(config.PackageStartMarker.EffectiveValue))
+            {
+                return ParseHexString(config.PackageStartMarker.EffectiveValue);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Get end marker from configuration
+        /// </summary>
+        private byte[] GetEndMarker(DetectionConfiguration config)
+        {
+            if (config.PackageEndMarker != null && !string.IsNullOrWhiteSpace(config.PackageEndMarker.EffectiveValue))
+            {
+                return ParseHexString(config.PackageEndMarker.EffectiveValue);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Split byte stream by start marker (PackageBased protocol)
+        /// Each package starts with start marker and ends before next start marker (or at end marker if present)
+        /// </summary>
+        private List<PackageData> SplitByStartMarker(byte[] data, byte[] startMarker, byte[] endMarker)
+        {
+            var packages = new List<PackageData>();
+            var positions = FindMarkerPositions(data, startMarker);
+
+            for (int i = 0; i < positions.Count; i++)
+            {
+                int startPos = positions[i];
+                int endPos;
+
+                if (i < positions.Count - 1)
+                {
+                    // End at next start marker
+                    endPos = positions[i + 1];
+                }
+                else
+                {
+                    // Last package - goes to end of data
+                    endPos = data.Length;
+                }
+
+                // If end marker is specified, trim to end marker
+                if (endMarker != null && endMarker.Length > 0)
+                {
+                    int endMarkerPos = FindFirstMarker(data, endMarker, startPos, endPos);
+                    if (endMarkerPos != -1)
+                    {
+                        endPos = endMarkerPos + endMarker.Length;
+                    }
+                }
+
+                int length = endPos - startPos;
+                if (length > 0)
+                {
+                    byte[] packageBytes = new byte[length];
+                    Array.Copy(data, startPos, packageBytes, 0, length);
+
                     packages.Add(new PackageData
                     {
-                        PackageNumber = i + 1,
-                        RawBytes = entries[i].RawBytes,
-                        SourceEntryNumber = entries[i].EntryNumber
+                        PackageNumber = packages.Count + 1,
+                        RawBytes = packageBytes,
+                        SourceEntryNumber = 0 // Can't track individual entry numbers in merged stream
                     });
                 }
             }
@@ -99,23 +191,107 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         }
 
         /// <summary>
-        /// Get the active package terminator from configuration
+        /// Split byte stream by end marker (SinglePackage protocol)
+        /// Each package ends with end marker
         /// </summary>
-        private byte[] GetActiveTerminator(DetectionConfiguration config)
+        private List<PackageData> SplitByEndMarker(byte[] data, byte[] endMarker)
         {
-            // Check for end marker first (most common for terminators)
-            if (config.PackageEndMarker != null && !string.IsNullOrWhiteSpace(config.PackageEndMarker.EffectiveValue))
+            var packages = new List<PackageData>();
+            var positions = FindMarkerPositions(data, endMarker);
+
+            int startPos = 0;
+            foreach (int markerPos in positions)
             {
-                return ParseHexString(config.PackageEndMarker.EffectiveValue);
+                int endPos = markerPos + endMarker.Length;
+                int length = endPos - startPos;
+
+                if (length > 0)
+                {
+                    byte[] packageBytes = new byte[length];
+                    Array.Copy(data, startPos, packageBytes, 0, length);
+
+                    packages.Add(new PackageData
+                    {
+                        PackageNumber = packages.Count + 1,
+                        RawBytes = packageBytes,
+                        SourceEntryNumber = 0
+                    });
+                }
+
+                startPos = endPos;
             }
 
-            // Check for start marker (less common for terminators)
-            if (config.PackageStartMarker != null && !string.IsNullOrWhiteSpace(config.PackageStartMarker.EffectiveValue))
+            // Handle remaining bytes (if any)
+            if (startPos < data.Length)
             {
-                return ParseHexString(config.PackageStartMarker.EffectiveValue);
+                int length = data.Length - startPos;
+                byte[] packageBytes = new byte[length];
+                Array.Copy(data, startPos, packageBytes, 0, length);
+
+                packages.Add(new PackageData
+                {
+                    PackageNumber = packages.Count + 1,
+                    RawBytes = packageBytes,
+                    SourceEntryNumber = 0
+                });
             }
 
-            return null;
+            return packages;
+        }
+
+        /// <summary>
+        /// Find all positions where marker occurs in data
+        /// </summary>
+        private List<int> FindMarkerPositions(byte[] data, byte[] marker)
+        {
+            var positions = new List<int>();
+
+            for (int i = 0; i <= data.Length - marker.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < marker.Length; j++)
+                {
+                    if (data[i + j] != marker[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    positions.Add(i);
+                    i += marker.Length - 1; // Skip past this marker
+                }
+            }
+
+            return positions;
+        }
+
+        /// <summary>
+        /// Find first occurrence of marker within specified range
+        /// </summary>
+        private int FindFirstMarker(byte[] data, byte[] marker, int startPos, int endPos)
+        {
+            for (int i = startPos; i <= endPos - marker.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < marker.Length; j++)
+                {
+                    if (data[i + j] != marker[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    return i;
+                }
+            }
+
+            return -1; // Not found
         }
 
         #endregion

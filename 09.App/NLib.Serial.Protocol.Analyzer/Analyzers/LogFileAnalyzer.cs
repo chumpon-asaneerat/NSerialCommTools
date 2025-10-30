@@ -30,6 +30,8 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         }
         /// <summary>
         /// Auto-detect package start marker using frequency analysis
+        /// Finds the LONGEST byte sequence at START with highest frequency (ignoring incomplete packages)
+        /// IGNORES first and last entries (may be incomplete captures)
         /// </summary>
         /// <param name="entries">List of log entries to analyze</param>
         /// <returns>Detected start marker bytes, or null if none found</returns>
@@ -38,24 +40,33 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             if (entries == null || entries.Count < _config.MinimumSampleSize)
                 return null; // Need minimum sample size
 
-            // Dictionary to track frequency of byte sequences at the start
-            var sequenceFrequency = new Dictionary<string, int>();
+            // Filter valid entries and IGNORE first and last (may be incomplete)
+            var validEntries = entries.Where(e => e.RawBytes != null && e.RawBytes.Length > 0).ToList();
 
-            // Analyze sequences at the beginning of each entry
-            foreach (var entry in entries)
+            if (validEntries.Count < 3) // Need at least 3 entries (to skip first and last)
+                return null;
+
+            // Skip first and last entries - use middle entries only for statistics
+            var middleEntries = validEntries.Skip(1).Take(validEntries.Count - 2).ToList();
+            int totalMiddleEntries = middleEntries.Count;
+
+            // Find the LONGEST sequence that meets frequency threshold in middle entries
+            // Start from longest and work down to shortest
+            for (int seqLength = _config.MaxSequenceLength; seqLength >= _config.MinSequenceLength; seqLength--)
             {
-                if (entry.RawBytes == null || entry.RawBytes.Length == 0)
-                    continue;
+                // Count frequency of each sequence at this length
+                var sequenceFrequency = new Dictionary<string, int>();
 
-                // Try sequences of varying lengths (configurable)
-                for (int seqLength = _config.MinSequenceLength;
-                     seqLength <= _config.MaxSequenceLength && seqLength <= entry.RawBytes.Length;
-                     seqLength++)
+                foreach (var entry in middleEntries)
                 {
+                    if (entry.RawBytes.Length < seqLength)
+                        continue; // Skip entries too short
+
+                    // Extract sequence from start
                     byte[] sequence = new byte[seqLength];
                     Array.Copy(entry.RawBytes, 0, sequence, 0, seqLength);
 
-                    // Use hex string as dictionary key
+                    // Use hex string as key
                     string key = BitConverter.ToString(sequence);
 
                     if (!sequenceFrequency.ContainsKey(key))
@@ -63,35 +74,57 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 
                     sequenceFrequency[key]++;
                 }
-            }
 
-            // Find sequence with highest frequency
-            string mostCommonKey = null;
-            int maxCount = 0;
+                // Find most common sequence at this length
+                string bestKey = null;
+                int maxCount = 0;
 
-            foreach (var kvp in sequenceFrequency)
-            {
-                if (kvp.Value > maxCount)
+                foreach (var kvp in sequenceFrequency)
                 {
-                    maxCount = kvp.Value;
-                    mostCommonKey = kvp.Key;
+                    if (kvp.Value > maxCount)
+                    {
+                        maxCount = kvp.Value;
+                        bestKey = kvp.Key;
+                    }
+                }
+
+                // Check if frequency meets threshold (e.g., 90%+ of middle entries)
+                if (bestKey != null)
+                {
+                    double frequency = (double)maxCount / totalMiddleEntries;
+
+                    if (frequency >= _config.MarkerFrequencyThreshold)
+                    {
+                        // Found it! Return longest sequence that meets threshold
+                        return ParseHexString(bestKey);
+                    }
                 }
             }
 
-            // Check if frequency meets configured threshold
-            double frequency = (double)maxCount / entries.Count;
+            return null; // No common start marker found
+        }
 
-            if (frequency >= _config.MarkerFrequencyThreshold && mostCommonKey != null)
+        /// <summary>
+        /// Helper: Compare two byte arrays for equality
+        /// </summary>
+        private bool ByteArraysEqual(byte[] a, byte[] b)
+        {
+            if (a == null || b == null) return false;
+            if (a.Length != b.Length) return false;
+
+            for (int i = 0; i < a.Length; i++)
             {
-                // Convert hex string back to byte array
-                return ParseHexString(mostCommonKey);
+                if (a[i] != b[i])
+                    return false;
             }
 
-            return null; // No consistent start marker found
+            return true;
         }
 
         /// <summary>
         /// Auto-detect package end marker using frequency analysis
+        /// Finds the LONGEST byte sequence at END with highest frequency (ignoring incomplete packages)
+        /// IGNORES first and last entries (may be incomplete captures)
         /// </summary>
         /// <param name="entries">List of log entries to analyze</param>
         /// <returns>Detected end marker bytes, or null if none found</returns>
@@ -100,25 +133,34 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             if (entries == null || entries.Count < _config.MinimumSampleSize)
                 return null; // Need minimum sample size
 
-            // Dictionary to track frequency of byte sequences at the end
-            var sequenceFrequency = new Dictionary<string, int>();
+            // Filter valid entries and IGNORE first and last (may be incomplete)
+            var validEntries = entries.Where(e => e.RawBytes != null && e.RawBytes.Length > 0).ToList();
 
-            // Analyze sequences at the end of each entry
-            foreach (var entry in entries)
+            if (validEntries.Count < 3) // Need at least 3 entries (to skip first and last)
+                return null;
+
+            // Skip first and last entries - use middle entries only for statistics
+            var middleEntries = validEntries.Skip(1).Take(validEntries.Count - 2).ToList();
+            int totalMiddleEntries = middleEntries.Count;
+
+            // Find the LONGEST sequence that meets frequency threshold in middle entries
+            // Start from longest and work down to shortest
+            for (int seqLength = _config.MaxSequenceLength; seqLength >= _config.MinSequenceLength; seqLength--)
             {
-                if (entry.RawBytes == null || entry.RawBytes.Length == 0)
-                    continue;
+                // Count frequency of each sequence at this length
+                var sequenceFrequency = new Dictionary<string, int>();
 
-                // Try sequences of varying lengths (configurable)
-                for (int seqLength = _config.MinSequenceLength;
-                     seqLength <= _config.MaxSequenceLength && seqLength <= entry.RawBytes.Length;
-                     seqLength++)
+                foreach (var entry in middleEntries)
                 {
+                    if (entry.RawBytes.Length < seqLength)
+                        continue; // Skip entries too short
+
+                    // Extract sequence from end
                     byte[] sequence = new byte[seqLength];
                     int startPos = entry.RawBytes.Length - seqLength;
                     Array.Copy(entry.RawBytes, startPos, sequence, 0, seqLength);
 
-                    // Use hex string as dictionary key
+                    // Use hex string as key
                     string key = BitConverter.ToString(sequence);
 
                     if (!sequenceFrequency.ContainsKey(key))
@@ -126,31 +168,34 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 
                     sequenceFrequency[key]++;
                 }
-            }
 
-            // Find sequence with highest frequency
-            string mostCommonKey = null;
-            int maxCount = 0;
+                // Find most common sequence at this length
+                string bestKey = null;
+                int maxCount = 0;
 
-            foreach (var kvp in sequenceFrequency)
-            {
-                if (kvp.Value > maxCount)
+                foreach (var kvp in sequenceFrequency)
                 {
-                    maxCount = kvp.Value;
-                    mostCommonKey = kvp.Key;
+                    if (kvp.Value > maxCount)
+                    {
+                        maxCount = kvp.Value;
+                        bestKey = kvp.Key;
+                    }
+                }
+
+                // Check if frequency meets threshold (e.g., 90%+ of middle entries)
+                if (bestKey != null)
+                {
+                    double frequency = (double)maxCount / totalMiddleEntries;
+
+                    if (frequency >= _config.MarkerFrequencyThreshold)
+                    {
+                        // Found it! Return longest sequence that meets threshold
+                        return ParseHexString(bestKey);
+                    }
                 }
             }
 
-            // Check if frequency meets configured threshold
-            double frequency = (double)maxCount / entries.Count;
-
-            if (frequency >= _config.MarkerFrequencyThreshold && mostCommonKey != null)
-            {
-                // Convert hex string back to byte array
-                return ParseHexString(mostCommonKey);
-            }
-
-            return null; // No consistent end marker found
+            return null; // No common end marker found
         }
 
         /// <summary>
