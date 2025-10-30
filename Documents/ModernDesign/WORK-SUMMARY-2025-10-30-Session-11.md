@@ -7,7 +7,12 @@ The user requested investigation into three critical issues identified after Ses
 - **Q2**: Phase 4 logic mismatch - implementation doesn't match design documents
 - **Q3**: Missing statistical summary display on LogDataPage after loading log file
 
-The session focused on investigating Q2 first to understand what Phase 4 (AnalyzerPage) should actually do according to the design documents, as this was causing confusion and implementation errors.
+The session work was completed in this order:
+1. ✅ Investigated Q2 - documented findings in work summary
+2. ✅ Updated IMPLEMENTATION-TRACKING.md Phase 4 with correct purpose
+3. ✅ Addressed Q3 - added statistical summary to LogDataPage
+4. ✅ Added ScrollViewer with Auto scrollbars to all 4 pages
+5. ⏳ Ready to implement new AnalyzerPage (next task)
 
 ## 2. Key Technical Concepts
 
@@ -154,7 +159,58 @@ The user chose **Option 2**: Replace the current Phase 4 implementation to match
 - Implement Analyzers/FieldAnalyzer.cs with 5-stage pipeline
 - Wire up to model.AnalysisResult
 
-## 5. Files Affected (To Be Modified in Next Steps)
+## 5. Files Modified in This Session
+
+### Files Updated:
+
+1. **IMPLEMENTATION-TRACKING.md** (648 lines → 649 lines)
+   - Updated Phase 4 header from "ANALYZER PAGE (Parsing)" to "ANALYZER PAGE (Statistical Analysis)"
+   - Added warning about Session 10 incorrect implementation
+   - Fixed architecture requirement from PackageParser to FieldAnalyzer
+   - Completely rewrote Phase 4 task breakdown (sections 4.1-4.10)
+   - Removed all package viewer UI tasks
+   - Added analysis results viewer UI tasks
+   - Added 5-stage pipeline implementation tasks
+   - Status: ✅ Completed
+
+2. **Pages/LogDataPage.xaml** (169 lines → 225 lines)
+   - Added Detection Summary Expander panel (lines 93-145)
+   - Displays: Protocol Type, Start/End Marker stats, Separator stats, Encoding stats, Overall Confidence
+   - Collapsible panel with yellow background (visibility initially collapsed)
+   - Added ScrollViewer wrapper around entire content (lines 16, 224)
+   - Status: ✅ Completed
+
+3. **Pages/LogDataPage.xaml.cs** (483 lines → 664 lines)
+   - Enhanced `AutoDetectDelimiters()` method (lines 326-422)
+     - Added statistical calculations for each detection
+     - Populates detection summary with detailed stats
+     - Shows and expands summary panel
+   - Added `CountOccurrences()` helper (lines 427-466)
+     - Counts marker frequency at start/end of entries
+   - Added `CountInternalOccurrences()` helper (lines 471-499)
+     - Counts separator occurrences within entries
+   - Added `GetTextRepresentation()` helper (lines 504-529)
+     - Converts byte sequences to readable format (CRLF, Space, etc.)
+   - Added `DetermineProtocolType()` helper (lines 534-550)
+     - Classifies protocol based on detected markers
+   - Added `CalculateOverallConfidence()` helper (lines 555-569)
+     - Computes confidence score from detection results
+   - Updated `ClearLog_Click()` to hide detection summary (line 263)
+   - Status: ✅ Completed
+
+4. **Pages/AnalyzerPage.xaml** (138 lines → 140 lines)
+   - Added ScrollViewer wrapper around content (lines 16, 139)
+   - Status: ✅ Completed
+
+5. **Pages/FieldEditorPage.xaml** (16 lines → 18 lines)
+   - Added ScrollViewer wrapper around content (lines 8, 17)
+   - Status: ✅ Completed
+
+6. **Pages/ExportPage.xaml** (16 lines → 18 lines)
+   - Added ScrollViewer wrapper around content (lines 8, 17)
+   - Status: ✅ Completed
+
+### Files to Be Modified in Next Steps (Phase 4 Rework):
 
 ### Files to Archive/Delete:
 1. `09.App/NLib.Serial.Protocol.Analyzer/Pages/AnalyzerPage.xaml` (138 lines)
@@ -287,16 +343,92 @@ public void Setup(ProtocolAnalyzerModel model)
 
 This pattern will be followed for the FieldAnalyzer implementation.
 
-## 10. Session Metrics
+## 10. Detailed Implementation Notes
+
+### Q3 Implementation: Statistical Summary Display
+
+**UI Enhancement (LogDataPage.xaml)**:
+- Added collapsible Expander with yellow background (#FFFACD border #FFD700)
+- Header: "📊 Detection Summary"
+- Initially hidden (Visibility="Collapsed"), shown after auto-detection completes
+- Contains 6 information rows:
+  1. Protocol Type classification
+  2. Start Marker statistics (hex, frequency, occurrence count)
+  3. End Marker statistics (hex, text representation, frequency)
+  4. Segment Separator statistics (occurrences, frequency)
+  5. Encoding statistics (selected encoding with reasoning)
+  6. Overall Confidence (percentage + progress bar)
+
+**Code Implementation Details**:
+
+**CountOccurrences()**: Searches for byte sequence at start or end of entries
+- Parameters: entries list, byte sequence, at-start flag
+- Returns: count of entries matching the sequence
+- Used for calculating marker frequency percentages
+
+**CountInternalOccurrences()**: Counts separator within entry bodies
+- Skips first and last 25% of bytes (to exclude markers)
+- Returns: total occurrences across all entries
+- Used for separator frequency statistics
+
+**GetTextRepresentation()**: Human-readable format converter
+- Maps common sequences: 0x0D 0x0A → "CRLF \\r\\n"
+- Maps single bytes: 0x20 → "Space", 0x09 → "Tab", 0x2C → "Comma"
+- Falls back to ASCII string if printable, else "binary"
+
+**DetermineProtocolType()**: Protocol classification logic
+- SinglePackage vs PackageBased determination
+- With/without Segments distinction
+- Returns descriptive string explaining protocol structure
+
+**CalculateOverallConfidence()**: Confidence score calculation
+- Start marker confidence = occurrence % × 100
+- End marker confidence = occurrence % × 100
+- Separator confidence = fixed 80% (harder to measure precisely)
+- Returns: average of detected items' confidence scores
+
+### ScrollViewer Addition
+
+All 4 pages now have auto-scrollbars:
+- Outer wrapper: `<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">`
+- Inner content: Existing DockPanel structure unchanged
+- Scrollbars appear automatically when content exceeds window size
+- Benefits smaller screens and high-DPI displays
+
+## 11. Session Metrics
 
 - **Documents Reviewed**: 3 (03-Parsing-Strategy, 06-Complete-UI, IMPLEMENTATION-TRACKING)
 - **Files Created**: 1 (This work summary)
 - **Files Deleted**: 1 (Incorrect Prompts/session_11_work_summary.txt)
-- **Issues Investigated**: 1 of 3 (Q2 - completed)
+- **Files Modified**: 6 (IMPLEMENTATION-TRACKING.md, 4 Page XAML files, LogDataPage code-behind)
+- **Lines Added**: 181 (LogDataPage.cs) + 56 (LogDataPage.xaml) + 8 (ScrollViewers across 4 pages)
+- **Issues Resolved**: 2 of 3 (Q2 investigated + documented, Q3 implemented)
 - **Architecture Decisions**: 1 (Option 2 - Replace implementation)
-- **Lines of Code to Replace**: ~574 lines (AnalyzerPage + PackageParser)
+- **Lines of Code to Replace**: ~574 lines (AnalyzerPage + PackageParser) - pending next task
+
+## 12. Completed Tasks Summary
+
+✅ **Task 1**: Updated IMPLEMENTATION-TRACKING.md Phase 4 description
+- Changed purpose from "Parsing" to "Statistical Analysis"
+- Removed wrong "Doc 03 Section 5" reference
+- Rewrote all Phase 4 tasks (4.1-4.10)
+
+✅ **Task 2**: Addressed Q3 - Statistical Summary Display
+- Added Detection Summary Expander to LogDataPage
+- Implemented 5 helper methods for statistics calculation
+- Shows protocol type, marker frequencies, confidence scores
+
+✅ **Task 3**: Added ScrollViewer to all pages
+- LogDataPage.xaml, AnalyzerPage.xaml, FieldEditorPage.xaml, ExportPage.xaml
+- Auto scrollbars on vertical and horizontal overflow
+
+⏳ **Next Task**: Implement new AnalyzerPage
+- Create Analyzers/FieldAnalyzer.cs with 5-stage pipeline
+- Rebuild AnalyzerPage.xaml per Document 06 spec
+- Rebuild AnalyzerPage.xaml.cs with "Run Analysis" logic
+- Update ProtocolAnalyzerModel to include FieldAnalyzer
 
 ---
 
-**Session End Status**: Investigation phase complete. Ready to begin Phase 4 rework in next session.
-**Next Session Goal**: Implement correct AnalyzerPage per Document 06 specification.
+**Session End Status**: Q2 investigated and documented, Q3 completed, Phase 4 tracking updated, all pages have scrollbars. Ready to begin Phase 4 implementation.
+**Next Task**: Create FieldAnalyzer and rebuild AnalyzerPage per Document 06 specification.
