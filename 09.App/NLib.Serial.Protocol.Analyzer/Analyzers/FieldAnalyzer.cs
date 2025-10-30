@@ -415,9 +415,9 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         }
 
         /// <summary>
-        /// Calculate field detection confidence
+        /// Calculate field detection confidence using byte-level pattern matching
         /// </summary>
-        private double CalculateFieldConfidence(List<string> samples, DataType dataType)
+        private double CalculateFieldConfidence(List<byte[]> samples, DataType dataType)
         {
             if (samples.Count == 0)
                 return 0;
@@ -432,18 +432,18 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                 switch (dataType)
                 {
                     case DataType.Integer:
-                        matches = int.TryParse(sample, out _);
+                        matches = IsNumericBytes(sample);
                         break;
                     case DataType.Float:
-                        matches = decimal.TryParse(sample, out _);
+                        matches = IsDecimalBytes(sample);
                         break;
                     case DataType.DateTime:
-                        matches = DateTime.TryParse(sample, out _);
+                        matches = IsDateBytes(sample) || IsTimeBytes(sample);
                         break;
                     case DataType.String:
                     case DataType.Hex:
                     case DataType.Binary:
-                        matches = true; // All can be strings/hex/binary
+                        matches = true; // All byte sequences can be treated as string/hex/binary
                         break;
                 }
 
