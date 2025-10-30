@@ -340,9 +340,10 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         }
 
         /// <summary>
-        /// Detect data type from sample values (returns DataType enum)
+        /// Detect data type from sample values using byte-level pattern analysis
+        /// NO string conversion - works with raw bytes following RULE #1
         /// </summary>
-        private DataType DetectDataTypeEnum(List<string> samples)
+        private DataType DetectDataTypeEnum(List<byte[]> samples)
         {
             if (samples.Count == 0)
                 return DataType.String;
@@ -350,41 +351,67 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             int intCount = 0;
             int decimalCount = 0;
             int dateCount = 0;
+            int timeCount = 0;
 
             foreach (var sample in samples)
             {
-                if (int.TryParse(sample, out _))
+                if (IsNumericBytes(sample))
                     intCount++;
-                else if (decimal.TryParse(sample, out _))
+                else if (IsDecimalBytes(sample))
                     decimalCount++;
-                else if (DateTime.TryParse(sample, out _))
+                else if (IsDateBytes(sample))
                     dateCount++;
+                else if (IsTimeBytes(sample))
+                    timeCount++;
             }
 
             double intRatio = (double)intCount / samples.Count;
             double decimalRatio = (double)decimalCount / samples.Count;
             double dateRatio = (double)dateCount / samples.Count;
+            double timeRatio = (double)timeCount / samples.Count;
 
-            if (intRatio > 0.8)
-                return DataType.Integer;
-            else if (decimalRatio > 0.8)
-                return DataType.Float; // Decimal values map to Float type
-            else if (dateRatio > 0.8)
+            // Prioritize most specific type first
+            if (dateRatio > 0.8 || timeRatio > 0.8)
                 return DataType.DateTime;
+            else if (decimalRatio > 0.8)
+                return DataType.Float;
+            else if (intRatio > 0.8)
+                return DataType.Integer;
             else
                 return DataType.String;
         }
 
         /// <summary>
         /// Calculate field variance (0 = constant, 1 = highly variable)
+        /// Works with byte arrays using byte-level comparison
         /// </summary>
-        private double CalculateFieldVariance(List<string> samples)
+        private double CalculateFieldVariance(List<byte[]> samples)
         {
             if (samples.Count == 0)
                 return 0;
 
-            var uniqueValues = samples.Distinct().Count();
-            return (double)uniqueValues / samples.Count;
+            // Count unique byte sequences
+            var uniqueValues = new List<byte[]>();
+
+            foreach (var sample in samples)
+            {
+                bool isDuplicate = false;
+                foreach (var existing in uniqueValues)
+                {
+                    if (ByteArraysEqual(sample, existing))
+                    {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+
+                if (!isDuplicate)
+                {
+                    uniqueValues.Add(sample);
+                }
+            }
+
+            return (double)uniqueValues.Count / samples.Count;
         }
 
         /// <summary>
