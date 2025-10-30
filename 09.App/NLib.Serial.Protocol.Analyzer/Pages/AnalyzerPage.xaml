@@ -16,124 +16,119 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
         <DockPanel Margin="10">
 
-        <!-- LEFT PANEL: Package List (30% width) -->
-        <DockPanel DockPanel.Dock="Left" Width="350" Margin="0,0,10,0">
-
-            <!-- Toolbar -->
-            <StackPanel DockPanel.Dock="Top" Orientation="Vertical" Margin="0,0,0,10">
-                <DockPanel Margin="0,0,0,5">
-                    <Button x:Name="ParsePackagesButton"
-                            Content="Parse Packages"
-                            Width="120"
-                            Height="30"
-                            DockPanel.Dock="Left"
-                            Margin="0,0,5,0"/>
-                    <Button x:Name="ClearResultsButton"
-                            Content="Clear"
-                            Width="80"
-                            Height="30"
-                            DockPanel.Dock="Right"/>
-                    <TextBlock x:Name="PackageCountLabel"
-                               Text="Packages: 0"
-                               VerticalAlignment="Center"
-                               Margin="5,0"/>
-                </DockPanel>
+            <!-- ACTION BUTTONS (Top) -->
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                <Button x:Name="RunAnalysisButton"
+                        Content="🔬 Run Analysis"
+                        Width="130"
+                        Height="35"
+                        Margin="0,0,10,0"/>
+                <TextBlock x:Name="AnalysisStatusText"
+                           Text="Click 'Run Analysis' to start"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           Foreground="Gray"/>
             </StackPanel>
 
-            <!-- Package ListBox -->
-            <ListBox x:Name="PackageListBox"
-                     SelectionMode="Single"
-                     DisplayMemberPath="DisplayText"/>
-
-        </DockPanel>
-
-        <!-- RIGHT PANEL: Package Details (70% width - fills remaining space) -->
-        <DockPanel Background="White">
-
-            <!-- Header Section -->
-            <DockPanel DockPanel.Dock="Top" Height="80" Background="#F5F5F5" Margin="0,0,0,10">
-                <StackPanel Margin="10">
-                    <DockPanel Margin="0,0,0,5">
-                        <TextBlock x:Name="PackageNumberLabel"
-                                   Text="Package #: -"
-                                   FontWeight="Bold"
-                                   FontSize="14"
-                                   DockPanel.Dock="Left"/>
-                        <TextBlock x:Name="PackageTotalBytesLabel"
-                                   Text="Total: 0 bytes"
-                                   DockPanel.Dock="Right"
-                                   Margin="10,0,0,0"/>
-                    </DockPanel>
-                    <DockPanel>
-                        <TextBlock x:Name="PackageSegmentCountLabel"
-                                   Text="Segments: 0"
-                                   DockPanel.Dock="Left"/>
-                        <TextBlock x:Name="PackageTimestampLabel"
-                                   Text="Timestamp: -"
-                                   DockPanel.Dock="Right"
-                                   Margin="10,0,0,0"/>
-                    </DockPanel>
+            <!-- OVERALL CONFIDENCE (Top) -->
+            <GroupBox DockPanel.Dock="Top" Header="📈 Overall Analysis Confidence" Margin="0,0,0,10">
+                <StackPanel Margin="5">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="Confidence: " FontWeight="Bold"/>
+                        <TextBlock x:Name="ConfidenceText" Text="0%" FontWeight="Bold"/>
+                    </StackPanel>
+                    <ProgressBar x:Name="ConfidenceProgressBar" Height="25" Minimum="0" Maximum="100" Value="0"/>
                 </StackPanel>
-            </DockPanel>
+            </GroupBox>
 
-            <!-- Segments DataGrid (Top 50% of remaining space) -->
-            <DockPanel DockPanel.Dock="Top" Height="250" Margin="0,0,0,10">
-                <TextBlock DockPanel.Dock="Top"
-                           Text="Segments:"
-                           FontWeight="Bold"
-                           Margin="0,0,0,5"/>
-                <DataGrid x:Name="SegmentsDataGrid"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          HeadersVisibility="Column">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Segment #"
-                                            Width="80"
-                                            Binding="{Binding SegmentIndex}"
-                                            ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
-                        <DataGridTextColumn Header="Raw Hex"
-                                            Width="*"
-                                            Binding="{Binding RawHex}"/>
-                        <DataGridTextColumn Header="Raw Text"
-                                            Width="*"
-                                            Binding="{Binding RawText}"/>
-                        <DataGridTextColumn Header="Length (Bytes)"
-                                            Width="100"
-                                            Binding="{Binding RawBytes.Length}"
-                                            ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </DockPanel>
+            <!-- FIELD PREVIEW (Bottom) -->
+            <GroupBox DockPanel.Dock="Bottom" Header="📊 Detected Fields Preview" Margin="0,10,0,0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Bottom" Background="#FFFACD" Padding="5" Margin="0,5,0,0">
+                        <TextBlock Text="💡 Variance: Low=constant, High=data field" FontStyle="Italic"/>
+                    </Border>
+                    <DataGrid x:Name="FieldsPreviewDataGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              Height="200">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Pos" Width="50" Binding="{Binding Position}"
+                                                ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
+                            <DataGridTextColumn Header="Name" Width="120" Binding="{Binding Name}"/>
+                            <DataGridTextColumn Header="Type" Width="100" Binding="{Binding DataType}"/>
+                            <DataGridTextColumn Header="Sample Values" Width="*" Binding="{Binding SampleValuesText}"/>
+                            <DataGridTextColumn Header="Conf%" Width="70" Binding="{Binding ConfidenceText}"
+                                                ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
+                            <DataGridTextColumn Header="Var" Width="70" Binding="{Binding VarianceText}"
+                                                ElementStyle="{StaticResource RightAlignedTextBlockStyle}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </GroupBox>
 
-            <!-- Raw Package Display (Bottom - fills remaining space) -->
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top"
-                           Text="Raw Package Data:"
-                           FontWeight="Bold"
-                           Margin="0,0,0,5"/>
-                <TabControl>
-                    <TabItem Header="Hex View">
-                        <TextBox x:Name="HexViewTextBox"
-                                 IsReadOnly="True"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto"
-                                 HorizontalScrollBarVisibility="Auto"/>
-                    </TabItem>
-                    <TabItem Header="Text View">
-                        <TextBox x:Name="TextViewTextBox"
-                                 IsReadOnly="True"
-                                 FontFamily="Consolas"
-                                 FontSize="12"
-                                 TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto"
-                                 HorizontalScrollBarVisibility="Auto"/>
-                    </TabItem>
-                </TabControl>
-            </DockPanel>
+            <!-- DETECTION RESULTS (Center - 3 panels side-by-side) -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
 
-        </DockPanel>
+                <!-- Panel 1: Terminator Detection -->
+                <GroupBox Header="🔚 Terminator" Width="280" Margin="0,0,10,0">
+                    <StackPanel Margin="5">
+                        <DockPanel Margin="0,0,0,5">
+                            <TextBlock Text="Hex Bytes:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="TerminatorHexText" Text="-" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <TextBlock Text="Text:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="TerminatorTextRepText" Text="-" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <TextBlock Text="Occurs:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="TerminatorOccursText" Text="-"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="Confidence:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="TerminatorConfText" Text="-"/>
+                        </DockPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Panel 2: Delimiter Detection -->
+                <GroupBox Header="✂️ Delimiter" Width="300" Margin="0,0,10,0">
+                    <StackPanel Margin="5">
+                        <DockPanel Margin="0,0,0,5">
+                            <TextBlock Text="Delimiter:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="DelimiterHexText" Text="-" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <TextBlock Text="Text:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="DelimiterTextRepText" Text="-" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="Frequency:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="DelimiterFreqText" Text="-"/>
+                        </DockPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Panel 3: Protocol Type -->
+                <GroupBox Header="📋 Protocol Type" Width="260">
+                    <StackPanel Margin="5">
+                        <DockPanel Margin="0,0,0,5">
+                            <TextBlock Text="Type:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="ProtocolTypeText" Text="-" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <TextBlock Text="Strategy:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="StrategyText" Text="-" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="Fields:" FontWeight="Bold" Width="80"/>
+                            <TextBlock x:Name="FieldCountText" Text="-"/>
+                        </DockPanel>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
 
         </DockPanel>
     </ScrollViewer>

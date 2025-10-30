@@ -158,6 +158,7 @@
     <Compile Include="Models\DetectionConfiguration.cs" />
     <Compile Include="Models\DetectionMode.cs" />
     <Compile Include="Models\DetectionModeInfo.cs" />
+    <Compile Include="Models\DetectionSummary.cs" />
     <Compile Include="Models\EncodingType.cs" />
     <Compile Include="Models\EndianType.cs" />
     <Compile Include="Models\FieldInfo.cs" />
