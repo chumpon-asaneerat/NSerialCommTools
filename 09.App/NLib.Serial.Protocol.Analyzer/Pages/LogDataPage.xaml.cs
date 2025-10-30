@@ -280,26 +280,22 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
             // Clear existing entries
             _model.LogFile.Entries.Clear();
 
-            // Read all lines from the file
-            string[] lines = System.IO.File.ReadAllLines(filePath);
+            // Read ENTIRE file as continuous byte stream (NOT split by lines!)
+            // This is CRITICAL for proper package boundary detection
+            // The analyzer will split into packages based on detected start/end markers
+            byte[] allBytes = System.IO.File.ReadAllBytes(filePath);
 
-            // Parse each line into a LogEntry
-            for (int i = 0; i < lines.Length; i++)
+            // Create ONE LogEntry with all bytes
+            LogEntry entry = new LogEntry
             {
-                string line = lines[i];
+                EntryNumber = 1,
+                Timestamp = System.DateTime.Now,
+                Direction = "RX",
+                RawBytes = allBytes // Entire file as raw bytes - NO line splitting!
+            };
 
-                // Create a LogEntry
-                LogEntry entry = new LogEntry
-                {
-                    EntryNumber = i + 1,
-                    Timestamp = System.DateTime.Now, // Placeholder - real logs may have timestamps
-                    Direction = "RX", // Placeholder - real logs may have direction markers
-                    RawBytes = System.Text.Encoding.ASCII.GetBytes(line) // Convert line to bytes
-                };
-
-                // Add to model (RawHex and RawText are computed properties)
-                _model.LogFile.Entries.Add(entry);
-            }
+            // Add to model
+            _model.LogFile.Entries.Add(entry);
 
             // Rebind DataGrid after all entries are loaded
             LogEntriesDataGrid.ItemsSource = _model.LogFile.Entries;
@@ -309,7 +305,11 @@ namespace NLib.Serial.Protocol.Analyzer.Pages
 
             // Update file info label
             string fileName = System.IO.Path.GetFileName(filePath);
-            FileInfoLabel.Text = $"{fileName} - {lines.Length:N0} entries";
+            long fileSize = allBytes.Length;
+            string sizeText = fileSize < 1024 ? $"{fileSize} bytes"
+                            : fileSize < 1024 * 1024 ? $"{fileSize / 1024.0:F1} KB"
+                            : $"{fileSize / (1024.0 * 1024.0):F1} MB";
+            FileInfoLabel.Text = $"{fileName} - {sizeText} (1 entry = full file)";
 
             // Run auto-detection if in Auto mode
             if (StartMarkerAutoRadio.IsChecked == true ||

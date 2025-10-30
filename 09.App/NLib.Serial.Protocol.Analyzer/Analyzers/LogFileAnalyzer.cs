@@ -37,71 +37,68 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         /// <returns>Detected start marker bytes, or null if none found</returns>
         public byte[] DetectPackageStartMarker(List<LogEntry> entries)
         {
-            if (entries == null || entries.Count < _config.MinimumSampleSize)
-                return null; // Need minimum sample size
-
-            // Filter valid entries and IGNORE first and last (may be incomplete)
-            var validEntries = entries.Where(e => e.RawBytes != null && e.RawBytes.Length > 0).ToList();
-
-            if (validEntries.Count < 3) // Need at least 3 entries (to skip first and last)
+            if (entries == null || entries.Count == 0)
                 return null;
 
-            // Skip first and last entries - use middle entries only for statistics
-            var middleEntries = validEntries.Skip(1).Take(validEntries.Count - 2).ToList();
-            int totalMiddleEntries = middleEntries.Count;
+            // Get all bytes from all entries (may be one big entry or multiple)
+            var allBytes = new List<byte>();
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes != null && entry.RawBytes.Length > 0)
+                {
+                    allBytes.AddRange(entry.RawBytes);
+                }
+            }
 
-            // Find the LONGEST sequence that meets frequency threshold in middle entries
+            byte[] data = allBytes.ToArray();
+            if (data.Length < 100) // Need sufficient data
+                return null;
+
+            // Find the LONGEST repeating sequence at start of packages
+            // Strategy: Search for sequences that appear multiple times in the data
             // Start from longest and work down to shortest
             for (int seqLength = _config.MaxSequenceLength; seqLength >= _config.MinSequenceLength; seqLength--)
             {
-                // Count frequency of each sequence at this length
-                var sequenceFrequency = new Dictionary<string, int>();
+                // Find all occurrences of each sequence of this length
+                var sequencePositions = new Dictionary<string, List<int>>();
 
-                foreach (var entry in middleEntries)
+                // Scan through data looking for repeating sequences
+                for (int i = 0; i <= data.Length - seqLength; i++)
                 {
-                    if (entry.RawBytes.Length < seqLength)
-                        continue; // Skip entries too short
-
-                    // Extract sequence from start
                     byte[] sequence = new byte[seqLength];
-                    Array.Copy(entry.RawBytes, 0, sequence, 0, seqLength);
+                    Array.Copy(data, i, sequence, 0, seqLength);
 
-                    // Use hex string as key
                     string key = BitConverter.ToString(sequence);
 
-                    if (!sequenceFrequency.ContainsKey(key))
-                        sequenceFrequency[key] = 0;
+                    if (!sequencePositions.ContainsKey(key))
+                        sequencePositions[key] = new List<int>();
 
-                    sequenceFrequency[key]++;
+                    sequencePositions[key].Add(i);
                 }
 
-                // Find most common sequence at this length
+                // Find sequence with most occurrences
                 string bestKey = null;
-                int maxCount = 0;
+                int maxOccurrences = 0;
 
-                foreach (var kvp in sequenceFrequency)
+                foreach (var kvp in sequencePositions)
                 {
-                    if (kvp.Value > maxCount)
+                    if (kvp.Value.Count > maxOccurrences)
                     {
-                        maxCount = kvp.Value;
+                        maxOccurrences = kvp.Value.Count;
                         bestKey = kvp.Key;
                     }
                 }
 
-                // Check if frequency meets threshold (e.g., 90%+ of middle entries)
-                if (bestKey != null)
+                // Check if this sequence appears frequently enough
+                // At least 5 occurrences to be considered a marker
+                if (bestKey != null && maxOccurrences >= 5)
                 {
-                    double frequency = (double)maxCount / totalMiddleEntries;
-
-                    if (frequency >= _config.MarkerFrequencyThreshold)
-                    {
-                        // Found it! Return longest sequence that meets threshold
-                        return ParseHexString(bestKey);
-                    }
+                    // Return the longest sequence that repeats
+                    return ParseHexString(bestKey);
                 }
             }
 
-            return null; // No common start marker found
+            return null;
         }
 
         /// <summary>
@@ -123,75 +120,71 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 
         /// <summary>
         /// Auto-detect package end marker using frequency analysis
-        /// Finds the LONGEST byte sequence at END with highest frequency (ignoring incomplete packages)
-        /// IGNORES first and last entries (may be incomplete captures)
+        /// Finds the LONGEST byte sequence at END with highest frequency
+        /// Scans continuous byte stream for repeating patterns at end of packages
         /// </summary>
         /// <param name="entries">List of log entries to analyze</param>
         /// <returns>Detected end marker bytes, or null if none found</returns>
         public byte[] DetectPackageEndMarker(List<LogEntry> entries)
         {
-            if (entries == null || entries.Count < _config.MinimumSampleSize)
-                return null; // Need minimum sample size
-
-            // Filter valid entries and IGNORE first and last (may be incomplete)
-            var validEntries = entries.Where(e => e.RawBytes != null && e.RawBytes.Length > 0).ToList();
-
-            if (validEntries.Count < 3) // Need at least 3 entries (to skip first and last)
+            if (entries == null || entries.Count == 0)
                 return null;
 
-            // Skip first and last entries - use middle entries only for statistics
-            var middleEntries = validEntries.Skip(1).Take(validEntries.Count - 2).ToList();
-            int totalMiddleEntries = middleEntries.Count;
+            // Get all bytes from all entries (may be one big entry or multiple)
+            var allBytes = new List<byte>();
+            foreach (var entry in entries)
+            {
+                if (entry.RawBytes != null && entry.RawBytes.Length > 0)
+                {
+                    allBytes.AddRange(entry.RawBytes);
+                }
+            }
 
-            // Find the LONGEST sequence that meets frequency threshold in middle entries
+            byte[] data = allBytes.ToArray();
+            if (data.Length < 100) // Need sufficient data
+                return null;
+
+            // Find the LONGEST repeating sequence near end of packages
+            // Strategy: For end markers, look for sequences that appear multiple times
             // Start from longest and work down to shortest
             for (int seqLength = _config.MaxSequenceLength; seqLength >= _config.MinSequenceLength; seqLength--)
             {
-                // Count frequency of each sequence at this length
-                var sequenceFrequency = new Dictionary<string, int>();
+                // Find all occurrences of each sequence of this length
+                var sequencePositions = new Dictionary<string, List<int>>();
 
-                foreach (var entry in middleEntries)
+                // Scan through data looking for repeating sequences
+                for (int i = 0; i <= data.Length - seqLength; i++)
                 {
-                    if (entry.RawBytes.Length < seqLength)
-                        continue; // Skip entries too short
-
-                    // Extract sequence from end
                     byte[] sequence = new byte[seqLength];
-                    int startPos = entry.RawBytes.Length - seqLength;
-                    Array.Copy(entry.RawBytes, startPos, sequence, 0, seqLength);
+                    Array.Copy(data, i, sequence, 0, seqLength);
 
-                    // Use hex string as key
                     string key = BitConverter.ToString(sequence);
 
-                    if (!sequenceFrequency.ContainsKey(key))
-                        sequenceFrequency[key] = 0;
+                    if (!sequencePositions.ContainsKey(key))
+                        sequencePositions[key] = new List<int>();
 
-                    sequenceFrequency[key]++;
+                    sequencePositions[key].Add(i);
                 }
 
-                // Find most common sequence at this length
+                // Find sequence with most occurrences
                 string bestKey = null;
-                int maxCount = 0;
+                int maxOccurrences = 0;
 
-                foreach (var kvp in sequenceFrequency)
+                foreach (var kvp in sequencePositions)
                 {
-                    if (kvp.Value > maxCount)
+                    if (kvp.Value.Count > maxOccurrences)
                     {
-                        maxCount = kvp.Value;
+                        maxOccurrences = kvp.Value.Count;
                         bestKey = kvp.Key;
                     }
                 }
 
-                // Check if frequency meets threshold (e.g., 90%+ of middle entries)
-                if (bestKey != null)
+                // Check if this sequence appears frequently enough
+                // At least 5 occurrences to be considered a marker
+                if (bestKey != null && maxOccurrences >= 5)
                 {
-                    double frequency = (double)maxCount / totalMiddleEntries;
-
-                    if (frequency >= _config.MarkerFrequencyThreshold)
-                    {
-                        // Found it! Return longest sequence that meets threshold
-                        return ParseHexString(bestKey);
-                    }
+                    // Return the longest sequence that repeats
+                    return ParseHexString(bestKey);
                 }
             }
 
