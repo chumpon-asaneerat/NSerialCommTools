@@ -11,14 +11,47 @@ namespace NLib.Serial.Protocol.Analyzer.Models
     public class AnalysisResult
     {
         /// <summary>
-        /// Total number of packages analyzed
+        /// Total number of log entries analyzed
         /// </summary>
-        public int PackageCount { get; set; }
+        public int TotalEntries { get; set; }
 
         /// <summary>
-        /// List of field definitions discovered/created
+        /// Total number of packages detected
         /// </summary>
-        public List<FieldInfo> FieldList { get; set; }
+        public int TotalPackages { get; set; }
+
+        /// <summary>
+        /// List of detected fields from analysis
+        /// </summary>
+        public List<FieldInfo> DetectedFields { get; set; }
+
+        /// <summary>
+        /// Overall confidence score (0.0 to 1.0)
+        /// </summary>
+        public double OverallConfidence { get; set; }
+
+        /// <summary>
+        /// Detection summary information (terminators, delimiters, protocol type)
+        /// </summary>
+        public DetectionSummary DetectionSummary { get; set; }
+
+        /// <summary>
+        /// Total number of packages analyzed (legacy property)
+        /// </summary>
+        public int PackageCount
+        {
+            get { return TotalPackages; }
+            set { TotalPackages = value; }
+        }
+
+        /// <summary>
+        /// List of field definitions discovered/created (legacy property)
+        /// </summary>
+        public List<FieldInfo> FieldList
+        {
+            get { return DetectedFields; }
+            set { DetectedFields = value; }
+        }
 
         /// <summary>
         /// Number of fields defined
@@ -49,8 +82,11 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         /// </summary>
         public AnalysisResult()
         {
-            PackageCount = 0;
-            FieldList = new List<FieldInfo>();
+            TotalEntries = 0;
+            TotalPackages = 0;
+            DetectedFields = new List<FieldInfo>();
+            OverallConfidence = 0.0;
+            DetectionSummary = new DetectionSummary();
             Statistics = new Dictionary<string, object>();
             Notes = new List<string>();
             AnalyzedAt = DateTime.Now;
