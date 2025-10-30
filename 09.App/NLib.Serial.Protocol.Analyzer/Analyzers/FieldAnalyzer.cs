@@ -104,15 +104,15 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         private byte[] GetActiveTerminator(DetectionConfiguration config)
         {
             // Check for end marker first (most common for terminators)
-            if (config.PackageEndMarker != null && !string.IsNullOrWhiteSpace(config.PackageEndMarker.GetActiveValue()))
+            if (config.PackageEndMarker != null && !string.IsNullOrWhiteSpace(config.PackageEndMarker.EffectiveValue))
             {
-                return ParseHexString(config.PackageEndMarker.GetActiveValue());
+                return ParseHexString(config.PackageEndMarker.EffectiveValue);
             }
 
             // Check for start marker (less common for terminators)
-            if (config.PackageStartMarker != null && !string.IsNullOrWhiteSpace(config.PackageStartMarker.GetActiveValue()))
+            if (config.PackageStartMarker != null && !string.IsNullOrWhiteSpace(config.PackageStartMarker.EffectiveValue))
             {
-                return ParseHexString(config.PackageStartMarker.GetActiveValue());
+                return ParseHexString(config.PackageStartMarker.EffectiveValue);
             }
 
             return null;
@@ -150,9 +150,9 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         /// </summary>
         private byte[] GetActiveSeparator(DetectionConfiguration config)
         {
-            if (config.SegmentSeparator != null && !string.IsNullOrWhiteSpace(config.SegmentSeparator.GetActiveValue()))
+            if (config.SegmentSeparator != null && !string.IsNullOrWhiteSpace(config.SegmentSeparator.EffectiveValue))
             {
-                return ParseHexString(config.SegmentSeparator.GetActiveValue());
+                return ParseHexString(config.SegmentSeparator.EffectiveValue);
             }
             return null;
         }
@@ -273,8 +273,8 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                 var samples = ExtractFieldSamples(packages, boundary, maxSamples: 10);
                 field.SampleValues = samples;
 
-                // Detect data type
-                field.DataType = DetectDataType(samples);
+                // Detect data type (returns DataType enum)
+                field.DataType = DetectDataTypeEnum(samples);
 
                 // Calculate variance (how much the field changes)
                 field.Variance = CalculateFieldVariance(samples);
@@ -340,12 +340,12 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         }
 
         /// <summary>
-        /// Detect data type from sample values
+        /// Detect data type from sample values (returns DataType enum)
         /// </summary>
-        private string DetectDataType(List<string> samples)
+        private DataType DetectDataTypeEnum(List<string> samples)
         {
             if (samples.Count == 0)
-                return "Unknown";
+                return DataType.String;
 
             int intCount = 0;
             int decimalCount = 0;
@@ -366,13 +366,13 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             double dateRatio = (double)dateCount / samples.Count;
 
             if (intRatio > 0.8)
-                return "Integer";
+                return DataType.Integer;
             else if (decimalRatio > 0.8)
-                return "Decimal";
+                return DataType.Float; // Decimal values map to Float type
             else if (dateRatio > 0.8)
-                return "DateTime";
+                return DataType.DateTime;
             else
-                return "String";
+                return DataType.String;
         }
 
         /// <summary>
@@ -390,7 +390,7 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         /// <summary>
         /// Calculate field detection confidence
         /// </summary>
-        private double CalculateFieldConfidence(List<string> samples, string dataType)
+        private double CalculateFieldConfidence(List<string> samples, DataType dataType)
         {
             if (samples.Count == 0)
                 return 0;
@@ -404,17 +404,19 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
 
                 switch (dataType)
                 {
-                    case "Integer":
+                    case DataType.Integer:
                         matches = int.TryParse(sample, out _);
                         break;
-                    case "Decimal":
+                    case DataType.Float:
                         matches = decimal.TryParse(sample, out _);
                         break;
-                    case "DateTime":
+                    case DataType.DateTime:
                         matches = DateTime.TryParse(sample, out _);
                         break;
-                    case "String":
-                        matches = true; // All can be strings
+                    case DataType.String:
+                    case DataType.Hex:
+                    case DataType.Binary:
+                        matches = true; // All can be strings/hex/binary
                         break;
                 }
 
@@ -438,7 +440,7 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             // Simplified implementation for now
             for (int i = 0; i < fields.Count - 1; i++)
             {
-                if (fields[i].DataType == "DateTime" && fields[i + 1].DataType == "DateTime")
+                if (fields[i].DataType == DataType.DateTime && fields[i + 1].DataType == DataType.DateTime)
                 {
                     // Potential date+time combination
                     fields[i].Relationships = new List<string> { $"Possible date-time pair with {fields[i + 1].Name}" };
@@ -470,16 +472,16 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             var summary = new DetectionSummary();
 
             // Terminator info
-            summary.PackageTerminator = config.PackageEndMarker?.GetActiveValue() ?? "None";
+            summary.PackageTerminator = config.PackageEndMarker?.EffectiveValue ?? "None";
             summary.PackageTerminatorOccurrences = packages.Count;
 
             // Delimiter info
-            summary.SegmentDelimiter = config.SegmentSeparator?.GetActiveValue() ?? "None";
+            summary.SegmentDelimiter = config.SegmentSeparator?.EffectiveValue ?? "None";
 
             // Protocol type
-            bool hasSeparator = !string.IsNullOrWhiteSpace(config.SegmentSeparator?.GetActiveValue());
-            bool hasStartMarker = !string.IsNullOrWhiteSpace(config.PackageStartMarker?.GetActiveValue());
-            bool hasEndMarker = !string.IsNullOrWhiteSpace(config.PackageEndMarker?.GetActiveValue());
+            bool hasSeparator = !string.IsNullOrWhiteSpace(config.SegmentSeparator?.EffectiveValue);
+            bool hasStartMarker = !string.IsNullOrWhiteSpace(config.PackageStartMarker?.EffectiveValue);
+            bool hasEndMarker = !string.IsNullOrWhiteSpace(config.PackageEndMarker?.EffectiveValue);
 
             if (hasStartMarker && hasSeparator)
                 summary.ProtocolType = "PackageBased with Segments";
