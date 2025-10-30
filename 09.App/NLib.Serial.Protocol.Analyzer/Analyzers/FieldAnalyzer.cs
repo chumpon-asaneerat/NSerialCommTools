@@ -549,6 +549,245 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             return bytes;
         }
 
+        /// <summary>
+        /// Check if byte array contains only numeric digits (0x30-0x39)
+        /// </summary>
+        private bool IsNumericBytes(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+                return false;
+
+            // Trim whitespace bytes (0x20, 0x09, 0x0D, 0x0A)
+            int start = 0;
+            int end = data.Length - 1;
+
+            while (start < data.Length && IsWhitespaceByte(data[start]))
+                start++;
+
+            while (end >= 0 && IsWhitespaceByte(data[end]))
+                end--;
+
+            if (start > end)
+                return false; // All whitespace
+
+            // All remaining bytes must be digits 0x30-0x39
+            for (int i = start; i <= end; i++)
+            {
+                if (data[i] < 0x30 || data[i] > 0x39)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if byte array is a decimal number (digits + 0x2E + digits)
+        /// </summary>
+        private bool IsDecimalBytes(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+                return false;
+
+            // Trim whitespace
+            int start = 0;
+            int end = data.Length - 1;
+
+            while (start < data.Length && IsWhitespaceByte(data[start]))
+                start++;
+
+            while (end >= 0 && IsWhitespaceByte(data[end]))
+                end--;
+
+            if (start > end)
+                return false;
+
+            // Find decimal point (0x2E)
+            int dotIndex = -1;
+            for (int i = start; i <= end; i++)
+            {
+                if (data[i] == 0x2E) // '.'
+                {
+                    dotIndex = i;
+                    break;
+                }
+            }
+
+            if (dotIndex == -1)
+                return false; // No decimal point
+
+            // Must have at least one digit before dot
+            if (dotIndex == start)
+                return false;
+
+            // Must have at least one digit after dot
+            if (dotIndex == end)
+                return false;
+
+            // Check before dot: all digits (allow optional + or -)
+            for (int i = start; i < dotIndex; i++)
+            {
+                if (i == start && (data[i] == 0x2B || data[i] == 0x2D)) // '+' or '-'
+                    continue;
+
+                if (data[i] < 0x30 || data[i] > 0x39)
+                    return false;
+            }
+
+            // Check after dot: all digits
+            for (int i = dotIndex + 1; i <= end; i++)
+            {
+                if (data[i] < 0x30 || data[i] > 0x39)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if byte array matches date pattern (YYYY-MM-DD, DD/MM/YYYY, etc.)
+        /// </summary>
+        private bool IsDateBytes(byte[] data)
+        {
+            if (data == null || data.Length < 8) // Minimum date length
+                return false;
+
+            // Trim whitespace
+            int start = 0;
+            int end = data.Length - 1;
+
+            while (start < data.Length && IsWhitespaceByte(data[start]))
+                start++;
+
+            while (end >= 0 && IsWhitespaceByte(data[end]))
+                end--;
+
+            int length = end - start + 1;
+            if (length < 8 || length > 10)
+                return false;
+
+            // Pattern: YYYY-MM-DD (10 chars) or DD/MM/YYYY (10 chars)
+            // Check for separators at positions 2 and 5, or 4 and 7
+            byte sep1 = 0, sep2 = 0;
+
+            if (length == 10)
+            {
+                // Could be YYYY-MM-DD or DD/MM/YYYY
+                if ((data[start + 4] == 0x2D || data[start + 4] == 0x2F) &&  // '-' or '/'
+                    (data[start + 7] == 0x2D || data[start + 7] == 0x2F))
+                {
+                    // YYYY-MM-DD format
+                    return IsDigitSequence(data, start, 4) &&
+                           IsDigitSequence(data, start + 5, 2) &&
+                           IsDigitSequence(data, start + 8, 2);
+                }
+                else if ((data[start + 2] == 0x2D || data[start + 2] == 0x2F) &&
+                         (data[start + 5] == 0x2D || data[start + 5] == 0x2F))
+                {
+                    // DD/MM/YYYY format
+                    return IsDigitSequence(data, start, 2) &&
+                           IsDigitSequence(data, start + 3, 2) &&
+                           IsDigitSequence(data, start + 6, 4);
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Check if byte array matches time pattern (HH:MM:SS or HH:MM)
+        /// </summary>
+        private bool IsTimeBytes(byte[] data)
+        {
+            if (data == null || data.Length < 5) // Minimum HH:MM
+                return false;
+
+            // Trim whitespace
+            int start = 0;
+            int end = data.Length - 1;
+
+            while (start < data.Length && IsWhitespaceByte(data[start]))
+                start++;
+
+            while (end >= 0 && IsWhitespaceByte(data[end]))
+                end--;
+
+            int length = end - start + 1;
+            if (length != 5 && length != 8) // HH:MM or HH:MM:SS
+                return false;
+
+            // Check for colon separators
+            if (data[start + 2] != 0x3A) // ':'
+                return false;
+
+            // HH:MM format
+            if (length == 5)
+            {
+                return IsDigitSequence(data, start, 2) &&
+                       IsDigitSequence(data, start + 3, 2);
+            }
+
+            // HH:MM:SS format
+            if (length == 8)
+            {
+                if (data[start + 5] != 0x3A) // ':'
+                    return false;
+
+                return IsDigitSequence(data, start, 2) &&
+                       IsDigitSequence(data, start + 3, 2) &&
+                       IsDigitSequence(data, start + 6, 2);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Check if specified range contains only digit bytes
+        /// </summary>
+        private bool IsDigitSequence(byte[] data, int start, int length)
+        {
+            if (start + length > data.Length)
+                return false;
+
+            for (int i = start; i < start + length; i++)
+            {
+                if (data[i] < 0x30 || data[i] > 0x39)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if byte is whitespace (space, tab, CR, LF)
+        /// </summary>
+        private bool IsWhitespaceByte(byte b)
+        {
+            return b == 0x20 || b == 0x09 || b == 0x0D || b == 0x0A;
+        }
+
+        /// <summary>
+        /// Compare two byte arrays for equality
+        /// </summary>
+        private bool ByteArraysEqual(byte[] a, byte[] b)
+        {
+            if (a == null && b == null)
+                return true;
+
+            if (a == null || b == null)
+                return false;
+
+            if (a.Length != b.Length)
+                return false;
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                    return false;
+            }
+
+            return true;
+        }
+
         #endregion
     }
 
