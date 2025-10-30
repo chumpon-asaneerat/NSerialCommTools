@@ -35,9 +35,9 @@ namespace NLib.Serial.Protocol.Analyzer.Models
         }
 
         /// <summary>
-        /// List of sample values extracted from log data
+        /// List of sample values extracted from log data (as raw bytes)
         /// </summary>
-        public List<string> SampleValues { get; set; }
+        public List<byte[]> SampleValues { get; set; }
 
         /// <summary>
         /// Variance score (0 = constant, 1 = highly variable)
@@ -139,6 +139,7 @@ namespace NLib.Serial.Protocol.Analyzer.Models
 
         /// <summary>
         /// Sample values formatted as comma-separated text for display
+        /// Converts bytes to string ONLY for UI display purposes
         /// </summary>
         public string SampleValuesText
         {
@@ -146,7 +147,20 @@ namespace NLib.Serial.Protocol.Analyzer.Models
             {
                 if (SampleValues == null || SampleValues.Count == 0)
                     return "-";
-                return string.Join(", ", SampleValues.Take(3));
+
+                var displaySamples = new List<string>();
+                foreach (var bytes in SampleValues.Take(3))
+                {
+                    if (bytes == null || bytes.Length == 0)
+                        continue;
+
+                    // Convert bytes to string for display only
+                    // This is UI presentation, not parsing logic
+                    string displayValue = System.Text.Encoding.ASCII.GetString(bytes);
+                    displaySamples.Add(displayValue);
+                }
+
+                return displaySamples.Count > 0 ? string.Join(", ", displaySamples) : "-";
             }
         }
 
