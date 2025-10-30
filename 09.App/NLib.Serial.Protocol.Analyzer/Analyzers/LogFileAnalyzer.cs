@@ -29,9 +29,9 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             _config = config ?? throw new ArgumentNullException(nameof(config));
         }
         /// <summary>
-        /// Auto-detect package start marker using frequency analysis
-        /// Finds the LONGEST byte sequence at START with highest frequency (ignoring incomplete packages)
-        /// IGNORES first and last entries (may be incomplete captures)
+        /// Auto-detect package start marker using DISTANCE-BASED analysis
+        /// True markers appear at REGULAR INTERVALS (package boundaries), not just frequently
+        /// Scans continuous byte stream for repeating patterns with consistent spacing
         /// </summary>
         /// <param name="entries">List of log entries to analyze</param>
         /// <returns>Detected start marker bytes, or null if none found</returns>
@@ -54,15 +54,20 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             if (data.Length < 100) // Need sufficient data
                 return null;
 
-            // Find the LONGEST repeating sequence at start of packages
-            // Strategy: Search for sequences that appear multiple times in the data
-            // Start from longest and work down to shortest
+            // NEW ALGORITHM: Find sequences that appear at REGULAR INTERVALS
+            // (Not just "most common" - that finds common data patterns!)
+
+            string bestMarker = null;
+            double bestScore = 0;
+            int bestLength = 0;
+
+            // Start from longest sequences and work down
             for (int seqLength = _config.MaxSequenceLength; seqLength >= _config.MinSequenceLength; seqLength--)
             {
                 // Find all occurrences of each sequence of this length
                 var sequencePositions = new Dictionary<string, List<int>>();
 
-                // Scan through data looking for repeating sequences
+                // Scan through data
                 for (int i = 0; i <= data.Length - seqLength; i++)
                 {
                     byte[] sequence = new byte[seqLength];
@@ -76,29 +81,53 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                     sequencePositions[key].Add(i);
                 }
 
-                // Find sequence with most occurrences
-                string bestKey = null;
-                int maxOccurrences = 0;
-
+                // Analyze each sequence: Calculate spacing consistency
                 foreach (var kvp in sequencePositions)
                 {
-                    if (kvp.Value.Count > maxOccurrences)
+                    List<int> positions = kvp.Value;
+
+                    // Need at least 5 occurrences
+                    if (positions.Count < 5)
+                        continue;
+
+                    // Calculate distances between consecutive occurrences
+                    List<int> distances = new List<int>();
+                    for (int i = 1; i < positions.Count; i++)
                     {
-                        maxOccurrences = kvp.Value.Count;
-                        bestKey = kvp.Key;
+                        distances.Add(positions[i] - positions[i - 1]);
+                    }
+
+                    // Calculate average distance and standard deviation
+                    double avgDistance = distances.Average();
+                    double variance = distances.Select(d => Math.Pow(d - avgDistance, 2)).Average();
+                    double stdDev = Math.Sqrt(variance);
+
+                    // Calculate coefficient of variation (CV = stdDev / mean)
+                    // Lower CV = more consistent spacing = more likely a boundary marker
+                    double cv = stdDev / avgDistance;
+
+                    // Score = Frequency × Length × (1 / CV)
+                    // Prioritize: many occurrences, longer sequences, consistent spacing
+                    double score = positions.Count * seqLength * (1.0 / (cv + 0.1)); // +0.1 to avoid division by zero
+
+                    // Update best if this is better
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestMarker = kvp.Key;
+                        bestLength = seqLength;
                     }
                 }
 
-                // Check if this sequence appears frequently enough
-                // At least 5 occurrences to be considered a marker
-                if (bestKey != null && maxOccurrences >= 5)
+                // If we found a good marker at this length, stop searching shorter lengths
+                if (bestMarker != null && bestLength == seqLength && bestScore > 100)
                 {
-                    // Return the longest sequence that repeats
-                    return ParseHexString(bestKey);
+                    return ParseHexString(bestMarker);
                 }
             }
 
-            return null;
+            // Return best marker found (if any)
+            return bestMarker != null ? ParseHexString(bestMarker) : null;
         }
 
         /// <summary>
@@ -119,9 +148,9 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         }
 
         /// <summary>
-        /// Auto-detect package end marker using frequency analysis
-        /// Finds the LONGEST byte sequence at END with highest frequency
-        /// Scans continuous byte stream for repeating patterns at end of packages
+        /// Auto-detect package end marker using DISTANCE-BASED analysis
+        /// True markers appear at REGULAR INTERVALS (package boundaries), not just frequently
+        /// Scans continuous byte stream for repeating patterns with consistent spacing
         /// </summary>
         /// <param name="entries">List of log entries to analyze</param>
         /// <returns>Detected end marker bytes, or null if none found</returns>
@@ -144,15 +173,20 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
             if (data.Length < 100) // Need sufficient data
                 return null;
 
-            // Find the LONGEST repeating sequence near end of packages
-            // Strategy: For end markers, look for sequences that appear multiple times
-            // Start from longest and work down to shortest
+            // NEW ALGORITHM: Find sequences that appear at REGULAR INTERVALS
+            // (Not just "most common" - that finds common data patterns!)
+
+            string bestMarker = null;
+            double bestScore = 0;
+            int bestLength = 0;
+
+            // Start from longest sequences and work down
             for (int seqLength = _config.MaxSequenceLength; seqLength >= _config.MinSequenceLength; seqLength--)
             {
                 // Find all occurrences of each sequence of this length
                 var sequencePositions = new Dictionary<string, List<int>>();
 
-                // Scan through data looking for repeating sequences
+                // Scan through data
                 for (int i = 0; i <= data.Length - seqLength; i++)
                 {
                     byte[] sequence = new byte[seqLength];
@@ -166,29 +200,53 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                     sequencePositions[key].Add(i);
                 }
 
-                // Find sequence with most occurrences
-                string bestKey = null;
-                int maxOccurrences = 0;
-
+                // Analyze each sequence: Calculate spacing consistency
                 foreach (var kvp in sequencePositions)
                 {
-                    if (kvp.Value.Count > maxOccurrences)
+                    List<int> positions = kvp.Value;
+
+                    // Need at least 5 occurrences
+                    if (positions.Count < 5)
+                        continue;
+
+                    // Calculate distances between consecutive occurrences
+                    List<int> distances = new List<int>();
+                    for (int i = 1; i < positions.Count; i++)
                     {
-                        maxOccurrences = kvp.Value.Count;
-                        bestKey = kvp.Key;
+                        distances.Add(positions[i] - positions[i - 1]);
+                    }
+
+                    // Calculate average distance and standard deviation
+                    double avgDistance = distances.Average();
+                    double variance = distances.Select(d => Math.Pow(d - avgDistance, 2)).Average();
+                    double stdDev = Math.Sqrt(variance);
+
+                    // Calculate coefficient of variation (CV = stdDev / mean)
+                    // Lower CV = more consistent spacing = more likely a boundary marker
+                    double cv = stdDev / avgDistance;
+
+                    // Score = Frequency × Length × (1 / CV)
+                    // Prioritize: many occurrences, longer sequences, consistent spacing
+                    double score = positions.Count * seqLength * (1.0 / (cv + 0.1)); // +0.1 to avoid division by zero
+
+                    // Update best if this is better
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestMarker = kvp.Key;
+                        bestLength = seqLength;
                     }
                 }
 
-                // Check if this sequence appears frequently enough
-                // At least 5 occurrences to be considered a marker
-                if (bestKey != null && maxOccurrences >= 5)
+                // If we found a good marker at this length, stop searching shorter lengths
+                if (bestMarker != null && bestLength == seqLength && bestScore > 100)
                 {
-                    // Return the longest sequence that repeats
-                    return ParseHexString(bestKey);
+                    return ParseHexString(bestMarker);
                 }
             }
 
-            return null; // No common end marker found
+            // Return best marker found (if any)
+            return bestMarker != null ? ParseHexString(bestMarker) : null;
         }
 
         /// <summary>
