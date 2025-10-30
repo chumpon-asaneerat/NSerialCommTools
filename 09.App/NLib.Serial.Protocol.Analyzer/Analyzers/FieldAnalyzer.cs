@@ -289,11 +289,11 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
         }
 
         /// <summary>
-        /// Extract sample values for a field from packages
+        /// Extract sample values for a field from packages (returns raw bytes)
         /// </summary>
-        private List<string> ExtractFieldSamples(List<PackageData> packages, FieldBoundary boundary, int maxSamples)
+        private List<byte[]> ExtractFieldSamples(List<PackageData> packages, FieldBoundary boundary, int maxSamples)
         {
-            var samples = new List<string>();
+            var samples = new List<byte[]>();
             int count = Math.Min(packages.Count, maxSamples);
 
             for (int i = 0; i < count; i++)
@@ -328,11 +328,11 @@ namespace NLib.Serial.Protocol.Analyzer.Analyzers
                     }
                 }
 
-                // Convert to string
-                string value = Encoding.ASCII.GetString(fieldData).Trim();
-                if (!string.IsNullOrWhiteSpace(value))
+                // Store raw bytes (NO string conversion)
+                // Bytes are the source of truth - follow RULE #1
+                if (fieldData != null && fieldData.Length > 0)
                 {
-                    samples.Add(value);
+                    samples.Add(fieldData);
                 }
             }
 
