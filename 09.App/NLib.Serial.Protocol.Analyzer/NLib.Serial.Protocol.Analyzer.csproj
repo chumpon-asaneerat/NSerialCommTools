@@ -122,6 +122,7 @@
     <None Include="v1\Analyzers\RelationshipDetector.cs" />
     <None Include="v1\Analyzers\TerminatorDetector.cs" />
     <None Include="v2\Analyzers\EncodingDetector.cs" />
+    <Compile Include="Analyzers\FieldAnalyzer.cs" />
     <Compile Include="Analyzers\LogFileAnalyzer.cs" />
     <Compile Include="Analyzers\LogFileAnalyzerConfig.cs" />
     <Compile Include="App.xaml.cs">
