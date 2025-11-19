@@ -87,7 +87,7 @@ namespace TestModbusServer
                     dataStore.CoilDiscretes[8] = false; // Coil address 7
 
                     // Initialize 2 discrete input values (InputDiscretes, addresses 0-1)
-                    dataStore.InputDiscretes[1] = true;  // Discrete input address 0
+                    dataStore.InputDiscretes[1] = false;  // Discrete input address 0
                     dataStore.InputDiscretes[2] = false; // Discrete input address 1
 
                     slave.DataStore = dataStore;
@@ -154,6 +154,23 @@ namespace TestModbusServer
             });
         }
 
+        private bool input1 = false;
+        private bool input2 = false;
+        private DateTime input1Time = DateTime.Now;
+        private DateTime input2Time = DateTime.Now;
+
+        private void cmdPressInput1_Click(object sender, RoutedEventArgs e)
+        {
+            input1 = true;
+            input1Time = DateTime.Now;
+        }
+
+        private void cmdPressInput2_Click(object sender, RoutedEventArgs e)
+        {
+            input2 = true;
+            input2Time = DateTime.Now;
+        }
+
         private void UpdateInputDiscretes(Modbus.Data.DataStore dataStore)
         {
             // Simulate changing discrete inputs periodically
@@ -161,10 +178,27 @@ namespace TestModbusServer
             {
                 try
                 {
+                    /*
                     // Toggle discrete input 0 every 5 seconds
                     dataStore.InputDiscretes[1] = !dataStore.InputDiscretes[1];
                     Dispatcher.Invoke(() => StatusTextBlock.Text = $"Updated discrete input 0 to {dataStore.InputDiscretes[1]}");
                     Thread.Sleep(5000); // Wait 5 seconds
+                    */
+                    dataStore.InputDiscretes[1] = input1;
+                    dataStore.InputDiscretes[2] = input2;
+                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Check discrete input 0: {dataStore.InputDiscretes[1]}, input 1: {dataStore.InputDiscretes[2]}");
+                    Thread.Sleep(500); // Wait 0.5 seconds
+                    // Reset inputs after 5 seconds
+                    var ts1 = DateTime.Now - input1Time;
+                    if (ts1.TotalSeconds > 5 && input1)
+                    {
+                        input1 = false;
+                    }
+                    var ts2 = DateTime.Now - input2Time;
+                    if (ts2.TotalSeconds > 5 && input2)
+                    {
+                        input2 = false;
+                    }
                 }
                 catch
                 {

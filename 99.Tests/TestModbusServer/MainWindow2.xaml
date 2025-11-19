@@ -69,7 +69,19 @@
                                     Content="Stop Slave"
                                     Click="StopSlaveButton_Click"
                                     Width="120"
-                                    IsEnabled="False" />
+                                    IsEnabled="False"
+                                    Margin="0,0,10,0" />
+
+                            <Button x:Name="cmdPressInput1"
+                                    Content="Set Input 1"
+                                    Click="cmdPressInput1_Click"
+                                    Width="120"
+                                    Margin="0,0,10,0" />
+                            <Button x:Name="cmdPressInput2"
+                                    Content="Set Input 2"
+                                    Click="cmdPressInput2_Click"
+                                    Width="120"
+                                    Margin="0,0,10,0" />
                         </StackPanel>
 
                         <TextBlock Grid.Row="2"

@@ -16,8 +16,10 @@ Implements #266
 Implements #265
 - 
 
+[Commit]
 Implements #264
-- 
+- Update TestModbusServer project.
+  - Add InputDiscretes test functional.
 
 [Commit]
 Implements #263
