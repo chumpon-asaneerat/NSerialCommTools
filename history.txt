@@ -13,8 +13,10 @@ Implements #267
 Implements #266
 - 
 
+[Commit]
 Implements #265
-- 
+- Update TestModbusServer project #2.
+  - Custom display data from Weighting project (MainWindow2)
 
 [Commit]
 Implements #264

@@ -77,13 +77,13 @@ namespace TestModbusServer
                     var dataStore = Modbus.Data.DataStoreFactory.CreateDefaultDataStore();
 
                     // Initialize 8 coil values (CoilDiscretes, addresses 0-7)
-                    dataStore.CoilDiscretes[1] = true;  // Coil address 0
-                    dataStore.CoilDiscretes[2] = true;  // Coil address 1
+                    dataStore.CoilDiscretes[1] = false; // Coil address 0
+                    dataStore.CoilDiscretes[2] = false; // Coil address 1
                     dataStore.CoilDiscretes[3] = false; // Coil address 2
                     dataStore.CoilDiscretes[4] = false; // Coil address 3
-                    dataStore.CoilDiscretes[5] = true;  // Coil address 4
+                    dataStore.CoilDiscretes[5] = false; // Coil address 4
                     dataStore.CoilDiscretes[6] = false; // Coil address 5
-                    dataStore.CoilDiscretes[7] = true;  // Coil address 6
+                    dataStore.CoilDiscretes[7] = false; // Coil address 6
                     dataStore.CoilDiscretes[8] = false; // Coil address 7
 
                     // Initialize 2 discrete input values (InputDiscretes, addresses 0-1)
@@ -186,7 +186,19 @@ namespace TestModbusServer
                     */
                     dataStore.InputDiscretes[1] = input1;
                     dataStore.InputDiscretes[2] = input2;
-                    Dispatcher.Invoke(() => StatusTextBlock.Text = $"Check discrete input 0: {dataStore.InputDiscretes[1]}, input 1: {dataStore.InputDiscretes[2]}");
+                    Dispatcher.Invoke(() =>
+                    {
+                        string msg = string.Empty;
+                        msg += $"Small: {dataStore.CoilDiscretes[1]}, Large: {dataStore.CoilDiscretes[2]}";
+                        msg += Environment.NewLine;
+                        msg += $"Green: {dataStore.CoilDiscretes[3]}, Yellow: {dataStore.CoilDiscretes[4]}, Red: {dataStore.CoilDiscretes[5]}";
+                        msg += Environment.NewLine;
+                        msg += $"Buzzer: {dataStore.CoilDiscretes[6]}";
+                        msg += Environment.NewLine;
+                        msg += $"Discrete input 0: {dataStore.InputDiscretes[1]}, input 1: {dataStore.InputDiscretes[2]}";
+
+                        StatusTextBlock.Text = msg;
+                    });
                     Thread.Sleep(500); // Wait 0.5 seconds
                     // Reset inputs after 5 seconds
                     var ts1 = DateTime.Now - input1Time;
