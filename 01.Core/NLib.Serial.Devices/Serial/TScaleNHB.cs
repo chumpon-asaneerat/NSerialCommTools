@@ -50,7 +50,7 @@ namespace NLib.Serial.Devices
             // ST,GS    20.7g  ..
             // 53 54 2C 47 53 20 20 20 20 32 30 2E 37 67 20 20 0D 0A
 
-            string actualW = ((double)W).ToString("F1");
+            string actualW = ((double)W).ToString("F3");
             output = status + "," + mode + " ";
             output += actualW.PadLeft(7, ' ');
             output += unit + "  ";

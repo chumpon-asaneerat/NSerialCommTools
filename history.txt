@@ -10,8 +10,9 @@ Implements #268
 Implements #267
 - 
 
+[Commit]
 Implements #266
-- 
+- Update TScaleNHB, TScaleQHW precision
 
 [Commit]
 Implements #265
